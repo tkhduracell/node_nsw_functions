@@ -18,6 +18,9 @@ jobs:
       contents: 'read'
       id-token: 'write'
 
+    env:
+        GCLOUD_REGION: europe-north1
+
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
