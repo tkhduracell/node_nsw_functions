@@ -1,0 +1,60 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - name: Install deps
+        run: npm ci
+      - name: Build source
+        run: npm run build --if-present
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v1.1.0
+
+      - name: Deploy function calendar-export-get
+        run: |
+          gcloud \
+            --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \
+            --runtime=nodejs18 \
+            --region="${GCLOUD_REGION}" \
+            --source=. \
+            --entry-point=get \
+            --trigger-http \
+            --allow-unauthenticated
+      - name: Deploy function calendar-export-update
+        run: |
+          gcloud \
+            --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
+            --runtime=nodejs18 \
+            --region="${GCLOUD_REGION}" \
+            --source=. \
+            --entry-point=update \
+            --trigger-http \
+            --memory=1024MB \
+            --allow-unauthenticated
+      - name: Update function scheduler
+        run: |
+          gcloud scheduler jobs update http calendar-update-half-hourly \
+            --location "${GCLOUD_REGION}" \
+            --schedule "*/30 * * * *" \
+            --time-zone "Europe/Stockholm" \
+            --uri "https://${GCLOUD_REGION}-${GCLOUD_PROJECT}.cloudfunctions.net/calendar-export-update" \
+            --http-method GET \
+            --description="calendar-export-update: Update NSW GCS ics files (half-hourly)"
