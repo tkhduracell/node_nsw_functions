@@ -19,7 +19,7 @@ jobs:
       id-token: 'write'
 
     env:
-        GCLOUD_REGION: europe-north1
+      GCLOUD_REGION: europe-north1
 
     steps:
       - uses: actions/checkout@v3
@@ -47,16 +47,19 @@ jobs:
         run: |
           gcloud \
             --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \
+            --gen2 \
             --runtime=nodejs18 \
             --region="${GCLOUD_REGION}" \
             --source=. \
             --entry-point=get \
             --trigger-http \
             --allow-unauthenticated
+
       - name: Deploy function calendar-export-update
         run: |
           gcloud \
             --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
+            --gen2 \
             --runtime=nodejs18 \
             --region="${GCLOUD_REGION}" \
             --source=. \
@@ -64,6 +67,7 @@ jobs:
             --trigger-http \
             --memory=1024MB \
             --allow-unauthenticated
+      
       - name: Update function scheduler
         run: |
           gcloud scheduler jobs update http calendar-update-half-hourly \
