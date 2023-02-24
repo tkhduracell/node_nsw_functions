@@ -11,8 +11,12 @@ import {config} from 'dotenv'
 
 config()
 
-const { ORG_ID, BASE_URL, USERNAME, PASSWORD, GCLOUD_PROJECT, GCLOUD_BUCKET, GCLOUD_REGION } = process.env as { 
-    ORG_ID: string; BASE_URL: string; USERNAME: string; PASSWORD: string; GCLOUD_PROJECT: string; GCLOUD_BUCKET: string; GCLOUD_REGION: string; 
+const { 
+    ACTIVITY_ORG_ID, ACTIVITY_BASE_URL, ACTIVITY_USERNAME, ACTIVITY_PASSWORD, 
+    GCLOUD_PROJECT, GCLOUD_BUCKET, GCLOUD_REGION 
+} = process.env as { 
+    ACTIVITY_ORG_ID: string; ACTIVITY_BASE_URL: string; ACTIVITY_USERNAME: string; ACTIVITY_PASSWORD: string; 
+    GCLOUD_PROJECT: string; GCLOUD_BUCKET: string; GCLOUD_REGION: string; 
 }
 
 const storage = new Storage({ projectId: GCLOUD_PROJECT });
@@ -50,16 +54,16 @@ http('update', async (req, res) => {
 
 
 async function login(page: Page) {
-    await page.goto(BASE_URL + '/');
-    await page.type('#userName', USERNAME)
-    await page.type('#loginForm > div:nth-child(4) > input', PASSWORD)
+    await page.goto(ACTIVITY_BASE_URL + '/');
+    await page.type('#userName', ACTIVITY_USERNAME)
+    await page.type('#loginForm > div:nth-child(4) > input', ACTIVITY_PASSWORD)
     
     await page.click('#loginForm > button')
     
     await page.waitForSelector('#OrganisationSelect2')
     await page.waitForSelector('#select2-OrganisationSelect2-container')
     // await page.click('#select2-OrganisationSelect2-container')
-    await page.select('#OrganisationSelect2', ORG_ID)
+    await page.select('#OrganisationSelect2', ACTIVITY_ORG_ID)
     
     await page.click('#login-button')
     await page.waitForSelector('#PageHeader_Start > h1')
@@ -68,7 +72,7 @@ async function login(page: Page) {
 }
 
 async function calendars(page: Page) {
-    await page.goto(`${BASE_URL}/Calendars/Index/${ORG_ID}`)
+    await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${ACTIVITY_ORG_ID}`)
     
     await page.waitForSelector('#btnSearchKalender')
     await sleep(5000)
@@ -112,7 +116,7 @@ export async function calendar(headless = true, useCGS = false) {
         const end = `${inayear.toISOString().replace(/(.*)T.*/, '$1')}+00%3A00%3A00`
         
         console.log(`Downloading - ${cal.name} (${cal.id})`)
-        const response = await fetch(`${BASE_URL}/activities/exportactivitiestoical?calendarId=${cal.id}&startTime=${start}&endTime=${end}&freeText=&activityTypes=`, {
+        const response = await fetch(`${ACTIVITY_BASE_URL}/activities/exportactivitiestoical?calendarId=${cal.id}&startTime=${start}&endTime=${end}&freeText=&activityTypes=`, {
             method: 'GET',
             headers: { cookie }
         })
