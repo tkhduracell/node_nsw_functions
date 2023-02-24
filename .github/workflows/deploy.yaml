@@ -33,21 +33,20 @@ jobs:
         run: npm ci
       - name: Build source
         run: npm run build --if-present
-      
+
       - id: 'auth'
         name: Setup  gcloud Cloud SDK auth
         uses: 'google-github-actions/auth@v1'
         with:
           workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
           service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
-      
+
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1.1.0
 
       - name: Deploy function calendar-export-get
         run: |
-          gcloud \
-            --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \
+          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \
             --gen2 \
             --runtime=nodejs18 \
             --region="${GCLOUD_REGION}" \
@@ -61,20 +60,19 @@ jobs:
 
       - name: Deploy function calendar-export-update
         run: |
-          gcloud \
-            --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
+          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
             --gen2 \
             --runtime=nodejs18 \
             --region="${GCLOUD_REGION}" \
             --source=. \
             --entry-point=update \
             --trigger-http \
-            --memory=1024MB \ 
+            --memory=1024MB \
             --allow-unauthenticated \
             --verbosity=debug \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
-      
+
       - name: Update function scheduler
         run: |
           gcloud scheduler jobs update http calendar-update-half-hourly \
