@@ -12,12 +12,22 @@ import {config} from 'dotenv'
 config()
 
 const { 
-    ACTIVITY_ORG_ID, ACTIVITY_BASE_URL, ACTIVITY_USERNAME, ACTIVITY_PASSWORD, 
-    GCLOUD_PROJECT, GCLOUD_BUCKET, GCLOUD_REGION 
-} = process.env as { 
-    ACTIVITY_ORG_ID: string; ACTIVITY_BASE_URL: string; ACTIVITY_USERNAME: string; ACTIVITY_PASSWORD: string; 
-    GCLOUD_PROJECT: string; GCLOUD_BUCKET: string; GCLOUD_REGION: string; 
-}
+    ACTIVITY_ORG_ID, 
+    ACTIVITY_BASE_URL, 
+    ACTIVITY_USERNAME, 
+    ACTIVITY_PASSWORD, 
+    GCLOUD_PROJECT, 
+    GCLOUD_BUCKET, 
+    GCLOUD_REGION 
+} = z.object({
+    ACTIVITY_ORG_ID: z.string().min(1),
+    ACTIVITY_BASE_URL: z.string().url(),
+    ACTIVITY_USERNAME: z.string().min(1),
+    ACTIVITY_PASSWORD: z.string().min(1),
+    GCLOUD_PROJECT: z.string().min(1),
+    GCLOUD_BUCKET: z.string().min(1),
+    GCLOUD_REGION: z.string().min(1)
+}).parse(process.env)
 
 const storage = new Storage({ projectId: GCLOUD_PROJECT });
 const bucket = storage.bucket(GCLOUD_BUCKET)
