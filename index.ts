@@ -13,14 +13,14 @@ import {config} from 'dotenv'
 
 config()
 
-const { 
-    ACTIVITY_ORG_ID, 
-    ACTIVITY_BASE_URL, 
-    ACTIVITY_USERNAME, 
-    ACTIVITY_PASSWORD, 
-    GCLOUD_PROJECT, 
-    GCLOUD_BUCKET, 
-    GCLOUD_REGION 
+const {
+    ACTIVITY_ORG_ID,
+    ACTIVITY_BASE_URL,
+    ACTIVITY_USERNAME,
+    ACTIVITY_PASSWORD,
+    GCLOUD_PROJECT,
+    GCLOUD_BUCKET,
+    GCLOUD_REGION
 } = z.object({
     ACTIVITY_ORG_ID: z.string().min(1),
     ACTIVITY_BASE_URL: z.string().url(),
@@ -44,7 +44,7 @@ http('get', async (req, res) => {
 
         return res.header('content-type', 'application/json').send(file).end()
     }
-    
+
     const id = z.string().regex(/\d+/).parse(req.query.id)
 
     res
@@ -69,47 +69,47 @@ async function login(page: Page) {
     await page.goto(ACTIVITY_BASE_URL + '/');
     await page.type('#userName', ACTIVITY_USERNAME)
     await page.type('#loginForm > div:nth-child(4) > input', ACTIVITY_PASSWORD)
-    
+
     await page.click('#loginForm > button')
-    
+
     await page.waitForSelector('#OrganisationSelect2')
     await page.waitForSelector('#select2-OrganisationSelect2-container')
     // await page.click('#select2-OrganisationSelect2-container')
     await page.select('#OrganisationSelect2', ACTIVITY_ORG_ID)
-    
+
     await page.click('#login-button')
     await page.waitForSelector('#PageHeader_Start > h1')
-    
+
     await sleep(1000)
 }
 
 async function calendars(page: Page) {
     await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${ACTIVITY_ORG_ID}`)
-    
+
     await page.waitForSelector('#btnSearchKalender')
     await sleep(5000)
-    
+
     const calendarTds = await page.$$('td[data-title="Kalender"]')
-    const calendars = calendarTds.map(d => d.$eval('a', a => ({ 
-        name: a.innerText, 
-        link: a.attributes.getNamedItem('href')?.textContent, 
+    const calendars = calendarTds.map(d => d.$eval('a', a => ({
+        name: a.innerText,
+        link: a.attributes.getNamedItem('href')?.textContent,
         id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '')
     })))
-    
+
     return Promise.all(calendars)
 }
 
 export async function calendar(headless = true, useCGS = false) {
     const browser = await launch({ headless });
     const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(1000 * 60 * 5); 
+    page.setDefaultNavigationTimeout(1000 * 60 * 5);
     page.setDefaultTimeout(1000 * 60 * 1);
 
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
-    
+
     console.log('Logging in')
     await login(page)
-    
+
     console.log('Finding calendars')
     const cals = await calendars(page)
 
@@ -123,10 +123,10 @@ export async function calendar(headless = true, useCGS = false) {
         const today = new Date()
         const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
         const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
-        
+
         const start = `${lastquater.toISOString().replace(/(.*)T.*/, '$1')}+00%3A00%3A00`
         const end = `${inayear.toISOString().replace(/(.*)T.*/, '$1')}+00%3A00%3A00`
-        
+
         console.log(`Downloading - ${cal.name} (${cal.id})`)
         const response = await fetch(`${ACTIVITY_BASE_URL}/activities/exportactivitiestoical?calendarId=${cal.id}&startTime=${start}&endTime=${end}&freeText=&activityTypes=`, {
             method: 'GET',
@@ -142,8 +142,8 @@ export async function calendar(headless = true, useCGS = false) {
 
         if(useCGS) {
             const destination = `${cal.id}.ics`
-            const metadata = { 
-                'x-goog-meta-calendar-name': cal.name, 
+            const metadata = {
+                'x-goog-meta-calendar-name': cal.name,
                 'x-goog-meta-calendar-id': cal.id
             }
             console.log(`Uploading - ${cal.name} (${cal.id}) to ${bucket.cloudStorageURI}/${destination}`)
