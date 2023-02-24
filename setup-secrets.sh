@@ -12,7 +12,7 @@ createSecret() {
         --project="${GCLOUD_PROJECT}" \
         --replication-policy="automatic" --data-file=- \
         & echo "Secret ${2} created!";
-    
+
     # Authorize compute to access secret
     gcloud secrets add-iam-policy-binding "${1}" \
         --member="serviceAccount:${GCLOUD_COMPUTE_ACCOUNT}" \
