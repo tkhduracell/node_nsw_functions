@@ -20,6 +20,7 @@ jobs:
 
     env:
       GCLOUD_REGION: europe-north1
+      GCLOUD_SCHEDULER_REGION: europe-west6
       GCLOUD_BUCKET: nackswinget-af7ef.appspot.com
 
     steps:
@@ -73,9 +74,9 @@ jobs:
 
       - name: Update function scheduler
         run: |
-          gcloud scheduler jobs update http calendar-update-half-hourly \
+          gcloud scheduler jobs update http calendar-update-half-hourly --project "${GCLOUD_PROJECT}" \
             --verbosity=debug \
-            --location "${GCLOUD_REGION}" \
+            --location ${GCLOUD_SCHEDULER_REGION} \
             --schedule "*/30 * * * *" \
             --time-zone "Europe/Stockholm" \
             --uri "https://${GCLOUD_REGION}-${GCLOUD_PROJECT}.cloudfunctions.net/calendar-export-update" \
