@@ -9,6 +9,7 @@
   "scripts": {
     "deploy": "dotenv -- ./deploy.sh",
     "build": "tsc",
+    "gcp-build": "node node_modules/puppeteer/install.js",
     "test": "node --loader ts-node/esm --inspect ./test.ts"
   },
   "author": "Filip Lindqvist",
