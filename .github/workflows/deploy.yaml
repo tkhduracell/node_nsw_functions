@@ -63,7 +63,7 @@ jobs:
         run: |
           gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
             --gen2 \
-            --runtime=nodejs18 \
+            --runtime=nodejs16  # Need to be node16 since newer engines are missing libs \
             --region="${GCLOUD_REGION}" \
             --source=. \
             --entry-point=update \
@@ -77,10 +77,9 @@ jobs:
       - name: Update function scheduler
         run: |
           gcloud scheduler jobs update http calendar-update-half-hourly --project "${GCLOUD_PROJECT}" \
-            --verbosity=debug \
-            --location ${GCLOUD_SCHEDULER_REGION} \
             --schedule "*/30 * * * *" \
             --time-zone "Europe/Stockholm" \
-            --uri "https://${GCLOUD_REGION}-${GCLOUD_PROJECT}.cloudfunctions.net/calendar-export-update" \
             --http-method GET \
+            --uri "$(gcloud functions --project ${GCLOUD_PROJECT} describe calendar-export-update --gen2 --region=${GCLOUD_REGION}  --format='value(serviceConfig.uri)')" \
+            --location ${GCLOUD_SCHEDULER_REGION} \
             --description="calendar-export-update: Update NSW GCS ics files (half-hourly)"
