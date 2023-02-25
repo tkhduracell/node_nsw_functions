@@ -70,6 +70,25 @@ http('get', async (req, res) => {
 });
 
 http('update', async (req, res) => {
+    const { dryrun } = z.object({ dryrun: z.enum(['true', 'false']) }).parse(req.query)
+    if (dryrun === 'true') {
+
+        const topicName = `calendar-337667`;
+        const start = new Date();
+        const end = new Date(new Date().getTime() + 3600000 * 3)
+        const summary = "Friträning"
+        const message = {
+          notification: {
+            title: 'Ny friträning inlagd',
+            body: start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
+          },
+          topic: topicName,
+        }
+        console.log({ message })
+        const resp = await getMessaging(app).send(message)
+        console.log({ resp })
+        return
+    }
     await calendar(true, true)
 
     res.sendStatus(200)
