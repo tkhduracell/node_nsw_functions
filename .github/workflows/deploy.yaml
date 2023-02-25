@@ -89,6 +89,7 @@ jobs:
 
       - name: Deploy function calendar-export-update
         run: |
+          export GCLOUD_FUNCITON_GET_URL=$(gcloud functions --project ${GCLOUD_PROJECT} describe calendar-export-get --gen2 --region=${GCLOUD_REGION}  --format='value(serviceConfig.uri)')
           gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
             --gen2 \
             --runtime=nodejs16  # Need to be node16 since newer engines are missing libs \
@@ -100,7 +101,7 @@ jobs:
             --max-instances=1 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=${GCLOUD_FUNCITON_GET_URL}
 
       - name: Update function scheduler
         run: |
