@@ -57,7 +57,7 @@ jobs:
             --max-instances=5 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET}
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
       - name: Deploy function calendar-unsubscribe
         run: |
@@ -71,7 +71,7 @@ jobs:
             --max-instances=5 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET}
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
       - name: Deploy function calendar-export-get
         run: |
@@ -104,10 +104,11 @@ jobs:
 
       - name: Update function scheduler
         run: |
+          export CLOUD_FUNCITON_UPDATE_URL=$(gcloud functions --project ${GCLOUD_PROJECT} describe calendar-export-update --gen2 --region=${GCLOUD_REGION}  --format='value(serviceConfig.uri)')
           gcloud scheduler jobs update http calendar-update-half-hourly --project "${GCLOUD_PROJECT}" \
             --schedule "*/30 * * * *" \
             --time-zone "Europe/Stockholm" \
             --http-method GET \
-            --uri "$(gcloud functions --project ${GCLOUD_PROJECT} describe calendar-export-update --gen2 --region=${GCLOUD_REGION}  --format='value(serviceConfig.uri)')" \
+            --uri "${CLOUD_FUNCITON_UPDATE_URL}" \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description="calendar-export-update: Update NSW GCS ics files (half-hourly)"
