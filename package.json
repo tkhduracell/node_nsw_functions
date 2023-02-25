@@ -9,8 +9,10 @@
   "scripts": {
     "deploy": "dotenv -- ./deploy.sh",
     "build": "tsc",
+    "watch": "concurrently \"tsc -w\" \"nodemon --watch index.js --exec 'node --inspect node_modules/.bin/functions-framework --target=get'\"",
     "gcp-build": "node node_modules/puppeteer/install.js",
-    "test": "node --loader ts-node/esm --inspect ./test.ts"
+    "test": "tsc && node --loader ts-node/esm --inspect ./test.ts",
+    "clean": "rm *.js"
   },
   "author": "Filip Lindqvist",
   "license": "ISC",
