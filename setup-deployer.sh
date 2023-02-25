@@ -11,6 +11,7 @@ gcloud services enable run.googleapis.com --project "${GCLOUD_PROJECT}"
 gcloud services enable secretmanager.googleapis.com --project "${GCLOUD_PROJECT}"
 gcloud services enable cloudresourcemanager.googleapis.com --project "${GCLOUD_PROJECT}"
 gcloud services enable cloudscheduler.googleapis.com --project "${GCLOUD_PROJECT}"
+gcloud services enable googlecloudmessaging.googleapis.com --project "${GCLOUD_PROJECT}"
 
 GCLOUD_SERVICE_ACCOUNT=github-deployer-account
 GCLOUD_SERVICE_ACCOUNT_ROLE=functions.deployer
