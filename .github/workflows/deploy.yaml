@@ -45,6 +45,34 @@ jobs:
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1.1.0
 
+      - name: Deploy function calendar-subscribe
+        run: |
+          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-subscribe \
+            --gen2 \
+            --runtime=nodejs18 \
+            --region="${GCLOUD_REGION}" \
+            --source=. \
+            --entry-point=subscribe \
+            --trigger-http \
+            --max-instances=5 \
+            --allow-unauthenticated \
+            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET}
+
+      - name: Deploy function calendar-unsubscribe
+        run: |
+          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-unsubscribe \
+            --gen2 \
+            --runtime=nodejs18 \
+            --region="${GCLOUD_REGION}" \
+            --source=. \
+            --entry-point=unsubscribe \
+            --trigger-http \
+            --max-instances=5 \
+            --allow-unauthenticated \
+            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET}
+
       - name: Deploy function calendar-export-get
         run: |
           gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \

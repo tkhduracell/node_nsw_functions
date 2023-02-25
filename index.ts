@@ -5,6 +5,8 @@ import { Storage } from '@google-cloud/storage'
 import { launch, Page } from 'puppeteer'
 import { writeFile as _writeFile } from 'fs'
 import { promisify } from 'util'
+import { initializeApp } from 'firebase-admin/app'
+import { getMessaging } from 'firebase-admin/messaging'
 
 import fetch from 'cross-fetch'
 import z from 'zod'
@@ -63,6 +65,19 @@ http('update', async (req, res) => {
     res.sendStatus(200)
 });
 
+http('subscribe', async (req, res) => {
+    const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
+    const response = await getMessaging().subscribeToTopic(token, topic)
+    console.log('Successfully subscribed to topic:', response)
+    return res.status(200).send(response)
+})
+
+http('unsubscribe', async (req, res) => {
+    const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
+    const response = await getMessaging().unsubscribeFromTopic(token, topic)
+    console.log('Successfully unsubscribed from topic:', response)
+    return res.status(200).send(response)
+})
 
 
 async function login(page: Page) {
