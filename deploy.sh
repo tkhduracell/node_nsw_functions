@@ -1,26 +1,28 @@
 #!/bin/sh
 set -e
 
-tsc
+npm run build
 
 gcloud \
-    --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \
-    --runtime=nodejs18 \
-    --region="${GCLOUD_REGION}" \
-    --source=. \
-    --entry-point=get \
-    --trigger-http \
-    --allow-unauthenticated
+  --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \
+  --gen2 \
+  --runtime=nodejs18 \
+  --region="${GCLOUD_REGION}" \
+  --source=dist \
+  --entry-point=get \
+  --trigger-http \
+  --allow-unauthenticated
 
 gcloud \
-    --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
-    --runtime=nodejs18 \
-    --region="${GCLOUD_REGION}" \
-    --source=. \
-    --entry-point=update \
-    --trigger-http \
-    --memory=1024MB \
-    --allow-unauthenticated
+  --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
+  --gen2 \
+  --runtime=nodejs18 \
+  --region="${GCLOUD_REGION}" \
+  --source=dist \
+  --entry-point=update \
+  --trigger-http \
+  --memory=1024MB \
+  --allow-unauthenticated
 
 gcloud scheduler jobs update http calendar-update-half-hourly \
   --location "${GCLOUD_REGION}" \
@@ -30,4 +32,4 @@ gcloud scheduler jobs update http calendar-update-half-hourly \
   --http-method GET \
   --description="calendar-export-update: Update NSW GCS ics files (half-hourly)"
 
-rm ./*.js
+npm run clean

@@ -16,7 +16,6 @@ import fetch from 'cross-fetch'
 import z from 'zod'
 
 import {config} from 'dotenv'
-import { credential } from 'firebase-admin'
 
 config()
 
@@ -86,6 +85,7 @@ http('update', async (req, res) => {
         }
         console.log({ message })
         const resp = await getMessaging(app).send(message)
+
         console.log({ resp })
         return
     }
@@ -95,6 +95,7 @@ http('update', async (req, res) => {
 });
 
 http('subscribe', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().subscribeToTopic(token, topic)
     console.log('Successfully subscribed to topic:', response)
@@ -102,6 +103,7 @@ http('subscribe', async (req, res) => {
 })
 
 http('unsubscribe', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().unsubscribeFromTopic(token, topic)
     console.log('Successfully unsubscribed from topic:', response)
@@ -198,6 +200,7 @@ export async function calendar(headless = true, useCGS = false) {
         const object = bucket.file(`cal_${cal.id}.ics`)
         const [{ metadata }] = await object.exists() ? await object.getMetadata() : [{ metadata: {} }]
         console.log({ metadata })
+
         if ((latest_uid ?? '') > (metadata['calendar_last_uid'] ?? '')) {
 
             const event = [...text.matchAll(/BEGIN:VEVENT[\s\S]+?UID:(\d+)[\s\S]+?END:VEVENT/ig)]

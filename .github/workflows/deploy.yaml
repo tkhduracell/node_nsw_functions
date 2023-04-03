@@ -51,7 +51,7 @@ jobs:
             --gen2 \
             --runtime=nodejs18 \
             --region="${GCLOUD_REGION}" \
-            --source=. \
+            --source=dist \
             --entry-point=subscribe \
             --trigger-http \
             --max-instances=5 \
@@ -65,7 +65,7 @@ jobs:
             --gen2 \
             --runtime=nodejs18 \
             --region="${GCLOUD_REGION}" \
-            --source=. \
+            --source=dist \
             --entry-point=unsubscribe \
             --trigger-http \
             --max-instances=5 \
@@ -79,7 +79,7 @@ jobs:
             --gen2 \
             --runtime=nodejs18 \
             --region="${GCLOUD_REGION}" \
-            --source=. \
+            --source=dist \
             --entry-point=get \
             --trigger-http \
             --max-instances=5 \
@@ -94,7 +94,7 @@ jobs:
             --gen2 \
             --runtime=nodejs16  # Need to be node16 since newer engines are missing libs \
             --region="${GCLOUD_REGION}" \
-            --source=. \
+            --source=dist \
             --entry-point=update \
             --trigger-http \
             --memory=1024MB \
