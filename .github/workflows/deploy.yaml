@@ -87,6 +87,19 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
+      - name: Deploy function competitions
+        run: |
+          gcloud --project "${GCLOUD_PROJECT}" functions deploy competitions-get \
+            --gen2 \
+            --runtime=nodejs18 \
+            --region="${GCLOUD_REGION}" \
+            --source=dist \
+            --entry-point=competitions \
+            --trigger-http \
+            --max-instances=5 \
+            --allow-unauthenticated \
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_REGION=${GCLOUD_REGION}
+
       - name: Deploy function calendar-export-update
         run: |
           export GCLOUD_FUNCITON_GET_URL=$(gcloud functions --project ${GCLOUD_PROJECT} describe calendar-export-get --gen2 --region=${GCLOUD_REGION}  --format='value(serviceConfig.uri)')

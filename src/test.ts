@@ -1,6 +1,8 @@
-import { calendar } from './index'
+import { competitions } from './index'
 
-calendar(true, true)
-    .then(() => console.log('DONE'))
+console.log()
+
+competitions()
+    .then(() => console.log())
     .catch((err: any) => console.error('ERROR', err))
     .then(() => process.exit(0))
