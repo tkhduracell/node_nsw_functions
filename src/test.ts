@@ -1,4 +1,4 @@
-import { competitions } from './index'
+import { competitions } from './comp'
 
 console.log()
 
