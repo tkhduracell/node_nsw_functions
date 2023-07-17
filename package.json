@@ -1,10 +1,10 @@
 {
   "name": "node_firebase_nackswinget",
   "version": "1.0.0",
-  "description": "",
+  "description": "Utility HTTP functions related to nackswinget",
   "main": "dist/index.js",
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "scripts": {
     "build": "tsc",
