@@ -1,5 +1,3 @@
-import 'source-map-support/register'
-
 import { http } from '@google-cloud/functions-framework'
 import { Storage } from '@google-cloud/storage'
 import { launch, Page } from 'puppeteer'
@@ -44,8 +42,7 @@ const bucket = storage.bucket(GCLOUD_BUCKET)
 
 const writeFile = promisify(_writeFile)
 
-// Register an HTTP function with the Functions Framework that will be executed
-// when you make an HTTP request to the deployed function's endpoint.
+
 http('get', async (req, res) => {
     if (!req.query.id) {
         const [file] = await bucket.file('index.json').download()
