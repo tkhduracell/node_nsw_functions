@@ -123,7 +123,7 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
 
         if (!data.open) continue
 
-        calendar.createEvent({
+        const event = {
             start: new Date(data.start_date),
             end: new Date(data.start_date),
             allDay: true,
@@ -131,7 +131,13 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
             summary: data.name,
             description: JSON.stringify(data, null, 2),
             location: data.city,
-        });
+        }
+
+        try {
+            calendar.createEvent(event);
+        } catch (err) {
+            console.error('Invalid event', event, err)
+        }
 
         console.log([data.name, data.start_date, data.classes, data.city].join(' '))
     }
