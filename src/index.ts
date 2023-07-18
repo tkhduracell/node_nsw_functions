@@ -8,6 +8,8 @@ import { config } from 'dotenv'
 import z from 'zod'
 
 import { GCloudOptions } from './env'
+import { calendar } from './calendar'
+import { fetchCompetitions } from './comp'
 
 config()
 
@@ -76,8 +78,20 @@ http('unsubscribe', async (req, res) => {
     return res.status(200).send(response)
 })
 
-import { calendar } from './calendar'
-import './comp'
+http('competitions', async (req, res) => {
+    const classTypes = z.enum(['X', 'N', 'R', '']).default('').parse(req.query.classTypes)
+
+    const cal = await fetchCompetitions(classTypes)
+
+    await cal.save('/tmp/comp.ics')
+
+    res
+        .setHeader('Content-Type', 'text/calendar')
+        .setHeader('Content-Disposition', `attachment; filename="comp_${classTypes || 'all'}.ics"`)
+        .status(200)
+        .sendFile('/tmp/comp.ics')
+});
+
 
 async function mockNotification() {
     const topicName = `calendar-337667`;

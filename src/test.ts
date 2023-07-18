@@ -1,8 +1,8 @@
-import { competitions } from './comp'
+import { fetchCompetitions } from './comp'
 
 console.log()
 
-competitions()
+fetchCompetitions()
     .then(() => console.log())
     .catch((err: any) => console.error('ERROR', err))
     .then(() => process.exit(0))

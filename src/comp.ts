@@ -1,26 +1,12 @@
-import { http } from '@google-cloud/functions-framework'
-
 import { zip } from 'lodash'
 
 import fetch from 'cross-fetch'
 import z from 'zod'
 
-http('competitions', async (req, res) => {
-    const classTypes = z.enum(['X', 'N', 'R', '']).default('').parse(req.query.classTypes)
-
-    await competitions(classTypes)
-
-    res
-        .setHeader('Content-Type', 'text/calendar')
-        .setHeader('Content-Disposition', `attachment; filename="comp_${classTypes || 'all'}.ics"`)
-        .status(200)
-        .sendFile('/tmp/comp.ics')
-});
-
 import { load } from 'cheerio'
 import ical from 'ical-generator';
 
-export async function competitions(classTypes?: 'R' | 'N' | 'X' | '') {
+export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
     const body = new URLSearchParams([
         [ 'cwi_db_FilterTemplate[filterName]', '' ],
         [ 'cwi_db_FilterTemplate[id]', '0' ],
@@ -149,6 +135,5 @@ export async function competitions(classTypes?: 'R' | 'N' | 'X' | '') {
 
         console.log([data.name, data.start_date, data.classes, data.city].join(' '))
     }
-
-    await calendar.save('/tmp/comp.ics')
+    return calendar
 }
