@@ -103,10 +103,10 @@ jobs:
 
       - name: Deploy function calendar-export-update
         run: |
-          export GCLOUD_FUNCITON_GET_URL=$(gcloud functions --project ${GCLOUD_PROJECT} describe calendar-export-get --gen2 --region=${GCLOUD_REGION}  --format='value(serviceConfig.uri)')
+          export GCLOUD_FUNCITON_GET_URL=$(gcloud functions --project ${GCLOUD_PROJECT} --region=${GCLOUD_REGION} describe calendar-export-get --gen2 --format='value(serviceConfig.uri)')
           gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
             --gen2 \
-            --runtime=nodejs16  # Need to be node16 since newer engines are missing libs \
+            --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
             --source=. \
             --entry-point=update \
@@ -119,7 +119,7 @@ jobs:
 
       - name: Update function scheduler
         run: |
-          export CLOUD_FUNCITON_UPDATE_URL=$(gcloud functions --project ${GCLOUD_PROJECT} describe calendar-export-update --gen2 --region=${GCLOUD_REGION}  --format='value(serviceConfig.uri)')
+          export CLOUD_FUNCITON_UPDATE_URL=$(gcloud functions --project ${GCLOUD_PROJECT} --region=${GCLOUD_REGION} describe calendar-export-update --gen2 --format='value(serviceConfig.uri)')
           gcloud scheduler jobs update http calendar-update-half-hourly --project "${GCLOUD_PROJECT}" \
             --schedule "*/30 * * * *" \
             --time-zone "Europe/Stockholm" \

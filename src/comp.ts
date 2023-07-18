@@ -20,7 +20,7 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
         [ 'cwi_event_Events[firstRow]', '1' ],
         [ 'cwi_event_Events[isCanceled]', '' ],
         [ 'cwi_event_Events[lastSelectedArea]', 'filter' ],
-        [ 'cwi_event_Events[maxRows]', '' ],
+        [ 'cwi_event_Events[maxRows]', '50' ],
         [ 'cwi_event_Events[maxRowsEnum]', '50' ],
         [ 'cwi_event_Events[nailedTabs][compact_sent]"', '1' ],
         [ 'cwi_event_Events[nailedTabs][compact]"', '1' ],
@@ -60,17 +60,17 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
     ])
 
     const page = await fetch("https://dans.se/catch/filter/", {
-        "headers": {
+        headers: {
             "content-type": "application/x-www-form-urlencoded",
         },
-        "body": body.toString(),
-        "method": "POST"
+        body: body,
+        method: "POST"
     });
     const sid = page.headers.get('Set-Cookie')?.replace(/sid=([A-Fa-f0-9]+);.*/gi, '$1')
 
     const res = await fetch("https://dans.se/comp/games/", {
-        "headers": {
-            "cookie": "sid=" + sid,
+        headers: {
+            cookie: "sid=" + sid,
         }
     });
 
