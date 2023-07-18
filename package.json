@@ -9,7 +9,6 @@
   "scripts": {
     "build": "tsc",
     "watch": "concurrently \"tsc -w\" \"nodemon --watch index.js --exec 'node --inspect node_modules/.bin/functions-framework --target=get'\"",
-    "gcp-build": "npm run pre-build && npm run build",
     "pre-build": "node node_modules/puppeteer/install.js",
     "test": "tsc && node --loader ts-node/esm --inspect src/test.ts",
     "clean": "rm -rf dist",
