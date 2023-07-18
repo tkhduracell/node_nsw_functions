@@ -53,7 +53,7 @@ jobs:
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
-            --source=dist \
+            --source=. \
             --entry-point=competitions \
             --trigger-http \
             --max-instances=5 \
@@ -65,7 +65,7 @@ jobs:
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
-            --source=dist \
+            --source=. \
             --entry-point=subscribe \
             --trigger-http \
             --max-instances=5 \
@@ -79,7 +79,7 @@ jobs:
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
-            --source=dist \
+            --source=. \
             --entry-point=unsubscribe \
             --trigger-http \
             --max-instances=5 \
@@ -93,7 +93,7 @@ jobs:
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
-            --source=dist \
+            --source=. \
             --entry-point=get \
             --trigger-http \
             --max-instances=5 \
@@ -108,7 +108,7 @@ jobs:
             --gen2 \
             --runtime=nodejs16  # Need to be node16 since newer engines are missing libs \
             --region="${GCLOUD_REGION}" \
-            --source=dist \
+            --source=. \
             --entry-point=update \
             --trigger-http \
             --memory=1024MB \
