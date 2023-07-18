@@ -1,3 +1,5 @@
+import 'source-map-support/register'
+
 import { http } from '@google-cloud/functions-framework'
 import { Storage } from '@google-cloud/storage'
 import { getMessaging } from 'firebase-admin/messaging'

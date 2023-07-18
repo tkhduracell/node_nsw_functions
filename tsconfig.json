@@ -4,5 +4,6 @@
   "exclude": [],
   "compilerOptions": {
     "outDir": ".",
+    "sourceMap": true,
   },
 }
