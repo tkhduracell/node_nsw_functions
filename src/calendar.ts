@@ -8,8 +8,11 @@ import { differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from './env'
+import { initializeApp } from 'firebase-admin/app'
 
 const writeFile = promisify(_writeFile)
+
+initializeApp()
 const db = getFirestore()
 
 export async function login(page: Page) {
