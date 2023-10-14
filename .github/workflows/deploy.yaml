@@ -120,6 +120,7 @@ jobs:
       - name: Update function scheduler
         run: |
           export CLOUD_FUNCTION_UPDATE_URL=$(gcloud functions --project ${GCLOUD_PROJECT} --region=${GCLOUD_REGION} describe calendar-export-update --gen2 --format='value(serviceConfig.uri)')
+          echo "CLOUD_FUNCTION_UPDATE_URL: ${CLOUD_FUNCTION_UPDATE_URL}"
           gcloud scheduler jobs update http calendar-update-half-hourly --project "${GCLOUD_PROJECT}" \
             --schedule "*/30 * * * *" \
             --time-zone "Europe/Stockholm" \
