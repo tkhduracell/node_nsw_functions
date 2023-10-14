@@ -154,7 +154,7 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
 
             const destination = `cal_${cal.id}.ics`
             const calendar_self = GCLOUD_FUNCITON_GET_URL ?
-                `webcal://${GCLOUD_FUNCITON_GET_URL}?id=${cal.id}` : undefined
+                `webcal://${GCLOUD_FUNCITON_GET_URL.replace(/https:\/\//gi, '')}?id=${cal.id}` : undefined
 
             console.log(`Uploading - ${cal.name} (${cal.id}) to ${bucket.cloudStorageURI}/${destination}`)
             await bucket.upload(file, { destination, metadata: { metadata: { ...metadata, calendar_self  }  } })
