@@ -98,7 +98,7 @@ http('iframe', async (req, res) => {
     res
         .setHeader('Content-Type', 'text/html')
         .status(200)
-        .sendFile('index.html')
+        .sendFile('index.html', { root: __dirname })
 });
 
 async function mockNotification() {
