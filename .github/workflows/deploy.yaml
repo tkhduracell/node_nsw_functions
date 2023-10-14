@@ -119,11 +119,11 @@ jobs:
 
       - name: Update function scheduler
         run: |
-          export CLOUD_FUNCITON_UPDATE_URL=$(gcloud functions --project ${GCLOUD_PROJECT} --region=${GCLOUD_REGION} describe calendar-export-update --gen2 --format='value(serviceConfig.uri)')
+          export CLOUD_FUNCTION_UPDATE_URL=$(gcloud functions --project ${GCLOUD_PROJECT} --region=${GCLOUD_REGION} describe calendar-export-update --gen2 --format='value(serviceConfig.uri)')
           gcloud scheduler jobs update http calendar-update-half-hourly --project "${GCLOUD_PROJECT}" \
             --schedule "*/30 * * * *" \
             --time-zone "Europe/Stockholm" \
             --http-method GET \
-            --uri "${CLOUD_FUNCITON_UPDATE_URL}" \
+            --uri "${CLOUD_FUNCTION_UPDATE_URL}" \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description="calendar-export-update: Update NSW GCS ics files (half-hourly)"
