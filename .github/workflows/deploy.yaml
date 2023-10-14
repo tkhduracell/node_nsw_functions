@@ -45,11 +45,14 @@ jobs:
           service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
 
       - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v1.1.0
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Setup default project
+        run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Deploy function competitions
         run: |
-          gcloud --project "${GCLOUD_PROJECT}" functions deploy competitions-get \
+          gcloud functions deploy competitions-get \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
@@ -61,7 +64,7 @@ jobs:
 
       - name: Deploy function calendar-subscribe
         run: |
-          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-subscribe \
+          gcloud functions deploy calendar-subscribe \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
@@ -75,7 +78,7 @@ jobs:
 
       - name: Deploy function calendar-unsubscribe
         run: |
-          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-unsubscribe \
+          gcloud functions deploy calendar-unsubscribe \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
@@ -89,7 +92,7 @@ jobs:
 
       - name: Deploy function calendar-export-get
         run: |
-          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-get \
+          gcloud functions deploy calendar-export-get \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
@@ -103,8 +106,9 @@ jobs:
 
       - name: Deploy function calendar-export-update
         run: |
-          export GCLOUD_FUNCITON_GET_URL=$(gcloud functions --project ${GCLOUD_PROJECT} --region=${GCLOUD_REGION} describe calendar-export-get --gen2 --format='value(serviceConfig.uri)')
-          gcloud --project "${GCLOUD_PROJECT}" functions deploy calendar-export-update \
+          export GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendar-export-get --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
+          echo "GCLOUD_FUNCITON_GET_URL: '${GCLOUD_FUNCITON_GET_URL}'"
+          gcloud functions deploy calendar-export-update \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
@@ -119,9 +123,9 @@ jobs:
 
       - name: Update function scheduler
         run: |
-          export CLOUD_FUNCTION_UPDATE_URL=$(gcloud functions --project ${GCLOUD_PROJECT} --region=${GCLOUD_REGION} describe calendar-export-update --gen2 --format='value(serviceConfig.uri)')
-          echo "CLOUD_FUNCTION_UPDATE_URL: ${CLOUD_FUNCTION_UPDATE_URL}"
-          gcloud scheduler jobs update http calendar-update-half-hourly --project "${GCLOUD_PROJECT}" \
+          export CLOUD_FUNCTION_UPDATE_URL=$(gcloud functions describe calendar-export-update --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})
+          echo "CLOUD_FUNCTION_UPDATE_URL: '${CLOUD_FUNCTION_UPDATE_URL}'"
+          gcloud scheduler jobs update http calendar-update-half-hourly \
             --schedule "*/30 * * * *" \
             --time-zone "Europe/Stockholm" \
             --http-method GET \
