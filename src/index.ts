@@ -94,6 +94,12 @@ http('competitions', async (req, res) => {
         .sendFile('/tmp/comp.ics')
 });
 
+http('iframe', async (req, res) => {
+    res
+        .setHeader('Content-Type', 'text/html')
+        .status(200)
+        .sendFile('index.html')
+});
 
 async function mockNotification() {
     const topicName = `calendar-337667`;
