@@ -3,12 +3,14 @@ import { launch, Page } from 'puppeteer'
 import { promisify } from 'util'
 import { max, mapKeys } from 'lodash'
 import { getMessaging } from 'firebase-admin/messaging'
+import { getFirestore } from 'firebase-admin/firestore'
 import { differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from './env'
 
 const writeFile = promisify(_writeFile)
+const db = getFirestore()
 
 export async function login(page: Page) {
     const {
@@ -32,7 +34,9 @@ export async function login(page: Page) {
     await page.click('#login-button')
     await page.waitForSelector('#PageHeader_Start > h1')
 
+    const cookies = await page.cookies()
     await sleep(1000)
+    return cookies
 }
 
 async function calendars(page: Page) {
@@ -60,15 +64,6 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
     const {
         ACTIVITY_BASE_URL,
     } = IDOActivityOptions.parse(process.env)
-
-    const out = await getMessaging().send({ // Try dl fb svc key and use it locally.
-        notification: {
-            title: 'Ny friträning inlagd',
-            body: '2023-05-31 kl 01:00 (ungefär två timmar) Filip test 2'
-        },
-        topic: 'cal-337667'
-      }, true)
-    console.log(out)
 
     const browser = await launch({ headless });
     const page = await browser.newPage();
@@ -111,10 +106,11 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
         console.log(`Wrote -  ${cal.name} to ${file}`)
 
         const object = bucket.file(`cal_${cal.id}.ics`)
-        const [{ metadata }] = await object.exists() ? await object.getMetadata() : [{ metadata: {} }]
-        console.log({ metadata })
+        const defaultMetadata = [{ metadata: { calendar_last_uid: '' } }]
+        const [{ metadata: { calendar_last_uid } }] = await object.exists()
+            ? await object.getMetadata() : defaultMetadata
 
-        if ((latest_uid ?? '') > (metadata['calendar_last_uid'] ?? '')) {
+        if ((latest_uid ?? '') > calendar_last_uid) {
 
             const event = [...text.matchAll(/BEGIN:VEVENT[\s\S]+?UID:(\d+)[\s\S]+?END:VEVENT/ig)]
                 .map(s => s[0])
@@ -125,19 +121,27 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
             const end = (event ?? '').match(/DTEND:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
             const summary = (event ?? '').match(/SUMMARY:(.*)/)?.reverse().find(() => true)
             const duration = end && start ? differenceInMinutes(end, start) : null
+
             console.log('New event discovered!', { start, end, duration, summary })
 
             const topicName = `calendar-${cal.id}`;
-
+            const body = start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
             const message = {
               notification: {
                 title: cal.name === 'Friträning' ?  'Ny friträning inlagd' : `${cal.name} uppdaterad`,
-                body: start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
+                body
               },
               topic: topicName,
             }
-            console.log({message})
-            const resp = await getMessaging().send(message)
+
+            await getMessaging().send(message)
+        }
+
+        const metadata = {
+            calendar_name: cal.name,
+            calendar_id: cal.id,
+            calendar_last_uid: latest_uid,
+            calendar_last_data: latest_date,
         }
 
         if (useCGS) {
@@ -146,19 +150,14 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
             } = GCloudOptions.parse(process.env)
 
             const destination = `cal_${cal.id}.ics`
-            const metadata = {
-                metadata: {
-                    'calendar_name': cal.name,
-                    'calendar_id': cal.id,
-                    'calendar_last_uid': latest_uid,
-                    'calendar_last_data': latest_date,
-                    'calendar_self': GCLOUD_FUNCITON_GET_URL ?
-                        `webcal://${GCLOUD_FUNCITON_GET_URL}?id=${cal.id}` : undefined
-                }
-            }
+            const calendar_self = GCLOUD_FUNCITON_GET_URL ?
+                `webcal://${GCLOUD_FUNCITON_GET_URL}?id=${cal.id}` : undefined
+
             console.log(`Uploading - ${cal.name} (${cal.id}) to ${bucket.cloudStorageURI}/${destination}`)
-            await bucket.upload(file, { destination, metadata })
+            await bucket.upload(file, { destination, metadata: { metadata: { ...metadata, calendar_self  }  } })
         }
+
+        await db.collection('calendars').doc(cal.id ?? '').set(metadata, { merge: true })
     }
 
     await browser.close();
