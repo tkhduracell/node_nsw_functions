@@ -110,7 +110,7 @@
                     })
 
                     if ('serviceWorker' in navigator) {
-                        await navigator.serviceWorker.register('./notifications-api/firebase-messaging-sw.js')
+                        const registration = await navigator.serviceWorker.register('./notifications-api/firebase-messaging-sw.js')
                         messaging.useServiceWorker(registration);
                         console.log('Registration successful, scope is:', registration.scope);
                     }

@@ -2,5 +2,6 @@ node_modules/
 .cache/
 .env
 *.js
+!static/*.js
 
 *-firebase-adminsdk-*.json
