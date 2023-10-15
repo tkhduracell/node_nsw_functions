@@ -57,7 +57,7 @@
                                 query.append('token', currentToken)
                                 query.append('topic', 'calendar-' + 337667)
 
-                                const resp = await fetch('/subscribe' + query.toString(), {  method: 'POST' })
+                                const resp = await fetch('/subscribe?' + query.toString(), {  method: 'POST' })
                                 if (resp.ok) {
                                     log('Subscribe success', await resp.json())
                                 } else {
