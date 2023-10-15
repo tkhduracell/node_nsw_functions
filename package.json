@@ -2,13 +2,13 @@
   "name": "node_firebase_nackswinget",
   "version": "1.0.0",
   "description": "Utility HTTP functions related to nackswinget",
-  "main": "index.js",
+  "main": "dist/index.js",
   "engines": {
     "node": "16"
   },
   "scripts": {
     "pre-build": "node node_modules/puppeteer/install.js",
-    "build": "tsc",
+    "build": "tsc && mkdir dist/static && cp -R static/ dist/static/",
     "test": "tsc && node --loader ts-node/esm --inspect src/test.ts",
     "clean": "rm -rf dist",
     "dev": "live-server --https=https.config.js --port=3000 --watch=static/index.html --host=localhost"
