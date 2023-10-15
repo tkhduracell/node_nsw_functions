@@ -57,7 +57,7 @@
                                 query.append('token', currentToken)
                                 query.append('topic', 'calendar-' + 337667)
 
-                                const resp = await fetch('/subscribe?' + query.toString(), {  method: 'POST' })
+                                const resp = await fetch('notifications-api/subscribe?' + query.toString(), {  method: 'POST' })
                                 if (resp.ok) {
                                     log('Subscribe success', await resp.json())
                                 } else {
@@ -79,7 +79,7 @@
                     const query = new URLSearchParams()
                     query.append('token', token.value)
                     query.append('topic', 'calendar-' + 337667)
-                    const resp = await fetch('/unsubscribe?' + query.toString(), {  method: 'POST' })
+                    const resp = await fetch('notifications-api/unsubscribe?' + query.toString(), {  method: 'POST' })
                     if (resp.ok) {
                         log('Unsubscribe success', await resp.json())
                     } else {
