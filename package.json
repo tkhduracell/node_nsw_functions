@@ -7,12 +7,10 @@
     "node": "16"
   },
   "scripts": {
-    "build": "tsc",
-    "watch": "concurrently \"tsc -w\" \"nodemon --watch index.js --exec 'node --inspect node_modules/.bin/functions-framework --target=get'\"",
     "pre-build": "node node_modules/puppeteer/install.js",
     "test": "tsc && node --loader ts-node/esm --inspect src/test.ts",
     "clean": "rm -rf dist",
-    "demo": "cd demo && live-server --https=https.config.js --port=3000 --watch=test.html --host=localhost"
+    "dev": "live-server --https=https.config.js --port=3000 --watch=static/index.html --host=localhost"
   },
   "author": "Filip Lindqvist",
   "license": "ISC",
