@@ -3,7 +3,7 @@
 
 <body>
     <div id="app">
-        <h1>Welcom</h1>
+        <h1>Welcome</h1>
         <div v-if="token">
             Token: <pre>{{ token }}</pre>
             <button @click="unsubscribe">Unsubscribe</button>
@@ -108,6 +108,12 @@
                     onMessage(messaging, (payload) => {
                         log('Message received. ', payload);
                     })
+
+                    if ('serviceWorker' in navigator) {
+                        await navigator.serviceWorker.register('./notifications-api/firebase-messaging-sw.js')
+                        messaging.useServiceWorker(registration);
+                        console.log('Registration successful, scope is:', registration.scope);
+                    }
                 })
 
                 return {

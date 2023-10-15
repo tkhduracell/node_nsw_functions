@@ -70,7 +70,6 @@ import path from 'path'
 
 const app = express()
 app.use(express.static(path.join(__dirname, 'static'), {}))
-
 app.post('/subscribe', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
@@ -83,6 +82,12 @@ app.post('/unsubscribe', async (req, res) => {
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().unsubscribeFromTopic(token, topic)
     console.log('Successfully unsubscribed from topic:', response)
+    return res.status(200).send(response)
+})
+app.post('/trigger', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
+    const { topic } = z.object({ topic: z.string().optional() }).parse(req.query)
+    const response = await mockNotification(topic)
     return res.status(200).send(response)
 })
 
@@ -102,20 +107,20 @@ http('competitions', async (req, res) => {
         .sendFile('/tmp/comp.ics')
 });
 
-async function mockNotification() {
-    const topicName = `calendar-337667`;
-        const start = new Date();
-        const end = new Date(new Date().getTime() + 3600000 * 3)
-        const summary = "Friträning"
-        const message = {
-          notification: {
-            title: 'Ny friträning inlagd',
-            body: start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
-          },
-          topic: topicName,
-        }
-        console.log({ message })
-        const resp = await getMessaging().send(message)
+async function mockNotification(topicName = 'calendar-337667') {
+    const start = new Date();
+    const end = new Date(new Date().getTime() + 3600000 * 3)
+    const summary = "Friträning"
+    const message = {
+        notification: {
+        title: 'Ny friträning inlagd',
+        body: start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
+        },
+        topic: topicName,
+    }
+    console.log({ message })
+    const resp = await getMessaging().send(message)
 
-        console.log({ resp })
+    console.log({ resp })
+    return resp
 }
