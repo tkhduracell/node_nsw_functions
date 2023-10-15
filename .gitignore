@@ -5,3 +5,7 @@ node_modules/
 !static/*.js
 
 *-firebase-adminsdk-*.json
+
+*.crt
+*.key
+*.csr
