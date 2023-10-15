@@ -50,17 +50,19 @@ jobs:
       - name: Setup default project
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
-      - name: Deploy function iframe
+      - name: Deploy function notifications-api
         run: |
-          gcloud functions deploy competitions-iframe \
+          gcloud functions deploy notifications-api \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
             --source=. \
-            --entry-point=iframe \
+            --entry-point=notifications-api \
             --trigger-http \
             --max-instances=5 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
       - name: Deploy function competitions
         run: |
@@ -73,34 +75,6 @@ jobs:
             --trigger-http \
             --max-instances=5 \
             --allow-unauthenticated
-
-      - name: Deploy function calendar-subscribe
-        run: |
-          gcloud functions deploy calendar-subscribe \
-            --gen2 \
-            --runtime=nodejs16 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=subscribe \
-            --trigger-http \
-            --max-instances=5 \
-            --allow-unauthenticated \
-            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
-
-      - name: Deploy function calendar-unsubscribe
-        run: |
-          gcloud functions deploy calendar-unsubscribe \
-            --gen2 \
-            --runtime=nodejs16 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=unsubscribe \
-            --trigger-http \
-            --max-instances=5 \
-            --allow-unauthenticated \
-            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
       - name: Deploy function calendar-export-get
         run: |

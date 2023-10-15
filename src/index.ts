@@ -64,21 +64,29 @@ http('update', async (req, res) => {
     res.sendStatus(200)
 });
 
-http('subscribe', async (req, res) => {
+
+import express from 'express'
+import path from 'path'
+
+const app = express()
+app.use(express.static(path.join(__dirname, 'static'), {}))
+
+app.post('/subscribe', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().subscribeToTopic(token, topic)
     console.log('Successfully subscribed to topic:', response)
     return res.status(200).send(response)
 })
-
-http('unsubscribe', async (req, res) => {
+app.post('/unsubscribe', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().unsubscribeFromTopic(token, topic)
     console.log('Successfully unsubscribed from topic:', response)
     return res.status(200).send(response)
 })
+
+http('notifications-api', app)
 
 http('competitions', async (req, res) => {
     const classTypes = z.enum(['X', 'N', 'R', '']).default('').parse(req.query.classTypes)
@@ -92,13 +100,6 @@ http('competitions', async (req, res) => {
         .setHeader('Content-Disposition', `attachment; filename="comp_${classTypes || 'all'}.ics"`)
         .status(200)
         .sendFile('/tmp/comp.ics')
-});
-
-http('iframe', async (req, res) => {
-    res
-        .setHeader('Content-Type', 'text/html')
-        .status(200)
-        .sendFile('index.html', { root: __dirname })
 });
 
 async function mockNotification() {

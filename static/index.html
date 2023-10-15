@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <div id="app">
+        <h1>Welcom</h1>
+        <div v-if="token">
+            Token: <pre>{{ token }}</pre>
+            <button @click="unsubscribe">Unsubscribe</button>
+        </div>
+        <button @click="subscribe" v-else>
+            Subscribe
+        </button>
+        <p>
+            <b>Messages</b>
+        </p>
+        <p v-for="msg in msgs">{{ msg }}</p>
+    </div>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js'
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js'
+        import {
+            getMessaging, getToken, onMessage
+        } from 'https://www.gstatic.com/firebasejs/9.17.1/firebase-messaging.js'
+
+        const vapidKey = 'BMTIrHUbvBXlQpWWeIDc2IMD_CPye0EW-XmOqzAtBvMkKy8bsRfx5YEfvQQ4Gp98XV2XAOcaz6o-x2bisVBNWXM'
+
+        const { ref, createApp, onMounted } = Vue
+        createApp({
+            setup() {
+                const token = ref('')
+                const msgs = ref([])
+
+                function log(...other) {
+                    console.log(...other);
+                    msgs.value = [...msgs.value, ...other.map(str => typeof(str) ==='string' ? str : JSON.stringify(str, null, 2))]
+                }
+
+                const subscribe = async () => {
+
+                    const permission = await Notification.requestPermission()
+                    if (permission === 'granted') {
+                        log('Notification permission granted.');
+                        const messaging = getMessaging();
+
+                        try {
+                            const currentToken = await getToken(messaging, { vapidKey });
+                            if (currentToken) {
+                                // Send the token to your server and update the UI if necessary
+                                localStorage.setItem('token', currentToken)
+                                token.value = currentToken
+                                log({ currentToken })
+
+                                const query = new URLSearchParams()
+                                query.append('token', currentToken)
+                                query.append('topic', 'calendar-' + 337667)
+
+                                const resp = await fetch('/subscribe' + query.toString(), {  method: 'POST' })
+                                if (resp.ok) {
+                                    log('Subscribe success', await resp.json())
+                                } else {
+                                    log('Subscribe failed', resp.status, resp.statusText)
+                                }
+
+                            } else {
+                                log('No registration token available. Request permission to generate one.');
+                            }
+                        } catch (e) {
+                            log('Exception: ' + e)
+                        }
+                    } else {
+                        log('Notification permission: ' + permission)
+                    }
+                }
+
+                const unsubscribe = async () => {
+                    const query = new URLSearchParams()
+                    query.append('token', token.value)
+                    query.append('topic', 'calendar-' + 337667)
+                    const resp = await fetch('/unsubscribe?' + query.toString(), {  method: 'POST' })
+                    if (resp.ok) {
+                        log('Unsubscribe success', await resp.json())
+                    } else {
+                        log('Unsubscribe failed', resp.status, resp.statusText)
+                    }
+                }
+
+                onMounted(async () => {
+                    token.value = localStorage.getItem('token')
+
+                    if (token.value) {
+                        log({ token: token.value })
+                    }
+
+                    const firebaseConfig = {
+                        apiKey: "AIzaSyBJ_cRfI7tvVZ_xlIk9QqF6eN29YD6xOAk",
+                        authDomain: "nackswinget-af7ef.firebaseapp.com",
+                        projectId: "nackswinget-af7ef",
+                        storageBucket: "nackswinget-af7ef.appspot.com",
+                        messagingSenderId: "560237127162",
+                        appId: "1:560237127162:web:2e12c34e9e8fa521997043"
+                    };
+
+                    const app = initializeApp(firebaseConfig);
+
+                    const messaging = getMessaging();
+                    onMessage(messaging, (payload) => {
+                        log('Message received. ', payload);
+                    })
+                })
+
+                return {
+                    token,
+                    subscribe,
+                    unsubscribe,
+                    msgs
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+
+</html>
