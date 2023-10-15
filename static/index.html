@@ -27,6 +27,7 @@
         const vapidKey = 'BMTIrHUbvBXlQpWWeIDc2IMD_CPye0EW-XmOqzAtBvMkKy8bsRfx5YEfvQQ4Gp98XV2XAOcaz6o-x2bisVBNWXM'
 
         const { ref, createApp, onMounted } = Vue
+        let serviceWorkerRegistration = null
         createApp({
             setup() {
                 const token = ref('')
@@ -45,7 +46,7 @@
                         const messaging = getMessaging();
 
                         try {
-                            const currentToken = await getToken(messaging, { vapidKey });
+                            const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
                             if (currentToken) {
                                 // Send the token to your server and update the UI if necessary
                                 localStorage.setItem('token', currentToken)
@@ -110,9 +111,8 @@
                     })
 
                     if ('serviceWorker' in navigator) {
-                        const registration = await navigator.serviceWorker.register('./notifications-api/firebase-messaging-sw.js')
-                        messaging.useServiceWorker(registration);
-                        console.log('Registration successful, scope is:', registration.scope);
+                        serviceWorkerRegistration = await navigator.serviceWorker.register('./notifications-api/firebase-messaging-sw.js')
+                        console.log('Registration successful, scope is:', serviceWorkerRegistration.scope);
                     }
                 })
 
