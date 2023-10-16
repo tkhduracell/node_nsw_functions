@@ -18,7 +18,7 @@ if (require.main === module) {
 }
 
 app.post('/status', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
+    res.header('Access-Control-Allow-Origin', 'https://nackswinget.se')
     const { token } = z.object({ token: z.string() }).parse(req.query)
     const db = getFirestore()
     const result = await db.collection('tokens').doc(token).get()
@@ -33,7 +33,7 @@ app.post('/status', async (req, res) => {
 })
 
 app.post('/subscribe', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
+    res.header('Access-Control-Allow-Origin', 'https://nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().subscribeToTopic(token, topic)
 
@@ -45,7 +45,7 @@ app.post('/subscribe', async (req, res) => {
 })
 
 app.post('/unsubscribe', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
+    res.header('Access-Control-Allow-Origin', 'https://nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().unsubscribeFromTopic(token, topic)
 
@@ -57,7 +57,7 @@ app.post('/unsubscribe', async (req, res) => {
 })
 
 app.post('/trigger', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
+    res.header('Access-Control-Allow-Origin', 'https://nackswinget.se')
     const { topic } = z.object({ topic: z.string().optional() }).parse(req.query)
     const response = await mockNotification(topic)
     return res.status(200).send(response)
