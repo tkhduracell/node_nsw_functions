@@ -5,15 +5,16 @@
             <h1>Welcome</h1>
             <div v-if="token">
                 Token: <pre>{{ token }}</pre>
-                <button @click="unsubscribe">Unsubscribe</button>
+                <button @click="unsubscribe" class="text-white cursor-pointer ont-bold bg-blue-500 hover:bg-blue-600 border-round transition-colors transition-duration-150 p-2 border-none">Unsubscribe</button>
             </div>
-            <button @click="subscribe" v-else>
+            <button @click="subscribe" class="text-white cursor-pointer font-bold bg-blue-500 hover:bg-blue-600 border-round transition-colors transition-duration-150 p-2 border-none" v-else>
                 Subscribe
             </button>
-            <p>
-                <b>Messages</b>
-            </p>
-            <p v-for="msg in msgs">{{ msg }}</p>
+            <div>
+                <h3>Messages</h3>
+                <p v-for="msg in msgs">{{ msg }}</p>
+                <a @click="clear" href="#">Clear messages</a>
+            </div>
         </div>
         <script type="importmap">
             {
@@ -42,6 +43,9 @@
                         console.log(...other);
                         msgs.value = [...msgs.value, ...other.map(str => typeof(str) ==='string' ? str : JSON.stringify(str, null, 2))]
                     }
+                    function clear() {
+                        msgs.value = []
+                    }
 
                     const subscribe = async () => {
                         const permission = await Notification.requestPermission()
@@ -61,7 +65,7 @@
                                     query.append('token', currentToken)
                                     query.append('topic', 'calendar-' + 337667)
 
-                                    const resp = await fetch('notifications-api/subscribe?' + query.toString(), {  method: 'POST' })
+                                    const resp = await fetch('subscribe?' + query.toString(), {  method: 'POST' })
                                     if (resp.ok) {
                                         log('Subscribe success', await resp.json())
                                     } else {
@@ -83,7 +87,7 @@
                         const query = new URLSearchParams()
                         query.append('token', token.value)
                         query.append('topic', 'calendar-' + 337667)
-                        const resp = await fetch('notifications-api/unsubscribe?' + query.toString(), {  method: 'POST' })
+                        const resp = await fetch('unsubscribe?' + query.toString(), {  method: 'POST' })
                         if (resp.ok) {
                             log('Unsubscribe success', await resp.json())
                         } else {
@@ -128,11 +132,14 @@
                         token,
                         subscribe,
                         unsubscribe,
-                        msgs
+                        msgs,
+                        clear
                     }
                 }
             }).mount('#app')
 
         </script>
+        <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/primeflex.css">
+        <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/themes/primeone-light.css">
     </body>
 </html>
