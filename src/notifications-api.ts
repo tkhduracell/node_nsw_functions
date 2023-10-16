@@ -21,7 +21,7 @@ app.post('/:token', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const token = z.string().parse(req.params.token)
     const db = getFirestore()
-    const result = await db.collection('token').doc(token).get()
+    const result = await db.collection('tokens').doc(token).get()
     if (result.exists) {
         return res.status(200).send({
             subscribed: true,
@@ -40,7 +40,7 @@ app.post('/subscribe', async (req, res) => {
     const response = await getMessaging().subscribeToTopic(token, topic)
 
     const db = getFirestore()
-    await db.collection('token').doc(token).set({ created_at: new Date(), topic }, { merge: true })
+    await db.collection('tokens').doc(token).set({ created_at: new Date(), topic }, { merge: true })
 
     console.log('Successfully subscribed to topic:', response)
     return res.status(200).send(response)
@@ -52,7 +52,7 @@ app.post('/unsubscribe', async (req, res) => {
     const response = await getMessaging().unsubscribeFromTopic(token, topic)
 
     const db = getFirestore()
-    await db.collection('token').doc(token).delete()
+    await db.collection('tokens').doc(token).delete()
 
     console.log('Successfully unsubscribed from topic:', response)
     return res.status(200).send(response)
