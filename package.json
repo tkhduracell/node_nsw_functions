@@ -8,7 +8,7 @@
   },
   "scripts": {
     "pre-build": "node node_modules/puppeteer/install.js",
-    "build": "tsc && mkdir dist/static && cp -R static/ dist/static/",
+    "build": "tsc && mkdir -p dist/static && cp -R static/ dist/static/",
     "test": "tsc && node --loader ts-node/esm --inspect src/test.ts",
     "clean": "rm -rf dist",
     "dev": "live-server --https=https.config.js --port=3000 --watch=static/index.html --host=localhost"
