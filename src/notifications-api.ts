@@ -6,6 +6,7 @@ import { initializeApp } from 'firebase-admin/app'
 import { getMessaging } from 'firebase-admin/messaging'
 import { format, formatDistance } from 'date-fns'
 import { sv } from 'date-fns/locale'
+import { getFirestore } from 'firebase-admin/firestore'
 
 
 const app = express()
@@ -16,20 +17,47 @@ if (require.main === module) {
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
 
+app.post('/:token', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'nackswinget.se')
+    const token = z.string().parse(req.params.token)
+    const db = getFirestore()
+    const result = await db.collection('token').doc(token).get()
+    if (result.exists) {
+        return res.status(200).send({
+            subscribed: true,
+            data: result.data()
+        })
+    } else {
+        return res.status(200).send({
+            subscribed: false,
+        })
+    }
+})
+
 app.post('/subscribe', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().subscribeToTopic(token, topic)
+
+    const db = getFirestore()
+    await db.collection('token').doc(token).set({ created_at: new Date(), topic }, { merge: true })
+
     console.log('Successfully subscribed to topic:', response)
     return res.status(200).send(response)
 })
+
 app.post('/unsubscribe', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
     const response = await getMessaging().unsubscribeFromTopic(token, topic)
+
+    const db = getFirestore()
+    await db.collection('token').doc(token).delete()
+
     console.log('Successfully unsubscribed from topic:', response)
     return res.status(200).send(response)
 })
+
 app.post('/trigger', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { topic } = z.object({ topic: z.string().optional() }).parse(req.query)

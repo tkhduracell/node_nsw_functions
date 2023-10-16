@@ -50,7 +50,9 @@ http('update', async (req, res) => {
     const storage = new Storage({ projectId: GCLOUD_PROJECT });
     const bucket = storage.bucket(GCLOUD_BUCKET)
 
-    const { dryrun } = z.object({ dryrun: z.enum(['true', 'false']).optional() }).parse(req.query)
+    const { dryrun } = z.object({
+        dryrun: z.enum(['true', 'false']).optional()
+    }).parse(req.query)
 
     if (dryrun === 'true') {
         await mockNotification()
