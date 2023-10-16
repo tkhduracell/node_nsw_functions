@@ -8,12 +8,8 @@ import { differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from './env'
-import { initializeApp } from 'firebase-admin/app'
 
 const writeFile = promisify(_writeFile)
-
-initializeApp()
-const db = getFirestore()
 
 export async function login(page: Page) {
     const {
@@ -160,6 +156,7 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
             await bucket.upload(file, { destination, metadata: { metadata: { ...metadata, calendar_self  }  } })
         }
 
+        const db = getFirestore()
         await db.collection('calendars').doc(cal.id ?? '').set(metadata, { merge: true })
     }
 

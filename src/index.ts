@@ -8,8 +8,10 @@ import z from 'zod'
 
 import { GCloudOptions } from './env'
 import { calendar } from './calendar'
+import { initializeApp } from 'firebase-admin/app'
 
 config()
+initializeApp()
 
 http('get', async (req, res) => {
     const {

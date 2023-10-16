@@ -8,9 +8,13 @@ import { format, formatDistance } from 'date-fns'
 import { sv } from 'date-fns/locale'
 
 
-initializeApp()
-
 const app = express()
+
+if (require.main === module) {
+    const port = process.env.PORT ?? 3000
+    initializeApp()
+    app.listen(port, () => console.log(`Listening on port ${port}`))
+}
 
 app.post('/subscribe', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
@@ -53,13 +57,5 @@ export async function mockNotification(topicName = 'calendar-337667') {
     console.log({ resp })
     return resp
 }
-
-if (require.main === module) {
-    const port = process.env.PORT ?? 3000
-    app.listen(port, () => {
-        console.log(`Listening on port ${port}`)
-    })
-}
-
 
 export default app
