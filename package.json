@@ -8,7 +8,7 @@
   },
   "scripts": {
     "pre-build": "node node_modules/puppeteer/install.js",
-    "build": "tsc && mkdir -p dist/static && cp -R static/ dist/static/",
+    "build": "tsc",
     "test": "tsc && node --loader ts-node/esm --inspect src/test.ts",
     "dev": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
     "dev-napi": "node --loader ts-node/esm --inspect src/notifications-api.ts",
