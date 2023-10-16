@@ -10,8 +10,8 @@
     "pre-build": "node node_modules/puppeteer/install.js",
     "build": "tsc && mkdir -p dist/static && cp -R static/ dist/static/",
     "test": "tsc && node --loader ts-node/esm --inspect src/test.ts",
-    "clean": "rm -rf dist",
-    "dev": "live-server --https=https.config.js --port=3000 --watch=static/index.html --host=localhost"
+    "dev": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
+    "clean": "rm -rf dist"
   },
   "author": "Filip Lindqvist",
   "license": "ISC",
@@ -27,7 +27,7 @@
     "lodash": "^4.17.21",
     "puppeteer": "^19.11.1",
     "source-map-support": "^0.5.21",
-    "zod": "^3.20.6"
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@tsconfig/node16": "^16.1.0",
