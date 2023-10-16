@@ -2,7 +2,7 @@
 <html>
     <body>
         <div id="app">
-            <div v-if="token">
+            <div v-if="token && isSubscribed">
                 <p class="mt-0 mb-1">
                     Du bevakar nya friträningar på denna enhet.
                 </p>
@@ -14,7 +14,7 @@
                 <p class="mt-0 mb-1">
                     Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en fritärning läggs upp.
                 </p>
-                <button @click="subscribe" class="text-white text-lg cursor-pointer font-bol btn-red border-round transition-colors transition-duration-150 p-2 border-none">
+                <button @click="requestAndSubscribe" class="text-white text-lg cursor-pointer font-bol btn-red border-round transition-colors transition-duration-150 p-2 border-none">
                     Börja bevaka
                 </button>
             </div>
@@ -42,6 +42,7 @@
             let serviceWorkerRegistration = null
             createApp({
                 setup() {
+                    const isSubscribed = ref(false)
                     const token = ref('')
                     const msgs = ref([])
                     const baseUrl = document.location.host.endsWith('cloudfunctions.net') ? 'notifications-api' : '.'
@@ -116,9 +117,8 @@
                         const app = initializeApp(firebaseConfig);
 
                         const messaging = getMessaging();
-                        onMessage(messaging, (payload) => {
-                            log('Message received. ', payload);
-                        })
+
+                        // onMessage(messaging, (payload) => log('Message received. ', payload))
 
                         if ('serviceWorker' in navigator) {
                             try {
@@ -131,12 +131,27 @@
 
                         const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
                         token.value = currentToken
+
+                        const resp = await fetch(baseUrl + '/' + token, {  method: 'POST' })
+                        if (resp.ok) {
+                            const { subscribed, data } = await resp.json()
+                            isSubscribed.value = !!subscribed
+                            if (subscribed) {
+                                log('Subscribed', data)
+                            } else {
+                                log('Not subscribed', data)
+                            }
+                        } else {
+                            log('Status failed', resp.status, resp.statusText)
+                        }
                     })
 
                     return {
                         token,
                         subscribe,
                         unsubscribe,
+                        requestAndSubscribe,
+                        isSubscribed,
                         msgs,
                         clear
                     }
