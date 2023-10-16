@@ -15,7 +15,7 @@
                     Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en fritärning läggs upp.
                 </p>
                 <button @click="requestAndSubscribe" class="text-white text-lg cursor-pointer font-bol btn-red border-round transition-colors transition-duration-150 p-2 border-none">
-                    Börja bevaka
+                    Bevaka
                 </button>
             </div>
             <div>
@@ -86,6 +86,7 @@
                         const resp = await fetch(baseUrl + '/subscribe?' + query.toString(), {  method: 'POST' })
                         if (resp.ok) {
                             log('Subscribe success', await resp.json())
+                            isSubscribed.value = true
                         } else {
                             log('Subscribe failed', resp.status, resp.statusText)
                         }
@@ -99,6 +100,7 @@
                         const resp = await fetch(baseUrl + '/unsubscribe?' + query.toString(), {  method: 'POST' })
                         if (resp.ok) {
                             log('Unsubscribe success', await resp.json())
+                            isSubscribed.value = false
                         } else {
                             log('Unsubscribe failed', resp.status, resp.statusText)
                         }
