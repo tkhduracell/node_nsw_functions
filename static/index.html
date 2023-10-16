@@ -132,7 +132,10 @@
                         const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
                         token.value = currentToken
 
-                        const resp = await fetch(baseUrl + '/' + token, {  method: 'POST' })
+                        const query = new URLSearchParams()
+                        query.append('token', token.value)
+
+                        const resp = await fetch(baseUrl + '/status?' + query.toString(), {  method: 'POST' })
                         if (resp.ok) {
                             const { subscribed, data } = await resp.json()
                             isSubscribed.value = !!subscribed

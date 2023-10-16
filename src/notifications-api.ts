@@ -17,9 +17,9 @@ if (require.main === module) {
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
 
-app.post('/:token', async (req, res) => {
+app.post('/status', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
-    const token = z.string().parse(req.params.token)
+    const { token } = z.object({ token: z.string() }).parse(req.query)
     const db = getFirestore()
     const result = await db.collection('tokens').doc(token).get()
     if (result.exists) {
@@ -28,9 +28,7 @@ app.post('/:token', async (req, res) => {
             data: result.data()
         })
     } else {
-        return res.status(200).send({
-            subscribed: false,
-        })
+        return res.status(200).send({ subscribed: false })
     }
 })
 
