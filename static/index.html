@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,regular,500,600,700,800,300italic,italic,500italic,600italic,700italic,800italic&amp;subset=latin,latin-ext&amp;display=swap" type="text/css" media="all">
+    </head>
     <body>
         <div id="app">
             <div v-if="token && isSubscribed">
                 <p class="mt-0 mb-1">
                     Du bevakar nya friträningar på denna enhet.
                 </p>
-                <button @click="unsubscribe" class="text-white text-lg cursor-pointer font-bold btn-red border-round transition-colors transition-duration-150 p-2 border-none">
+                <button @click="unsubscribe" class="btn-red">
                     Sluta bevaka
                 </button>
             </div>
@@ -14,7 +17,7 @@
                 <p class="mt-0 mb-1">
                     Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en fritärning läggs upp.
                 </p>
-                <button @click="requestAndSubscribe" class="text-white text-lg cursor-pointer font-bol btn-red border-round transition-colors transition-duration-150 p-2 border-none">
+                <button @click="requestAndSubscribe" class="btn-red">
                     Bevaka
                 </button>
             </div>
@@ -169,12 +172,22 @@
                 --nsw-red-lighter: #d2174c;
                 --nsw-red: #F9064B;
                 --nsw-red-darker: #d40741;
+                --border-radius: 6px;
             }
             body {
+                font-family: 'Open Sans',Helvetica,Arial,Lucida,sans-serif;
                 margin: 0 !important;
             }
             .btn-red {
                 background-color: var(--nsw-red);
+                color: #fff;
+                font-size: 1.125rem;
+                font-weight: 700;
+                cursor: pointer;
+                border-radius: var(--border-radius);
+                padding: 0.5rem;
+                border-style: none;
+                border-width: 0px;
             }
             .btn-red:hover {
                 background-color: var(--nsw-red-lighter) !important;
@@ -183,7 +196,5 @@
                 background-color: var(--nsw-red-darker) !important;
             }
         </style>
-        <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/primeflex.css">
-        <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/themes/primeone-light.css">
     </body>
 </html>
