@@ -69,7 +69,7 @@ import express from 'express'
 import path from 'path'
 
 const app = express()
-app.use(express.static(path.join(__dirname, 'static'), {}))
+app.use('/', express.static(path.join(__dirname, 'static')))
 app.post('/subscribe', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'nackswinget.se')
     const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
