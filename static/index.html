@@ -3,7 +3,7 @@
     <body>
         <div id="app">
             <div v-if="token">
-                <p>
+                <p class="mt-0 mb-1">
                     Du bevakar nya friträningar på denna enhet.
                 </p>
                 <button @click="unsubscribe" class="text-white text-lg cursor-pointer font-bold btn-red border-round transition-colors transition-duration-150 p-2 border-none">
@@ -11,7 +11,7 @@
                 </button>
             </div>
             <div v-else>
-                <p>
+                <p class="mt-0 mb-1">
                     Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en fritärning läggs upp.
                 </p>
                 <button @click="subscribe" class="text-white text-lg cursor-pointer font-bol btn-red border-round transition-colors transition-duration-150 p-2 border-none">
@@ -147,6 +147,9 @@
                 --nsw-red-lighter: #d2174c;
                 --nsw-red: #F9064B;
                 --nsw-red-darker: #d40741;
+            }
+            body {
+                margin: 0 !important;
             }
             .btn-red {
                 background-color: var(--nsw-red);
