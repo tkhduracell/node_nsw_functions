@@ -3,7 +3,7 @@ import path from 'path'
 import z from 'zod'
 
 import { initializeApp } from 'firebase-admin/app'
-import { getMessaging } from 'firebase-admin/messaging'
+import { Message, getMessaging } from 'firebase-admin/messaging'
 import { format, formatDistance } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import { getFirestore } from 'firebase-admin/firestore'
@@ -55,14 +55,22 @@ app.post('/unsubscribe', async (req, res) => {
 })
 
 app.post('/trigger', async (req, res) => {
-    const { topic } = z.object({ topic: z.string().optional() }).parse(req.query)
-    const response = await mockNotification(topic)
+    const { topic, title, body } = z.object({
+        topic: z.string().optional(),
+        title: z.string().optional(),
+        body: z.string().optional()
+    }).parse(req.query)
+    const response = await mockNotification(topic, title, body)
     return res.status(200).send(response)
 })
 
 app.use(express.static(path.join(__dirname, '..', 'static')))
 
-export async function mockNotification(topicName = 'calendar-337667') {
+export async function mockNotification(
+        topicName = 'calendar-337667',
+        title = undefined as string | undefined,
+        body = undefined as string | undefined
+    ) {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 19, 0, 0, 0)
     const start = new Date(today.getTime() + 3600000 * 24 * Math.floor(Math.random() * 30))
@@ -71,12 +79,25 @@ export async function mockNotification(topicName = 'calendar-337667') {
     const startTime = `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')}`
     const duration = `${formatDistance(start, end, { locale: sv, includeSeconds: false })}`
 
-    const body = `En ny friträning har lagts in ${startTime} (om ${duration})`
-    const message = {
+    if (!body) body = `En ny friträning har lagts in ${startTime} (om ${duration})`
+    if (!title) title = 'Ny friträning'
+
+    const message: Message = {
         notification: {
-            title: 'Ny friträning',
+            title,
             body,
-            image: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg"
+            // imageUrl: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg"
+        },
+        android: {
+            notification: {
+                icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
+                color: '#F9064B'
+            }
+        },
+        webpush: {
+            notification: {
+                icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
+            }
         },
         topic: topicName,
     }
