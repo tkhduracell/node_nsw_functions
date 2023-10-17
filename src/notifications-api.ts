@@ -69,10 +69,13 @@ export async function mockNotification(topicName = 'calendar-337667') {
     const end = new Date(new Date().getTime() + 3600000 * 1)
 
     const startTime = `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')}`
+    const duration = `${formatDistance(start, end, { locale: sv, includeSeconds: false })}`
+
+    const body = `En ny friträning har lagts in ${startTime} (om ${duration})`
     const message = {
         notification: {
-            title: 'Ny friträning inlagd',
-            body: start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary,
+            title: 'Ny friträning',
+            body,
             image: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg"
         },
         topic: topicName,
