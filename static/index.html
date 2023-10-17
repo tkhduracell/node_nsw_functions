@@ -5,7 +5,7 @@
     </head>
     <body>
         <div id="app">
-            <div v-if="token && isSubscribed">
+            <div v-if="isSupported && token && isSubscribed">
                 <p class="mt-0 mb-1">
                     Du bevakar nya friträningar på denna enhet.
                 </p>
@@ -13,17 +13,18 @@
                     Sluta bevaka
                 </button>
             </div>
-            <div v-else>
+            <div v-else-if="isSupported">
+                <div><b>Nyhet!</b></div>
                 <p class="mt-0 mb-1">
-                    Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en fritärning läggs upp.
+                    Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en friträning bokas.
                 </p>
                 <button @click="requestAndSubscribe" class="btn-red">
                     Bevaka
                 </button>
             </div>
-            <div>
-                <p v-for="msg in msgs">{{ msg }}</p>
-            </div>
+            <p class="mt-1">
+                <div v-for="msg in msgs">{{ msg }}</div>
+            </p>
         </div>
         <script type="importmap">
             {
@@ -35,9 +36,8 @@
             }
         </script>
         <script type="module">
-
             import { initializeApp } from 'firebase/app';
-            import { getMessaging, getToken, onMessage } from 'firebase/messaging'
+            import { getMessaging, getToken, onMessage, isSupported as getIsSupported } from 'firebase/messaging'
             import { ref, createApp, onMounted } from 'vue'
 
             const vapidKey = 'BMTIrHUbvBXlQpWWeIDc2IMD_CPye0EW-XmOqzAtBvMkKy8bsRfx5YEfvQQ4Gp98XV2XAOcaz6o-x2bisVBNWXM'
@@ -46,14 +46,24 @@
             createApp({
                 setup() {
                     const isSubscribed = ref(false)
+                    const isSupported = ref(false)
                     const token = ref('')
                     const msgs = ref([])
-                    const baseUrl = document.location.host.endsWith('cloudfunctions.net') ? 'notifications-api' : '.'
+                    const baseUrl = document.location.host.endsWith('cloudfunctions.net')
+                        ? 'notifications-api' :
+                        document.location.host.endsWith('nackswinget.se')
+                            ? 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/notifications-api'
+                            : '.'
+                    const swBaseUrl = document.location.host.endsWith('cloudfunctions.net')
+                        ? 'notifications-api' :
+                        document.location.host.endsWith('nackswinget.se')
+                            ? ''
+                            : '.'
 
-                    const str = x => typeof(str) === 'string' ? str : JSON.stringify(str, null, 2)
+                    const str = x => typeof(x) === 'string' ? x : JSON.stringify(x, null, 2)
                     function log(...other) {
                         console.log(...other);
-                        msgs.value = [...msgs.value, ...other.map(str)]
+                        // msgs.value = [...msgs.value, ...other.map(str)]
                     }
                     function clear() {
                         msgs.value = []
@@ -125,32 +135,41 @@
 
                         // onMessage(messaging, (payload) => log('Message received. ', payload))
 
-                        if ('serviceWorker' in navigator) {
+                        const supported = await getIsSupported()
+                        isSupported.value = supported
+
+                        if (supported) {
                             try {
-                                serviceWorkerRegistration = await navigator.serviceWorker.register(baseUrl + '/firebase-messaging-sw.js')
+                                serviceWorkerRegistration = await navigator.serviceWorker.register(swBaseUrl + '/firebase-messaging-sw.js')
+                                console.log('Registration successful, scope is:', serviceWorkerRegistration.scope);
+
+                                if (Notification.permission !== "granted") return;
+
+                                console.log('Requesting token...');
+                                const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
+                                token.value = currentToken
+
+                                console.log('Got token', currentToken);
+
+                                const query = new URLSearchParams()
+                                query.append('token', token.value)
+
+                                const resp = await fetch(baseUrl + '/status?' + query.toString(), {  method: 'POST' })
+                                if (resp.ok) {
+                                    const { subscribed, data } = await resp.json()
+                                    isSubscribed.value = !!subscribed
+                                    if (subscribed) {
+                                        log('Subscribed', data)
+                                    } else {
+                                        log('Not subscribed', data)
+                                    }
+                                } else {
+                                    log('Status failed', resp.status, resp.statusText)
+                                }
                             } catch (e) {
                                 console.error(e)
+
                             }
-                            console.log('Registration successful, scope is:', serviceWorkerRegistration.scope);
-                        }
-
-                        const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
-                        token.value = currentToken
-
-                        const query = new URLSearchParams()
-                        query.append('token', token.value)
-
-                        const resp = await fetch(baseUrl + '/status?' + query.toString(), {  method: 'POST' })
-                        if (resp.ok) {
-                            const { subscribed, data } = await resp.json()
-                            isSubscribed.value = !!subscribed
-                            if (subscribed) {
-                                log('Subscribed', data)
-                            } else {
-                                log('Not subscribed', data)
-                            }
-                        } else {
-                            log('Status failed', resp.status, resp.statusText)
                         }
                     })
 
@@ -160,6 +179,7 @@
                         unsubscribe,
                         requestAndSubscribe,
                         isSubscribed,
+                        isSupported,
                         msgs,
                         clear
                     }
@@ -174,6 +194,11 @@
                 --nsw-red-darker: #d40741;
                 --border-radius: 6px;
             }
+            @media only screen and (max-width: 980px) {
+                #app div {
+                    font-size: 90% !important;
+                }
+            }
             body {
                 font-family: 'Open Sans',Helvetica,Arial,Lucida,sans-serif;
                 margin: 0 !important;
@@ -181,7 +206,7 @@
             .btn-red {
                 background-color: var(--nsw-red);
                 color: #fff;
-                font-size: 1.125rem;
+                font-size: 1.0rem;
                 font-weight: 700;
                 cursor: pointer;
                 border-radius: var(--border-radius);
