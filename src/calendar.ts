@@ -36,7 +36,12 @@ export async function login(page: Page) {
     await page.waitForSelector('#PageHeader_Start > h1')
 
     const cookies = await page.cookies()
-    await sleep(1000)
+
+    const db = getFirestore()
+    await db.collection('browser')
+        .doc(`org-${ACTIVITY_ORG_ID}`)
+        .set({data: cookies}, { merge: false })
+
     return cookies
 }
 
