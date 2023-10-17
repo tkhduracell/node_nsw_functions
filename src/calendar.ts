@@ -3,7 +3,7 @@ import { launch, Page } from 'puppeteer'
 import { promisify } from 'util'
 import { max, mapKeys } from 'lodash'
 import { getMessaging } from 'firebase-admin/messaging'
-import { getFirestore } from 'firebase-admin/firestore'
+import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
@@ -40,7 +40,7 @@ export async function login(page: Page) {
     const db = getFirestore()
     await db.collection('browser')
         .doc(`org-${ACTIVITY_ORG_ID}`)
-        .set({data: cookies}, { merge: false })
+        .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
 
     return cookies
 }
@@ -148,6 +148,7 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
             calendar_id: cal.id,
             calendar_last_uid: latest_uid,
             calendar_last_data: latest_date,
+            updated_at: FieldValue.serverTimestamp()
         }
 
         if (useCGS) {
