@@ -5,24 +5,44 @@ on:
     branches:
       - main
 
+env:
+  GCLOUD_REGION: europe-north1
+  GCLOUD_SCHEDULER_REGION: europe-west6
+  GCLOUD_BUCKET: nackswinget-af7ef.appspot.com
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [16.x]
-
     permissions:
       contents: 'read'
       id-token: 'write'
 
-    env:
-      GCLOUD_REGION: europe-north1
-      GCLOUD_SCHEDULER_REGION: europe-west6
-      GCLOUD_BUCKET: nackswinget-af7ef.appspot.com
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
 
+      - name: Install deps
+        run: npm ci
+
+      - name: Build source
+        run: npm run build --if-present
+
+  deploy-notifications-api:
+    runs-on: ubuntu-latest
+    needs: 'build'
+    strategy:
+      matrix:
+        node-version: [16.x]
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -64,6 +84,42 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
+  deploy-competitions-api:
+    runs-on: ubuntu-latest
+    needs: 'build'
+    strategy:
+      matrix:
+        node-version: [16.x]
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build source
+        run: npm run build --if-present
+
+      - id: 'auth'
+        name: Setup  gcloud Cloud SDK auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
+          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Setup default project
+        run: gcloud config set project "${GCLOUD_PROJECT}"
+
       - name: Deploy function competitions
         run: |
           gcloud functions deploy competitions-get \
@@ -75,6 +131,42 @@ jobs:
             --trigger-http \
             --max-instances=5 \
             --allow-unauthenticated
+
+  deploy-calendar-api:
+    runs-on: ubuntu-latest
+    needs: 'build'
+    strategy:
+      matrix:
+        node-version: [16.x]
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build source
+        run: npm run build --if-present
+
+      - id: 'auth'
+        name: Setup  gcloud Cloud SDK auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
+          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Setup default project
+        run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Deploy function calendar-export-get
         run: |
