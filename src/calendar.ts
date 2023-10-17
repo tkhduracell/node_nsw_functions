@@ -9,6 +9,8 @@ import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from './env'
 
+import fetch from 'cross-fetch'
+
 const writeFile = promisify(_writeFile)
 
 export async function login(page: Page) {
