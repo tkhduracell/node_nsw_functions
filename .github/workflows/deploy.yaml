@@ -37,6 +37,7 @@ jobs:
   deploy-notifications-api:
     runs-on: ubuntu-latest
     needs: 'build'
+    concurrency: 'notifications-api'
     strategy:
       matrix:
         node-version: [16.x]
@@ -87,6 +88,7 @@ jobs:
   deploy-competitions-api:
     runs-on: ubuntu-latest
     needs: 'build'
+    concurrency: 'competitions-api'
     strategy:
       matrix:
         node-version: [16.x]
@@ -135,6 +137,7 @@ jobs:
   deploy-calendar-api:
     runs-on: ubuntu-latest
     needs: 'build'
+    concurrency: 'calendar-api'
     strategy:
       matrix:
         node-version: [16.x]
