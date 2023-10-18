@@ -88,12 +88,6 @@ export async function mockNotification(
             body,
             // imageUrl: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg"
         },
-        android: {
-            notification: {
-                icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
-                color: '#F9064B'
-            }
-        },
         webpush: {
             notification: {
                 icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
