@@ -54,12 +54,7 @@ http('update', async (req, res) => {
         dryrun: z.enum(['true', 'false']).optional()
     }).parse(req.query)
 
-    if (dryrun === 'true') {
-        await mockNotification()
-        return
-    }
-
-    await calendar(bucket, true, true)
+    await calendar(bucket, true)
 
     res.sendStatus(200)
 });

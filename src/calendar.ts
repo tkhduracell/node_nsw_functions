@@ -59,19 +59,19 @@ async function calendars(page: Page) {
     const calendarTds = await page.$$('td[data-title="Kalender"]')
     const calendars = calendarTds.map(d => d.$eval('a', a => ({
         name: a.innerText,
-        link: a.attributes.getNamedItem('href')?.textContent,
-        id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '')
+        link: a.attributes.getNamedItem('href')?.textContent ?? '(not found)',
+        id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '') ?? '(not found)'
     })))
 
     return Promise.all(calendars)
 }
 
-export async function calendar(bucket: Bucket, headless = true, useCGS = false) {
+export async function calendar(bucket: Bucket, useCGS = false) {
     const {
         ACTIVITY_BASE_URL,
     } = IDOActivityOptions.parse(process.env)
 
-    const browser = await launch({ headless });
+    const browser = await launch({ headless: 'new' });
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(1000 * 60 * 5);
     page.setDefaultTimeout(1000 * 60 * 1);
@@ -117,30 +117,7 @@ export async function calendar(bucket: Bucket, headless = true, useCGS = false) 
             ? await object.getMetadata() : defaultMetadata
 
         if ((latest_uid ?? '') > calendar_last_uid) {
-
-            const event = [...text.matchAll(/BEGIN:VEVENT[\s\S]+?UID:(\d+)[\s\S]+?END:VEVENT/ig)]
-                .map(s => s[0])
-                .filter(evt => evt.includes(`UID:${latest_uid}`))
-                .find(() => true)
-
-            const start = (event ?? '').match(/DTSTART:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
-            const end = (event ?? '').match(/DTEND:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
-            const summary = (event ?? '').match(/SUMMARY:(.*)/)?.reverse().find(() => true)
-            const duration = end && start ? differenceInMinutes(end, start) : null
-
-            console.log('New event discovered!', { start, end, duration, summary })
-
-            const topicName = `calendar-${cal.id}`;
-            const body = start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
-            const message = {
-              notification: {
-                title: cal.name === 'Friträning' ?  'Ny friträning inlagd' : `${cal.name} uppdaterad`,
-                body
-              },
-              topic: topicName,
-            }
-
-            await getMessaging().send(message)
+            notifyNewEvent(text, latest_uid, cal.id, cal.name)
         }
 
         const metadata = {
@@ -196,4 +173,32 @@ export function postprocess(content: string, calendar: { name: string }) {
     const latest_date = max([...text.matchAll(/DTSTAMP:.*/gi)].map(s => s[0].replace('DTSTAMP:', ''))) ?? null
     const latest_uid = max([...text.matchAll(/UID:.*/gi)].map(s => s[0].replace('UID:', ''))) ?? null
     return { text, latest_date: latest_date ? parseISO(latest_date) : null, latest_uid }
+}
+
+async function notifyNewEvent(text: string, latest_uid: string | null, calendar_id: string, calendar_name: string){
+
+    const event = [...text.matchAll(/BEGIN:VEVENT[\s\S]+?UID:(\d+)[\s\S]+?END:VEVENT/ig)]
+        .map(s => s[0])
+        .filter(evt => evt.includes(`UID:${latest_uid}`))
+        .find(() => true)
+
+    const start = (event ?? '').match(/DTSTART:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
+    const end = (event ?? '').match(/DTEND:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
+    const summary = (event ?? '').match(/SUMMARY:(.*)/)?.reverse().find(() => true)
+    const duration = end && start ? differenceInMinutes(end, start) : null
+
+    console.log('New event discovered!', { start, end, duration, summary })
+
+    const topicName = `calendar-${calendar_id}`;
+    const body = start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
+    const title = calendar_name === 'Friträning' ?  'Ny friträning inlagd' : `${calendar_name} uppdaterad`
+    const message = {
+        notification: {
+            title,
+            body
+        },
+        topic: topicName,
+    }
+
+    await getMessaging().send(message)
 }
