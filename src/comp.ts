@@ -116,7 +116,7 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
         const { data } = result
 
         // Enrichment
-        data.last_regestration_date = data.last_regestration_date?.replace(/Senast +/gi, '') ?? null
+        data.last_regestration_date = data.last_regestration_date?.replace(/(Senast|Stängd) +/gi, '') ?? null
         data.open = data.type?.toLocaleLowerCase() === 'öppen' || data.type?.toLocaleLowerCase() === 'gp'
         data.cancelled = data.name.toLocaleLowerCase().includes('inställd!')
         data.name = data.name.replace(/ *Inställd! */g, '')
