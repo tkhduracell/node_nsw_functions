@@ -2,7 +2,7 @@ import { writeFile as _writeFile } from 'fs'
 import { launch, Page } from 'puppeteer'
 import { promisify } from 'util'
 import { max, mapKeys } from 'lodash'
-import { getMessaging } from 'firebase-admin/messaging'
+import { getMessaging, Message } from 'firebase-admin/messaging'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
@@ -187,15 +187,27 @@ async function notifyNewEvent(text: string, latest_uid: string | null, calendar_
     const summary = (event ?? '').match(/SUMMARY:(.*)/)?.reverse().find(() => true)
     const duration = end && start ? differenceInMinutes(end, start) : null
 
-    console.log('New event discovered!', { start, end, duration, summary })
+    if (!start || !end) {
+        console.log('Event without start & end', { start, end, duration, summary })
+        return
+    }
+
+    console.log('New event discovered!', {
+        start, end, duration, summary
+    })
 
     const topicName = `calendar-${calendar_id}`;
     const body = start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
-    const title = calendar_name === 'Friträning' ?  'Ny friträning inlagd' : `${calendar_name} uppdaterad`
-    const message = {
+    const title = calendar_name === 'Friträning' ?  'Ny friträning' : `${calendar_name} uppdaterad`
+    const message: Message = {
         notification: {
             title,
-            body
+            body,
+        },
+        webpush: {
+            notification: {
+                icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
+            }
         },
         topic: topicName,
     }
