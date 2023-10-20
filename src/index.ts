@@ -59,7 +59,7 @@ http('update', async (req, res) => {
     res.sendStatus(200)
 });
 
-import napi, { mockNotification } from './notifications-api'
+import napi from './notifications-api'
 
 http('notifications-api', napi)
 
