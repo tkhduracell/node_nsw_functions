@@ -1,5 +1,5 @@
 import { writeFile as _writeFile } from 'fs'
-import { launch, Page } from 'puppeteer'
+import { launch, Page, Protocol } from 'puppeteer'
 import { promisify } from 'util'
 import { max, mapKeys } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
@@ -45,6 +45,27 @@ export async function login(page: Page) {
     return cookies
 }
 
+export async function restoreCookies(page: Page) {
+    const {
+        ACTIVITY_ORG_ID,
+    } = IDOActivityOptions.parse(process.env)
+
+    const db = getFirestore()
+    const document = await db.collection('browser')
+        .doc(`org-${ACTIVITY_ORG_ID}`)
+        .get()
+
+    if (!document.exists) {
+        console.warn('No cookies in database')
+    }
+
+    const { data: cookies } = document.data()! as { data: Protocol.Network.CookieParam[] }
+
+    console.info(`Restored ${cookies.length} cookies`)
+
+    await page.setCookie(...cookies)
+}
+
 async function calendars(page: Page) {
     const {
         ACTIVITY_ORG_ID,
@@ -66,7 +87,7 @@ async function calendars(page: Page) {
     return Promise.all(calendars)
 }
 
-export async function calendar(bucket: Bucket, useCGS = false) {
+export async function calendar(bucket: Bucket, useCGS = false, useSavedCookies = false) {
     const {
         ACTIVITY_BASE_URL,
     } = IDOActivityOptions.parse(process.env)
@@ -78,8 +99,13 @@ export async function calendar(bucket: Bucket, useCGS = false) {
 
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-    console.log('Logging in')
-    await login(page)
+    if (useSavedCookies) {
+        console.log('Fetching previous cookies')
+        await restoreCookies(page)
+    } else {
+        console.log('Logging in')
+        await login(page)
+    }
 
     console.log('Finding calendars')
     const cals = await calendars(page)

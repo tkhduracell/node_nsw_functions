@@ -59,6 +59,19 @@ http('update', async (req, res) => {
     res.sendStatus(200)
 });
 
+http('update-lean', async (req, res) => {
+    const {
+        GCLOUD_PROJECT,
+        GCLOUD_BUCKET,
+    } = GCloudOptions.parse(process.env)
+    const storage = new Storage({ projectId: GCLOUD_PROJECT });
+    const bucket = storage.bucket(GCLOUD_BUCKET)
+
+    await calendar(bucket, true, true)
+
+    res.sendStatus(200)
+});
+
 import napi from './notifications-api'
 
 http('notifications-api', napi)
