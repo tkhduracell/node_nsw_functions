@@ -13,6 +13,8 @@ import fetch from 'cross-fetch'
 
 const writeFile = promisify(_writeFile)
 
+const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
+
 export async function login(page: Page) {
     const {
         ACTIVITY_ORG_ID,
@@ -25,14 +27,13 @@ export async function login(page: Page) {
     await page.type('#userName', ACTIVITY_USERNAME)
     await page.type('#loginForm > div:nth-child(4) > input', ACTIVITY_PASSWORD)
 
-    await page.click('#loginForm > button')
+    await navigate(page, () => page.click('#loginForm > button'));
 
     await page.waitForSelector('#OrganisationSelect2')
-    await page.waitForSelector('#select2-OrganisationSelect2-container')
-    // await page.click('#select2-OrganisationSelect2-container')
     await page.select('#OrganisationSelect2', ACTIVITY_ORG_ID)
 
-    await page.click('#login-button')
+    await navigate(page, () => page.click('#login-button'));
+
     await page.waitForSelector('#PageHeader_Start > h1')
 
     const cookies = await page.cookies()
