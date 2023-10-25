@@ -1,10 +1,10 @@
 import { writeFile as _writeFile } from 'fs'
 import { launch, Page, Protocol } from 'puppeteer'
 import { promisify } from 'util'
-import { max, mapKeys } from 'lodash'
+import { max, mapKeys, sortBy, zip } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
-import { differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
+import { addDays, differenceInDays, differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from './env'
@@ -131,27 +131,31 @@ export async function calendar(bucket: Bucket, useCGS = false, useSavedCookies =
             method: 'GET',
             headers: { cookie }
         })
-        const { text, latest_date, latest_uid } = postprocess(await response.text(), cal)
-        console.log(`Processed - ${cal.name}`, {latest_date, latest_uid})
+        const { text, events } = postprocess(await response.text(), cal)
+        console.log(`Processed - ${cal.name}`)
 
         console.log(`Saving - ${cal.name}`)
         await writeFile(file, text)
         console.log(`Wrote -  ${cal.name} to ${file}`)
 
         const object = bucket.file(`cal_${cal.id}.ics`)
-        const defaultMetadata = [{ metadata: { calendar_last_uid: '' } }]
-        const [{ metadata: { calendar_last_uid } }] = await object.exists()
-            ? await object.getMetadata() : defaultMetadata
+        const [{ metadata: { calendar_last_date } }] = await object.exists()
+            ? await object.getMetadata() : [{ metadata: { calendar_last_date: new Date().toISOString() } }]
 
-        if ((latest_uid ?? '') > calendar_last_uid) {
-            notifyNewEvent(text, latest_uid, cal.id, cal.name)
+        const nextEvent = sortBy(events, e => e.date)
+            .filter(e => e.date < addDays(new Date(), 14).toISOString()) // No more than 2 weeks
+            .find(e => e.date > calendar_last_date) // Anyone larger than current
+        if (nextEvent) {
+            await notifyNewEvent(text, nextEvent, cal.id, cal.name)
+        } else {
+            console.warn("No next event found")
         }
 
         const metadata = {
             calendar_name: cal.name,
             calendar_id: cal.id,
-            calendar_last_uid: latest_uid,
-            calendar_last_data: latest_date,
+            calendar_last_uid: nextEvent?.uid,
+            calendar_last_date: nextEvent?.date,
             updated_at: FieldValue.serverTimestamp()
         }
 
@@ -197,16 +201,19 @@ export function postprocess(content: string, calendar: { name: string }) {
         `NAME:${calendar.name}`,
     ]
     const text = content.replace(/(X-WR-CALNAME):.*/gi, `\$1:${calendar.name}\n${new_fields.join('\n')}`)
-    const latest_date = max([...text.matchAll(/DTSTAMP:.*/gi)].map(s => s[0].replace('DTSTAMP:', ''))) ?? null
-    const latest_uid = max([...text.matchAll(/UID:.*/gi)].map(s => s[0].replace('UID:', ''))) ?? null
-    return { text, latest_date: latest_date ? parseISO(latest_date) : null, latest_uid }
+
+    const dates = [...text.matchAll(/DTSTAMP:.*/gi)].map(s => s[0].replace('DTSTAMP:', ''))
+    const uids = [...text.matchAll(/UID:.*/gi)].map(s => s[0].replace('UID:', ''))
+
+    const events = zip(dates, uids).map(([date, uid]) => ({ date, uid })) as { date: string, uid: string }[]
+    return { text, events }
 }
 
-async function notifyNewEvent(text: string, latest_uid: string | null, calendar_id: string, calendar_name: string){
+async function notifyNewEvent(text: string, e: { date: string, uid: string }, calendar_id: string, calendar_name: string){
 
     const event = [...text.matchAll(/BEGIN:VEVENT[\s\S]+?UID:(\d+)[\s\S]+?END:VEVENT/ig)]
         .map(s => s[0])
-        .filter(evt => evt.includes(`UID:${latest_uid}`))
+        .filter(evt => evt.includes(`UID:${e.uid}`))
         .find(() => true)
 
     const start = (event ?? '').match(/DTSTART:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
@@ -219,25 +226,38 @@ async function notifyNewEvent(text: string, latest_uid: string | null, calendar_
         return
     }
 
-    console.log('New event discovered!', {
-        start, end, duration, summary
-    })
-
     const topicName = `calendar-${calendar_id}`;
-    const body = start && end ? `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')} (${formatDistance(start, end, { locale: sv })}) ${summary}` : summary
-    const title = calendar_name === 'Friträning' ?  'Ny friträning' : `${calendar_name} uppdaterad`
+
     const message: Message = {
         notification: {
-            title,
-            body,
+            title: getNotificationTitle(calendar_name),
+            body: getNotificationBody(start, duration),
         },
         webpush: {
             notification: {
+                tag: 'nsw',
                 icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
             }
         },
         topic: topicName,
     }
+    console.log('New event!', { ...message.notification, summary })
 
     await getMessaging().send(message)
+}
+
+function getNotificationTitle(calendar_name: string) {
+    return calendar_name === 'Friträning' ?  'Ny friträning' : `${calendar_name} uppdaterad`
+}
+function getNotificationBody(start: Date, durationMin: number | null) {
+    const date = format(start, 'do MMMM')
+    const hhmm = format(start, 'HH:mm')
+    const inDays = differenceInDays(start, new Date())
+    const weekday = format(start, 'EEEE', { locale: sv })
+
+    if (inDays < 7) {
+        return `${weekday}, ${durationMin} minuter, kl ${hhmm}`
+    } else {
+        return `${date}, ${weekday}\n${durationMin} minuter, kl ${hhmm}`
+    }
 }
