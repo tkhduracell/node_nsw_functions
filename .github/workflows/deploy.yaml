@@ -200,16 +200,6 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendar-export-get --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
 
-      - name: Update function scheduler
-        run: |
-          gcloud scheduler jobs update http calendar-update-30m \
-            --schedule "*/30 * * * *" \
-            --time-zone "Europe/Stockholm" \
-            --http-method GET \
-            --uri $(gcloud functions describe calendar-export-update --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
-            --location ${GCLOUD_SCHEDULER_REGION} \
-            --description "calendar-export-update: Update NSW GCS .ics files (30m)"
-
       - name: Deploy function calendar-export-update-lean
         run: |
           gcloud functions deploy calendar-export-update-lean \
@@ -225,7 +215,17 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendar-export-get --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
 
-      - name: Update function scheduler
+      - name: Update function scheduler calendar-update-30m
+        run: |
+          gcloud scheduler jobs update http calendar-update-30m \
+            --schedule "*/30 * * * *" \
+            --time-zone "Europe/Stockholm" \
+            --http-method GET \
+            --uri $(gcloud functions describe calendar-export-update --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
+            --location ${GCLOUD_SCHEDULER_REGION} \
+            --description "calendar-export-update: Update NSW GCS .ics files (30m)"
+
+      - name: Update function scheduler calendar-update-lean-5m
         run: |
           gcloud scheduler jobs update http calendar-update-lean-5m \
             --schedule "*/5 6-23 * * *" \
