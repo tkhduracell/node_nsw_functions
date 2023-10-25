@@ -218,7 +218,7 @@ jobs:
       - name: Update function scheduler calendar-update-30m
         run: |
           gcloud scheduler jobs update http calendar-update-30m \
-            --schedule "*/30 * * * *" \
+            --schedule "*/30 0-1,6-23 * * *" \
             --time-zone "Europe/Stockholm" \
             --http-method GET \
             --uri $(gcloud functions describe calendar-export-update --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
@@ -228,7 +228,7 @@ jobs:
       - name: Update function scheduler calendar-update-lean-5m
         run: |
           gcloud scheduler jobs update http calendar-update-lean-5m \
-            --schedule "*/5 6-23 * * *" \
+            --schedule "*/5 0-1,7-23 * * *" \
             --time-zone "Europe/Stockholm" \
             --http-method GET \
             --uri $(gcloud functions describe calendar-export-update-lean --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION}) \
