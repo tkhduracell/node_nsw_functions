@@ -247,7 +247,7 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
     const message: Message = {
         notification: {
             title: getNotificationTitle(calendar_name),
-            body: getNotificationBody(start, duration),
+            body: getNotificationBody(start, end, duration),
         },
         webpush: {
             notification: {
@@ -265,15 +265,17 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
 function getNotificationTitle(calendar_name: string) {
     return calendar_name === 'Friträning' ?  'Ny friträning bokad!' : `${calendar_name} uppdaterad`
 }
-function getNotificationBody(start: Date, durationMin: number | null) {
+function getNotificationBody(start: Date, end: Date, durationMin: number | null) {
     const date = format(start, 'do MMMM', { locale: sv })
     const hhmm = format(start, 'HH:mm',  { locale: sv })
+    const hhmm_end = format(end, 'HH:mm',  { locale: sv })
     const inDays = differenceInDays(start, new Date())
     const weekday = format(start, 'EEEE', { locale: sv }).replace(/^./, s => s.toUpperCase())
 
+    const suffix = `${durationMin} min, kl ${hhmm}-${hhmm_end}`
     if (inDays < 7) {
-        return `${weekday}, ${durationMin} minuter, kl ${hhmm}`
+        return `${weekday}, ${suffix}`
     } else {
-        return `${date}, ${weekday}\n${durationMin} minuter, kl ${hhmm}`
+        return `${date}, ${weekday}\n${suffix}`
     }
 }
