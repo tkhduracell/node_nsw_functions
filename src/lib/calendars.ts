@@ -7,7 +7,7 @@ import { FieldValue, Firestore } from 'firebase-admin/firestore'
 import { addDays, differenceInDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
-import { GCloudOptions, IDOActivityOptions } from './env'
+import { GCloudOptions, IDOActivityOptions } from '../env'
 
 import fetch from 'cross-fetch'
 
@@ -251,7 +251,7 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
         },
         webpush: {
             notification: {
-                tag: 'nsw',
+                tag: 'nsw-' + topicName,
                 icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
             }
         },

@@ -2,8 +2,8 @@
 *   npx ts-node -T src/test.ts
 */
 
-import { Browser, launch } from 'puppeteer';
-import { calendar, login } from './calendar'
+import { launch } from 'puppeteer';
+import { calendar } from './lib/calendars'
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
 

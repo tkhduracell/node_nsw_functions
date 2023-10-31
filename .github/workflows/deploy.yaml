@@ -171,66 +171,51 @@ jobs:
       - name: Setup default project
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
-      - name: Deploy function calendar-export-get
+      - name: Deploy function calendars-api
         run: |
-          gcloud functions deploy calendar-export-get \
+          gcloud functions deploy calendars-api \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
             --source=. \
-            --entry-point=get \
+            --entry-point=calendars-api \
             --trigger-http \
             --max-instances=5 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
-      - name: Deploy function calendar-export-update
+      - name: Deploy function calendars-update-api
         run: |
-          gcloud functions deploy calendar-export-update \
+          gcloud functions deploy calendars-update-api \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
             --source=. \
-            --entry-point=update \
+            --entry-point=calendars-update-api \
             --trigger-http \
             --memory=1024MB \
             --max-instances=1 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendar-export-get --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
-
-      - name: Deploy function calendar-export-update-lean
-        run: |
-          gcloud functions deploy calendar-export-update-lean \
-            --gen2 \
-            --runtime=nodejs16 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=update-lean \
-            --trigger-http \
-            --memory=1024MB \
-            --max-instances=1 \
-            --allow-unauthenticated \
-            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendar-export-get --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendars-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
 
       - name: Update function scheduler calendar-update-30m
         run: |
           gcloud scheduler jobs update http calendar-update-30m \
             --schedule "*/30 0-1,6-23 * * *" \
             --time-zone "Europe/Stockholm" \
-            --http-method GET \
-            --uri $(gcloud functions describe calendar-export-update --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
+            --http-method POST \
+            --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")/update \
             --location ${GCLOUD_SCHEDULER_REGION} \
-            --description "calendar-export-update: Update NSW GCS .ics files (30m)"
+            --description "calendars-update-api: Update NSW GCS .ics files (30m)"
 
       - name: Update function scheduler calendar-update-lean-5m
         run: |
           gcloud scheduler jobs update http calendar-update-lean-5m \
             --schedule "*/5 0-1,7-23 * * *" \
             --time-zone "Europe/Stockholm" \
-            --http-method GET \
-            --uri $(gcloud functions describe calendar-export-update-lean --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION}) \
+            --http-method POST \
+            --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update-lean \
             --location ${GCLOUD_SCHEDULER_REGION} \
-            --description "calendar-export-update-lean: Update NSW GCS .ics files (5m)"
+            --description "calendars-update-api: Lean update NSW GCS .ics files (5m)"

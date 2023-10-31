@@ -1,85 +1,21 @@
 import 'source-map-support/register'
 
 import { http } from '@google-cloud/functions-framework'
-import { Storage } from '@google-cloud/storage'
 import { config } from 'dotenv'
 
-import z from 'zod'
-
-import { GCloudOptions } from './env'
-import { calendar } from './calendar'
 import { initializeApp } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
 
 config()
 initializeApp()
 
-http('get', async (req, res) => {
-    const {
-        GCLOUD_PROJECT,
-        GCLOUD_BUCKET,
-    } = GCloudOptions.parse(process.env)
-    const storage = new Storage({ projectId: GCLOUD_PROJECT });
-    const bucket = storage.bucket(GCLOUD_BUCKET)
+import calendars from './calendars-api'
+http('calendars-api', calendars)
 
-    if (!req.query.id) {
-        const [file] = await bucket.file('index.json').download()
+import calendarsUpdate from './calendars-update-api'
+http('calendars-update-api', calendarsUpdate)
 
-        return res.header('Content-Type', 'application/json').send(file).end()
-    }
+import notifications from './notifications-api'
+http('notifications-api', notifications)
 
-    const id = z.string().regex(/\d+/).parse(req.query.id)
-
-    const [{ metadata }] = await bucket.file(`cal_${id}.ics`).getMetadata()
-
-    res
-        .setHeader('Content-Type', 'text/calendar')
-        .setHeader('Content-Disposition', `attachment; filename="${metadata['CalendarName']}.ics"`)
-        .status(200)
-
-    bucket
-        .file(`cal_${id}.ics`)
-        .createReadStream()
-        .pipe(res, { end: true })
-});
-
-http('update', async (req, res) => {
-    const {
-        GCLOUD_PROJECT,
-        GCLOUD_BUCKET,
-    } = GCloudOptions.parse(process.env)
-    const storage = new Storage({ projectId: GCLOUD_PROJECT });
-    const bucket = storage.bucket(GCLOUD_BUCKET)
-
-    const db = getFirestore()
-    const browser = await launch({ headless: 'new' });
-    await calendar(browser, bucket, db, true)
-    await browser.close()
-
-    res.sendStatus(200)
-});
-
-http('update-lean', async (req, res) => {
-    const {
-        GCLOUD_PROJECT,
-        GCLOUD_BUCKET,
-    } = GCloudOptions.parse(process.env)
-    const storage = new Storage({ projectId: GCLOUD_PROJECT });
-    const bucket = storage.bucket(GCLOUD_BUCKET)
-
-    const db = getFirestore()
-    const browser = await launch({ headless: 'new' });
-    await calendar(browser, bucket, db, true)
-    await browser.close()
-
-    res.sendStatus(200)
-});
-
-import napi from './notifications-api'
-
-http('notifications-api', napi)
-
-import comp from './competitions-api'
-import { launch } from 'puppeteer'
-
-http('competitions', comp);
+import competitions from './competitions-api'
+http('competitions-api', competitions);

@@ -1,4 +1,4 @@
-import { fetchCompetitions } from './comp'
+import { fetchCompetitions } from './lib/competitions'
 import z from 'zod'
 import express from 'express'
 
