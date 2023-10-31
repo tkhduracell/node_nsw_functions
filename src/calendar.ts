@@ -172,7 +172,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
             calendar_name: cal.name,
             calendar_id: cal.id,
             calendar_last_uid: nextEvent?.uid ?? '',
-            calendar_last_date: nextEvent?.date ?? '',
+            calendar_last_date: nextEvent?.date ?? new Date().toISOString(),
             updated_at: FieldValue.serverTimestamp()
         }
 
