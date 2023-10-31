@@ -71,7 +71,7 @@ jobs:
       - name: Setup default project
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
-      - name: Deploy function notifications-api
+      - name: Deploy notifications-api
         run: |
           gcloud functions deploy notifications-api \
             --gen2 \
@@ -122,7 +122,7 @@ jobs:
       - name: Setup default project
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
-      - name: Deploy function competitions
+      - name: Deploy competitions-api
         run: |
           gcloud functions deploy competitions-get \
             --gen2 \
@@ -171,7 +171,7 @@ jobs:
       - name: Setup default project
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
-      - name: Deploy function calendars-api
+      - name: Deploy calendars-api
         run: |
           gcloud functions deploy calendars-api \
             --gen2 \
@@ -185,7 +185,7 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
-      - name: Deploy function calendars-update-api
+      - name: Deploy calendars-update-api
         run: |
           gcloud functions deploy calendars-update-api \
             --gen2 \
@@ -200,7 +200,7 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendars-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
 
-      - name: Update function scheduler calendar-update-30m
+      - name: Update scheduler calendar-update-30m
         run: |
           gcloud scheduler jobs update http calendar-update-30m \
             --schedule "*/30 0-1,6-23 * * *" \
@@ -210,7 +210,7 @@ jobs:
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description "calendars-update-api: Update NSW GCS .ics files (30m)"
 
-      - name: Update function scheduler calendar-update-lean-5m
+      - name: Update scheduler calendar-update-lean-5m
         run: |
           gcloud scheduler jobs update http calendar-update-lean-5m \
             --schedule "*/5 0-1,7-23 * * *" \
