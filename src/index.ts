@@ -9,6 +9,7 @@ import z from 'zod'
 import { GCloudOptions } from './env'
 import { calendar } from './calendar'
 import { initializeApp } from 'firebase-admin/app'
+import { getFirestore } from 'firebase-admin/firestore'
 
 config()
 initializeApp()
@@ -50,11 +51,10 @@ http('update', async (req, res) => {
     const storage = new Storage({ projectId: GCLOUD_PROJECT });
     const bucket = storage.bucket(GCLOUD_BUCKET)
 
-    const { dryrun } = z.object({
-        dryrun: z.enum(['true', 'false']).optional()
-    }).parse(req.query)
-
-    await calendar(bucket, true)
+    const db = getFirestore()
+    const browser = await launch({ headless: 'new' });
+    await calendar(browser, bucket, db, true)
+    await browser.close()
 
     res.sendStatus(200)
 });
@@ -67,7 +67,10 @@ http('update-lean', async (req, res) => {
     const storage = new Storage({ projectId: GCLOUD_PROJECT });
     const bucket = storage.bucket(GCLOUD_BUCKET)
 
-    await calendar(bucket, true, true)
+    const db = getFirestore()
+    const browser = await launch({ headless: 'new' });
+    await calendar(browser, bucket, db, true)
+    await browser.close()
 
     res.sendStatus(200)
 });
@@ -77,5 +80,6 @@ import napi from './notifications-api'
 http('notifications-api', napi)
 
 import comp from './competitions-api'
+import { launch } from 'puppeteer'
 
 http('competitions', comp);

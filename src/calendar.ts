@@ -1,9 +1,9 @@
 import { writeFile as _writeFile } from 'fs'
-import { launch, Page, Protocol } from 'puppeteer'
+import { Browser, launch, Page, Protocol } from 'puppeteer'
 import { promisify } from 'util'
-import { max, mapKeys, sortBy, zip } from 'lodash'
+import { mapKeys, sortBy, zip } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
-import { FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { FieldValue, Firestore } from 'firebase-admin/firestore'
 import { addDays, differenceInDays, differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
@@ -15,7 +15,7 @@ const writeFile = promisify(_writeFile)
 
 const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
 
-export async function login(page: Page) {
+export async function login(browser: Browser, db?: Firestore) {
     const {
         ACTIVITY_ORG_ID,
         ACTIVITY_BASE_URL,
@@ -23,35 +23,39 @@ export async function login(page: Page) {
         ACTIVITY_PASSWORD,
     } = IDOActivityOptions.parse(process.env)
 
+    const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(1000 * 60 * 5);
+    page.setDefaultTimeout(1000 * 60 * 1);
+    await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
+
+    // Login
     await page.goto(ACTIVITY_BASE_URL + '/');
     await page.type('#userName', ACTIVITY_USERNAME)
     await page.type('#loginForm > div:nth-child(4) > input', ACTIVITY_PASSWORD)
-
     await navigate(page, () => page.click('#loginForm > button'));
 
+    // Select org
     await page.waitForSelector('#OrganisationSelect2')
     await page.select('#OrganisationSelect2', ACTIVITY_ORG_ID)
-
     await navigate(page, () => page.click('#login-button'));
 
+    // Verify login state
     await page.waitForSelector('#PageHeader_Start > h1')
 
     const cookies = await page.cookies()
 
-    const db = getFirestore()
-    await db.collection('browser')
+    if (db) {
+        await db.collection('browser')
         .doc(`org-${ACTIVITY_ORG_ID}`)
         .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
+    }
 
     return cookies
 }
 
-export async function restoreCookies(page: Page) {
-    const {
-        ACTIVITY_ORG_ID,
-    } = IDOActivityOptions.parse(process.env)
+export async function restoreCookies(page: Page, db: Firestore) {
+    const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
-    const db = getFirestore()
     const document = await db.collection('browser')
         .doc(`org-${ACTIVITY_ORG_ID}`)
         .get()
@@ -75,9 +79,11 @@ async function calendars(page: Page) {
 
     await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${ACTIVITY_ORG_ID}`)
 
+    console.log('Waiting for search button')
     await page.waitForSelector('#btnSearchKalender')
     await sleep(5000)
 
+    console.log('Locating calendars in table')
     const calendarTds = await page.$$('td[data-title="Kalender"]')
     const calendars = calendarTds.map(d => d.$eval('a', a => ({
         name: a.innerText,
@@ -88,33 +94,34 @@ async function calendars(page: Page) {
     return Promise.all(calendars)
 }
 
-export async function calendar(bucket: Bucket, useCGS = false, useSavedCookies = false) {
-    const {
-        ACTIVITY_BASE_URL,
-    } = IDOActivityOptions.parse(process.env)
+export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore, useSavedCookies = false) {
+    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
 
-    const browser = await launch({ headless: 'new' });
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(1000 * 60 * 5);
     page.setDefaultTimeout(1000 * 60 * 1);
 
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-    if (useSavedCookies) {
+    if (db && useSavedCookies) {
         console.log('Fetching previous cookies')
-        await restoreCookies(page)
+        await restoreCookies(page, db)
     } else {
         console.log('Logging in')
-        await login(page)
+        const coookies = await login(browser, db)
+        page.setCookie(...coookies)
     }
 
     console.log('Finding calendars')
     const cals = await calendars(page)
 
+    console.log('Extracting cookies')
     const cookies = await page.cookies();
     const cookie = cookies.map(ck => ck.name + '=' + ck.value).join(';');
 
-    try { await bucket.create() } catch (e) {}
+    if (bucket) {
+        try { await bucket.create() } catch (e) {}
+    }
 
     for (const cal of cals) {
         // link: '/Calendars/View/333892'
@@ -138,13 +145,23 @@ export async function calendar(bucket: Bucket, useCGS = false, useSavedCookies =
         await writeFile(file, text)
         console.log(`Wrote -  ${cal.name} to ${file}`)
 
-        const object = bucket.file(`cal_${cal.id}.ics`)
-        const [{ metadata: { calendar_last_date } }] = await object.exists()
-            ? await object.getMetadata() : [{ metadata: { calendar_last_date: new Date().toISOString() } }]
+        const asd = sortBy(events, e => e.date)
+            .filter(e => e.date < addDays(new Date(), 14).toISOString()) // No more than 2 weeks
+        debugger
+
+        let calendar_last_date = new Date().toISOString()
+        if (bucket) {
+            const object = bucket.file(`cal_${cal.id}.ics`)
+            if (await object.exists()) {
+                const [{ metadata: _tmp }] = await object.getMetadata() as { metadata: Record<string, string> }[]
+                calendar_last_date = _tmp.calendar_last_date
+            }
+        }
 
         const nextEvent = sortBy(events, e => e.date)
             .filter(e => e.date < addDays(new Date(), 14).toISOString()) // No more than 2 weeks
             .find(e => e.date > calendar_last_date) // Anyone larger than current
+
         if (nextEvent) {
             await notifyNewEvent(text, nextEvent, cal.id, cal.name)
         } else {
@@ -154,12 +171,12 @@ export async function calendar(bucket: Bucket, useCGS = false, useSavedCookies =
         const metadata = {
             calendar_name: cal.name,
             calendar_id: cal.id,
-            calendar_last_uid: nextEvent?.uid,
-            calendar_last_date: nextEvent?.date,
+            calendar_last_uid: nextEvent?.uid ?? '',
+            calendar_last_date: nextEvent?.date ?? '',
             updated_at: FieldValue.serverTimestamp()
         }
 
-        if (useCGS) {
+        if (bucket) {
             const {
                 GCLOUD_FUNCITON_GET_URL
             } = GCloudOptions.parse(process.env)
@@ -172,13 +189,14 @@ export async function calendar(bucket: Bucket, useCGS = false, useSavedCookies =
             await bucket.upload(file, { destination, metadata: { metadata: { ...metadata, calendar_self  }  } })
         }
 
-        const db = getFirestore()
-        await db.collection('calendars').doc(cal.id ?? '').set(metadata, { merge: true })
+        if (db) {
+            await db.collection('calendars')
+                .doc(cal.id ?? '')
+                .set(metadata, { merge: true })
+        }
     }
 
-    await browser.close();
-
-    if (useCGS) {
+    if (bucket) {
         const [files] = await bucket.getFiles({ prefix: 'cal_' })
 
         const metadatas = await Promise.all(files.map(f => f.getMetadata()))
