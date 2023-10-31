@@ -71,14 +71,6 @@ export async function mockNotification(
         title = undefined as string | undefined,
         body = undefined as string | undefined
     ) {
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 19, 0, 0, 0)
-    const start = new Date(today.getTime() + 3600000 * 24 * Math.floor(Math.random() * 30))
-    const end = new Date(new Date().getTime() + 3600000 * 1)
-
-    const startTime = `${format(start, 'yyyy-MM-dd')} kl ${format(start, 'HH:mm')}`
-    const durationMin = (start.getTime() - end.getTime()) / (1000 * 60)
-    const duration = formatDistance(start, end, { locale: sv, includeSeconds: false })
 
     if (!body) body = `Test av notification`
     if (!title) title = 'Ny notis'
