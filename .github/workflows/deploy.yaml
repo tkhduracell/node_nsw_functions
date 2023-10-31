@@ -124,12 +124,12 @@ jobs:
 
       - name: Deploy competitions-api
         run: |
-          gcloud functions deploy competitions-get \
+          gcloud functions deploy competitions-api \
             --gen2 \
             --runtime=nodejs16 \
             --region="${GCLOUD_REGION}" \
             --source=. \
-            --entry-point=competitions \
+            --entry-point=competitions-api \
             --trigger-http \
             --max-instances=5 \
             --allow-unauthenticated
