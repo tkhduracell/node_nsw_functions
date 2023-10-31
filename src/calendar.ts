@@ -148,12 +148,11 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         const compactISO = (d: Date) => d.toISOString().replace(/[-:]|\.[0-9]+/g, '')
 
         let calendar_last_date = compactISO(new Date())
-        if (bucket) {
-            const object = bucket.file(`cal_${cal.id}.ics`)
-            if (await object.exists()) {
-                const [{ metadata: _tmp }] = await object.getMetadata() as { metadata: Record<string, string> }[]
-                calendar_last_date = _tmp.calendar_last_date
-            }
+        if (db) {
+            const prev = await db.collection('calendars')
+                .doc(cal.id ?? '')
+                .get()
+            calendar_last_date = prev.data()?.calendar_last_date
         }
 
         const nextEvent = sortBy(events, e => e.date)
