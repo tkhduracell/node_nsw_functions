@@ -76,6 +76,9 @@
                     }
 
                     const requestPermission = async () => {
+                        // Already requested
+                        if (Notification.permission === "granted") return;
+
                         const permission = await Notification.requestPermission()
                         if (permission === 'granted') {
                             log('Notification permission granted.');
