@@ -1,10 +1,10 @@
 import { writeFile as _writeFile } from 'fs'
-import { Browser, launch, Page, Protocol } from 'puppeteer'
+import { Browser, Page, Protocol } from 'puppeteer'
 import { promisify } from 'util'
 import { mapKeys, sortBy, zip } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
 import { FieldValue, Firestore } from 'firebase-admin/firestore'
-import { addDays, differenceInDays, differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
+import { addDays, differenceInDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from './env'
@@ -266,8 +266,8 @@ function getNotificationTitle(calendar_name: string) {
     return calendar_name === 'Friträning' ?  'Ny friträning bokad!' : `${calendar_name} uppdaterad`
 }
 function getNotificationBody(start: Date, durationMin: number | null) {
-    const date = format(start, 'do MMMM')
-    const hhmm = format(start, 'HH:mm')
+    const date = format(start, 'do MMMM', { locale: sv })
+    const hhmm = format(start, 'HH:mm',  { locale: sv })
     const inDays = differenceInDays(start, new Date())
     const weekday = format(start, 'EEEE', { locale: sv }).replace(/^./, s => s.toUpperCase())
 
