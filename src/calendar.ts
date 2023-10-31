@@ -147,9 +147,6 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
 
         const compactISO = (d: Date) => d.toISOString().replace(/[-:]|\.[0-9]+/g, '')
 
-        const inTwoWeeks = compactISO(addDays(new Date(), 14))
-        // "20230823T170000Z" ?
-
         let calendar_last_date = compactISO(new Date())
         if (bucket) {
             const object = bucket.file(`cal_${cal.id}.ics`)
@@ -160,6 +157,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         }
 
         const nextEvent = sortBy(events, e => e.date)
+            .filter(e => e.date >= compactISO(new Date())) // Must be in future
             .filter(e => e.date < compactISO(addDays(new Date(), 14))) // No more than 2 weeks
             .find(e => e.date > calendar_last_date) // Anyone larger than current
 
