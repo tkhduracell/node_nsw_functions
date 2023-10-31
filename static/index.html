@@ -147,7 +147,7 @@
                                 serviceWorkerRegistration = await navigator.serviceWorker.register(swBaseUrl + '/firebase-messaging-sw.js')
                                 console.log('Registration successful, scope is:', serviceWorkerRegistration.scope);
 
-                                if (Notification.permission !== "granted") return;
+                                if (!["default", "granted"].includes(Notification.permission)) return;
 
                                 console.log('Requesting token...');
                                 const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
