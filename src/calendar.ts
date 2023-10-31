@@ -145,11 +145,12 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         await writeFile(file, text)
         console.log(`Wrote -  ${cal.name} to ${file}`)
 
-        const asd = sortBy(events, e => e.date)
-            .filter(e => e.date < addDays(new Date(), 14).toISOString()) // No more than 2 weeks
-        debugger
+        const compactISO = (d: Date) => d.toISOString().replace(/[-:]|\.[0-9]+/g, '')
 
-        let calendar_last_date = new Date().toISOString()
+        const inTwoWeeks = compactISO(addDays(new Date(), 14))
+        // "20230823T170000Z" ?
+
+        let calendar_last_date = compactISO(new Date())
         if (bucket) {
             const object = bucket.file(`cal_${cal.id}.ics`)
             if (await object.exists()) {
@@ -159,7 +160,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         }
 
         const nextEvent = sortBy(events, e => e.date)
-            .filter(e => e.date < addDays(new Date(), 14).toISOString()) // No more than 2 weeks
+            .filter(e => e.date < compactISO(addDays(new Date(), 14))) // No more than 2 weeks
             .find(e => e.date > calendar_last_date) // Anyone larger than current
 
         if (nextEvent) {
@@ -172,7 +173,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
             calendar_name: cal.name,
             calendar_id: cal.id,
             calendar_last_uid: nextEvent?.uid ?? '',
-            calendar_last_date: nextEvent?.date ?? new Date().toISOString(),
+            calendar_last_date: nextEvent?.date ?? compactISO(new Date()),
             updated_at: FieldValue.serverTimestamp()
         }
 
@@ -220,7 +221,7 @@ export function postprocess(content: string, calendar: { name: string }) {
     ]
     const text = content.replace(/(X-WR-CALNAME):.*/gi, `\$1:${calendar.name}\n${new_fields.join('\n')}`)
 
-    const dates = [...text.matchAll(/DTSTAMP:.*/gi)].map(s => s[0].replace('DTSTAMP:', ''))
+    const dates = [...text.matchAll(/DTSTART:.*/gi)].map(s => s[0].replace('DTSTART:', ''))
     const uids = [...text.matchAll(/UID:.*/gi)].map(s => s[0].replace('UID:', ''))
 
     const events = zip(dates, uids).map(([date, uid]) => ({ date, uid })) as { date: string, uid: string }[]
