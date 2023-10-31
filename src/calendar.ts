@@ -263,13 +263,13 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
 }
 
 function getNotificationTitle(calendar_name: string) {
-    return calendar_name === 'Friträning' ?  'Ny friträning' : `${calendar_name} uppdaterad`
+    return calendar_name === 'Friträning' ?  'Ny friträning bokad!' : `${calendar_name} uppdaterad`
 }
 function getNotificationBody(start: Date, durationMin: number | null) {
     const date = format(start, 'do MMMM')
     const hhmm = format(start, 'HH:mm')
     const inDays = differenceInDays(start, new Date())
-    const weekday = format(start, 'EEEE', { locale: sv })
+    const weekday = format(start, 'EEEE', { locale: sv }).replace(/^./, s => s.toUpperCase())
 
     if (inDays < 7) {
         return `${weekday}, ${durationMin} minuter, kl ${hhmm}`
