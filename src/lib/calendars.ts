@@ -272,7 +272,7 @@ function getNotificationBody(start: Date, end: Date, durationMin: number | null)
     const inDays = differenceInDays(start, new Date())
     const weekday = format(start, 'EEEE', { locale: sv }).replace(/^./, s => s.toUpperCase())
 
-    const suffix = `${durationMin} min, kl ${hhmm}-${hhmm_end}`
+    const suffix = `kl ${hhmm}-${hhmm_end}, ${durationMin} min`
     if (inDays < 7) {
         return `${weekday}, ${suffix}`
     } else {
