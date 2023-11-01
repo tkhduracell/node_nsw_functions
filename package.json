@@ -4,7 +4,7 @@
   "description": "Utility HTTP functions related to nackswinget",
   "main": "dist/index.js",
   "engines": {
-    "node": "16"
+    "node": "20"
   },
   "scripts": {
     "pre-build": "node node_modules/puppeteer/install.js",
