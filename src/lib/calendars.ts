@@ -119,10 +119,6 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
     const cookies = await page.cookies();
     const cookie = cookies.map(ck => ck.name + '=' + ck.value).join(';');
 
-    if (bucket) {
-        try { await bucket.create() } catch (e) {}
-    }
-
     for (const cal of cals) {
         // link: '/Calendars/View/333892'
         const today = new Date()
