@@ -1,9 +1,8 @@
 import { Storage } from '@google-cloud/storage'
 import z from 'zod'
+import express from 'express'
 
 import { GCloudOptions } from './env'
-
-import express from 'express'
 
 const app = express()
 
@@ -24,10 +23,11 @@ app.get('/', async (req, res) => {
     const id = z.string().regex(/\d+/).parse(req.query.id)
 
     const [{ metadata }] = await bucket.file(`cal_${id}.ics`).getMetadata()
+    const name = metadata && 'CalendarName' in metadata ? metadata['CalendarName'] : id
 
     res
         .setHeader('Content-Type', 'text/calendar')
-        .setHeader('Content-Disposition', `attachment; filename="${metadata['CalendarName']}.ics"`)
+        .setHeader('Content-Disposition', `attachment; filename="${name}.ics"`)
         .status(200)
 
     bucket

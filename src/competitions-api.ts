@@ -9,14 +9,10 @@ app.get('/', async (req, res) => {
 
     const cal = await fetchCompetitions(classTypes)
 
-    await cal.save('/tmp/comp.ics')
-
-    res.sendFile('/tmp/comp.ics', {
-        headers: {
-            'Content-Type': 'text/calendar',
-            'Content-Disposition': `attachment; filename="comp_${classTypes || 'all'}.ics"`
-        }
-    })
+    res
+        .header('Content-Type', 'text/calendar')
+        .header('Content-Disposition', `attachment; filename="comp_${classTypes || 'all'}.ics"`)
+        .send(cal.toString())
 })
 
 export default app

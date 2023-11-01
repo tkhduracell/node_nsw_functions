@@ -1,11 +1,9 @@
 import express from 'express'
-import path from 'path'
+import { join } from 'path'
 import z from 'zod'
 
 import { initializeApp } from 'firebase-admin/app'
 import { Message, getMessaging } from 'firebase-admin/messaging'
-import { format, formatDistance } from 'date-fns'
-import { sv } from 'date-fns/locale'
 import { getFirestore } from 'firebase-admin/firestore'
 import cors from 'cors'
 
@@ -64,7 +62,7 @@ app.post('/trigger', async (req, res) => {
     return res.status(200).send(response)
 })
 
-app.use(express.static(path.join(__dirname, '..', 'static')))
+app.use(express.static(join(__dirname, '..', 'static')))
 
 export async function mockNotification(
         topicName = 'calendar-337667',
