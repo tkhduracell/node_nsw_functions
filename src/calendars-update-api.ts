@@ -1,10 +1,10 @@
-import { Storage } from '@google-cloud/storage'
+import { Bucket, Storage } from '@google-cloud/storage'
 
 import { GCloudOptions } from './env'
 import { calendar } from './lib/calendars'
 import { getFirestore } from 'firebase-admin/firestore'
 
-import { launch } from 'puppeteer'
+import { Browser, TimeoutError, launch } from 'puppeteer'
 import express from 'express'
 
 const app = express()
@@ -17,9 +17,21 @@ app.post('/update', async (req, res) => {
     const storage = new Storage({ projectId: GCLOUD_PROJECT });
     const bucket = storage.bucket(GCLOUD_BUCKET)
 
+    if (!(await bucket.exists())) {
+        await bucket.create()
+    }
+
     const db = getFirestore()
     const browser = await launch({ headless: 'new' });
-    await calendar(browser, bucket, db, true)
+
+    try {
+        await calendar(browser, bucket, db, true)
+    } catch (err) {
+        if (!(err instanceof TimeoutError)) throw err
+        await dumpScreenshots(browser, bucket, err)
+        throw err
+    }
+
     await browser.close()
 
     res.sendStatus(200)
@@ -42,3 +54,13 @@ app.post('/update-lean', async (req, res) => {
 });
 
 export default app
+
+async function dumpScreenshots(browser: Browser, bucket: Bucket, err: TimeoutError) {
+    for (const page of await browser.pages()) {
+        const img = await page.screenshot({ fullPage: true, type: 'png' })
+        const imageName = '/errors/' + new Date().getTime() + '.png'
+        const file = bucket.file(imageName)
+        console.log('Writing error screenshot to', file.publicUrl(), err)
+        await file.save(img, { contentType: 'image/png' })
+    }
+}
