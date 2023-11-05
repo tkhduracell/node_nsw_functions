@@ -28,7 +28,7 @@ app.post('/update', async (req, res) => {
         await calendar(browser, bucket, db, true)
     } catch (err) {
         console.error(err)
-        await dumpScreenshots(browser, bucket)
+        await dumpScreenshots(browser, bucket, 'update')
         throw new Error("Error in /update", { cause: err })
     }
 
@@ -55,7 +55,7 @@ app.post('/update-lean', async (req, res) => {
         await calendar(browser, bucket, db, true)
     } catch (err) {
         console.error(err)
-        await dumpScreenshots(browser, bucket)
+        await dumpScreenshots(browser, bucket, 'update-lean')
         throw new Error("Error in /update-lean", { cause: err })
     }
 
@@ -66,10 +66,14 @@ app.post('/update-lean', async (req, res) => {
 
 export default app
 
-async function dumpScreenshots(browser: Browser, bucket: Bucket) {
+async function dumpScreenshots(browser: Browser, bucket: Bucket, prefix: string) {
+    let i = 0
+    const date = new Date()
+    date.setMilliseconds(0)
+
     for (const page of await browser.pages()) {
         const img = await page.screenshot({ fullPage: true, type: 'png'  })
-        const imageName = `errors/${new Date().toISOString()}.png`
+        const imageName = `errors/${prefix}/${date.toISOString()}-page-${i++}.png`
         const file = bucket.file(imageName)
         console.info('Writing error screenshot to', file.publicUrl())
         await file.save(img, { contentType: 'image/png' })
