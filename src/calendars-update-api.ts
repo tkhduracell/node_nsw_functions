@@ -29,7 +29,7 @@ app.post('/update', async (req, res) => {
     } catch (err) {
         console.error(err)
         await dumpScreenshots(browser, bucket)
-        throw err
+        throw new Error("Error in /update", { cause: err })
     }
 
     await browser.close()
@@ -45,9 +45,20 @@ app.post('/update-lean', async (req, res) => {
     const storage = new Storage({ projectId: GCLOUD_PROJECT });
     const bucket = storage.bucket(GCLOUD_BUCKET)
 
+    if (!(await bucket.exists())) {
+        await bucket.create()
+    }
+
     const db = getFirestore()
     const browser = await launch({ headless: 'new' });
-    await calendar(browser, bucket, db, true)
+    try {
+        await calendar(browser, bucket, db, true)
+    } catch (err) {
+        console.error(err)
+        await dumpScreenshots(browser, bucket)
+        throw new Error("Error in /update-lean", { cause: err })
+    }
+
     await browser.close()
 
     res.sendStatus(200)
