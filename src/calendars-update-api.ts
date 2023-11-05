@@ -25,7 +25,7 @@ app.post('/update', async (req, res) => {
     const browser = await launch({ headless: 'new' });
 
     try {
-        await calendar(browser, bucket, db, true)
+        await calendar(browser, bucket, db, false)
     } catch (err) {
         console.error(err)
         await dumpScreenshots(browser, bucket, 'update')
