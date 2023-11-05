@@ -68,8 +68,8 @@ export default app
 
 async function dumpScreenshots(browser: Browser, bucket: Bucket) {
     for (const page of await browser.pages()) {
-        const img = await page.screenshot({ fullPage: true, type: 'png' })
-        const imageName = '/errors/' + new Date().getTime() + '.png'
+        const img = await page.screenshot({ fullPage: true, type: 'png'  })
+        const imageName = `errors/${new Date().toISOString()}.png`
         const file = bucket.file(imageName)
         console.info('Writing error screenshot to', file.publicUrl())
         await file.save(img, { contentType: 'image/png' })
