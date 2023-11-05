@@ -194,8 +194,8 @@ jobs:
             --source=. \
             --entry-point=calendars-update-api \
             --trigger-http \
-            --memory=2GiB \
-            --max-instances=1 \
+            --memory=4GiB \
+            --max-instances=2 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendars-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
