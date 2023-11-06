@@ -158,26 +158,27 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                 .get()
             const calendar_last_date = prev.data()?.calendar_last_date
             const calendar_last_uid = prev.data()?.calendar_last_uid
+            const last_notifications = prev.data()?.last_notifications
 
             const newEvents = sortBy(events, e => e.uid)
                 .filter(e => e.date >= compactISO(new Date())) // Must be in future
                 .filter(e => e.date < compactISO(addDays(new Date(), 14))) // No more than 2 weeks
 
-            const nextEvent = newEvents.find(e => e.uid > calendar_last_uid) // Anyone larger than current
+            const newEvent = newEvents.find(e => e.uid > calendar_last_uid) // Anyone larger than current
 
             console.log(
                 'Found', newEvents.length,
                 JSON.stringify({
                     calendar_last_date,
                     calendar_last_uid,
-                    next_event: nextEvent,
+                    next_event: newEvent,
                     next_events: newEvents,
                 }))
-            if (nextEvent) {
-                const out = await notifyNewEvent(text, nextEvent, cal.id, cal.name)
-                metadata.calendar_last_date = nextEvent.date
-                metadata.calendar_last_uid = nextEvent.uid
-                metadata.last_notifications = [...metadata.last_notifications, { at: new Date().toISOString(), ...out }].slice(0, 5)
+            if (newEvent) {
+                const out = await notifyNewEvent(text, newEvent, cal.id, cal.name)
+                metadata.calendar_last_date = newEvent.date
+                metadata.calendar_last_uid = newEvent.uid
+                metadata.last_notifications = [...last_notifications, { at: new Date().toISOString(), ...newEvent, ...out }].slice(0, 5)
             } else {
                 console.warn("No next event found")
             }
