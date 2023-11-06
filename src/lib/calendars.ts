@@ -174,9 +174,17 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                 }))
             if (nextEvent) {
                 await notifyNewEvent(text, nextEvent, cal.id, cal.name)
+                metadata.calendar_last_date = nextEvent.date
+                metadata.calendar_last_uid = nextEvent.uid
             } else {
                 console.warn("No next event found")
             }
+        }
+
+        if (db) {
+            await db.collection('calendars')
+                .doc(cal.id ?? '')
+                .set(metadata, { merge: true })
         }
 
         if (bucket) {
@@ -190,12 +198,6 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
 
             console.log(`Uploading - ${cal.name} (${cal.id}) to ${bucket.cloudStorageURI}/${destination}`)
             await bucket.upload(file, { destination, metadata: { metadata: { ...metadata, calendar_self  }  } })
-        }
-
-        if (db) {
-            await db.collection('calendars')
-                .doc(cal.id ?? '')
-                .set(metadata, { merge: true })
         }
     }
 
