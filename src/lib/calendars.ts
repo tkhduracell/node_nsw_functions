@@ -151,10 +151,12 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
             calendar_last_date = prev.data()?.calendar_last_date
         }
 
-        const nextEvent = sortBy(events, e => e.date)
+        const commingEvent = sortBy(events, e => e.date)
             .filter(e => e.date >= compactISO(new Date())) // Must be in future
             .filter(e => e.date < compactISO(addDays(new Date(), 14))) // No more than 2 weeks
-            .find(e => e.date > calendar_last_date) // Anyone larger than current
+
+        console.log('Found', commingEvent.length ,'new events', JSON.stringify({ calendar_last_date, dates: commingEvent.map(e => e.date) }))
+        const nextEvent = commingEvent.find(e => e.date > calendar_last_date) // Anyone larger than current
 
         if (nextEvent) {
             await notifyNewEvent(text, nextEvent, cal.id, cal.name)
@@ -253,7 +255,7 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
         },
         topic: topicName,
     }
-    console.log('New event!', JSON.stringify({ ...message.notification, summary }, null, 2))
+    console.log('New event!', JSON.stringify({ ...message.notification, summary }))
 
     await getMessaging().send(message)
 }
@@ -272,6 +274,6 @@ function getNotificationBody(start: Date, end: Date, durationMin: number | null)
     if (inDays < 7) {
         return `${weekday}, ${suffix}`
     } else {
-        return `${date}, ${weekday}\n${suffix}`
+        return `${weekday}, ${date}\n${suffix}`
     }
 }
