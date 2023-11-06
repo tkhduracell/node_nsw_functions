@@ -143,33 +143,40 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
 
         const compactISO = (d: Date) => d.toISOString().replace(/[-:]|\.[0-9]+/g, '')
 
-        let calendar_last_date = compactISO(new Date())
-        if (db) {
-            const prev = await db.collection('calendars')
-                .doc(cal.id ?? '')
-                .get()
-            calendar_last_date = prev.data()?.calendar_last_date
-        }
-
-        const commingEvent = sortBy(events, e => e.date)
-            .filter(e => e.date >= compactISO(new Date())) // Must be in future
-            .filter(e => e.date < compactISO(addDays(new Date(), 14))) // No more than 2 weeks
-
-        console.log('Found', commingEvent.length ,'new events', JSON.stringify({ calendar_last_date, dates: commingEvent.map(e => e.date) }))
-        const nextEvent = commingEvent.find(e => e.date > calendar_last_date) // Anyone larger than current
-
-        if (nextEvent) {
-            await notifyNewEvent(text, nextEvent, cal.id, cal.name)
-        } else {
-            console.warn("No next event found")
-        }
-
         const metadata = {
             calendar_name: cal.name,
             calendar_id: cal.id,
-            calendar_last_uid: nextEvent?.uid ?? '',
-            calendar_last_date: nextEvent?.date ?? compactISO(new Date()),
+            calendar_last_uid: '',
+            calendar_last_date: '',
             updated_at: FieldValue.serverTimestamp()
+        }
+
+        if (db && cal.id === '337667') {
+            const prev = await db.collection('calendars')
+                .doc(cal.id ?? '')
+                .get()
+            const calendar_last_date = prev.data()?.calendar_last_date
+            const calendar_last_uid = prev.data()?.calendar_last_uid
+
+            const newEvents = sortBy(events, e => e.uid)
+                .filter(e => e.date >= compactISO(new Date())) // Must be in future
+                .filter(e => e.date < compactISO(addDays(new Date(), 14))) // No more than 2 weeks
+
+            const nextEvent = newEvents.find(e => e.uid > calendar_last_uid) // Anyone larger than current
+
+            console.log(
+                'Found', newEvents.length,
+                JSON.stringify({
+                    calendar_last_date,
+                    calendar_last_uid,
+                    next_event: nextEvent,
+                    next_events: newEvents,
+                }))
+            if (nextEvent) {
+                await notifyNewEvent(text, nextEvent, cal.id, cal.name)
+            } else {
+                console.warn("No next event found")
+            }
         }
 
         if (bucket) {
