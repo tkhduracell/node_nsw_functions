@@ -137,10 +137,6 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         const { text, events } = postprocess(await response.text(), cal)
         console.log(`Processed - ${cal.name}`)
 
-        console.log(`Saving - ${cal.name}`)
-        await writeFile(file, text)
-        console.log(`Wrote -  ${cal.name} to ${file}`)
-
         const compactISO = (d: Date) => d.toISOString().replace(/[-:]|\.[0-9]+/g, '')
 
         const metadata = {
@@ -201,7 +197,8 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                 `webcal://${GCLOUD_FUNCITON_GET_URL.replace(/https:\/\//gi, '')}?id=${cal.id}` : undefined
 
             console.log(`Uploading - ${cal.name} (${cal.id}) to ${bucket.cloudStorageURI}/${destination}`)
-            await bucket.upload(file, { destination, metadata: { metadata: { ...metadata, calendar_self  }  } })
+            await bucket.file(destination)
+                .save(text, { metadata: { metadata: { ...metadata, calendar_self  } }})
         }
     }
 
