@@ -151,7 +151,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
             updated_at: FieldValue.serverTimestamp()
         }
 
-        if (db && cal.id === '337667') {
+        if (db) {
             const prev = await db.collection('calendars')
                 .doc(cal.id ?? '')
                 .get()
