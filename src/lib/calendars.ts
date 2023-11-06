@@ -3,7 +3,7 @@ import { Browser, Page, Protocol } from 'puppeteer'
 import { promisify } from 'util'
 import { mapKeys, sortBy, zip } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
-import { FieldValue, Firestore } from 'firebase-admin/firestore'
+import { FieldValue, Firestore, Timestamp } from 'firebase-admin/firestore'
 import { addDays, differenceInDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
@@ -148,6 +148,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
             calendar_id: cal.id,
             calendar_last_uid: '',
             calendar_last_date: '',
+            last_notifications: [] as (Awaited<ReturnType<typeof notifyNewEvent>> & { at: string })[],
             updated_at: FieldValue.serverTimestamp()
         }
 
@@ -173,9 +174,10 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                     next_events: newEvents,
                 }))
             if (nextEvent) {
-                await notifyNewEvent(text, nextEvent, cal.id, cal.name)
+                const out = await notifyNewEvent(text, nextEvent, cal.id, cal.name)
                 metadata.calendar_last_date = nextEvent.date
                 metadata.calendar_last_uid = nextEvent.uid
+                metadata.last_notifications = [...metadata.last_notifications, { at: new Date().toISOString(), ...out }].slice(0, 5)
             } else {
                 console.warn("No next event found")
             }
@@ -232,7 +234,7 @@ export function postprocess(content: string, calendar: { name: string }) {
     return { text, events }
 }
 
-async function notifyNewEvent(text: string, e: { date: string, uid: string }, calendar_id: string, calendar_name: string){
+async function notifyNewEvent(text: string, e: { date: string, uid: string }, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
 
     const event = [...text.matchAll(/BEGIN:VEVENT[\s\S]+?UID:(\d+)[\s\S]+?END:VEVENT/ig)]
         .map(s => s[0])
@@ -246,7 +248,7 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
 
     if (!start || !end) {
         console.log('Event without start & end', { start, end, duration, summary })
-        return
+        throw new Error('Event without start & end' +  JSON.stringify({ start, end, duration, summary }))
     }
 
     const topicName = `calendar-${calendar_id}`;
@@ -267,6 +269,8 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
     console.log('New event!', JSON.stringify({ ...message.notification, summary }))
 
     await getMessaging().send(message)
+
+    return message.notification
 }
 
 function getNotificationTitle(calendar_name: string) {
