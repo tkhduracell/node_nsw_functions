@@ -253,7 +253,7 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
         },
         topic: topicName,
     }
-    console.log('New event!', { ...message.notification, summary })
+    console.log('New event!', JSON.stringify({ ...message.notification, summary }, null, 2))
 
     await getMessaging().send(message)
 }
