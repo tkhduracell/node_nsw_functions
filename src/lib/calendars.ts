@@ -162,7 +162,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
 
             const newEvents = sortBy(events, e => e.uid)
                 .filter(e => e.date >= compactISO(new Date())) // Must be in future
-                .filter(e => e.date < compactISO(addDays(new Date(), 14))) // No more than 2 weeks
+                .filter(e => e.date < compactISO(addDays(new Date(), 6))) // No more than 6 days ahead
                 .filter(e => e.uid > calendar_last_uid) // Larger than last uid
 
             const newEvent = newEvents.find(e => true) // Take first
