@@ -1,17 +1,16 @@
 import { writeFile as _writeFile } from 'fs'
 import { Browser, Page, Protocol } from 'puppeteer'
-import { promisify } from 'util'
-import { mapKeys, sortBy, zip } from 'lodash'
+import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
-import { FieldValue, Firestore, Timestamp } from 'firebase-admin/firestore'
+import { FieldValue, Firestore } from 'firebase-admin/firestore'
 import { addDays, differenceInDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from '../env'
 
 import fetch from 'cross-fetch'
-
-const writeFile = promisify(_writeFile)
+import { ICalCalendar, ICalEvent } from 'ical-generator'
+import { ListedActivities } from './types'
 
 const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
 
@@ -120,24 +119,32 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
     const cookie = cookies.map(ck => ck.name + '=' + ck.value).join(';');
 
     for (const cal of cals) {
-        // link: '/Calendars/View/333892'
+
         const today = new Date()
         const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
         const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
 
-        const file = `/tmp/cal_${cal.id}.ics`
         const start = `${lastquater.toISOString().replace(/(.*)T.*/, '$1')}+00%3A00%3A00`
         const end = `${inayear.toISOString().replace(/(.*)T.*/, '$1')}+00%3A00%3A00`
 
-        console.log(`Downloading - ${cal.name} (${cal.id})`)
-        const response = await fetch(`${ACTIVITY_BASE_URL}/activities/exportactivitiestoical?calendarId=${cal.id}&startTime=${start}&endTime=${end}&freeText=&activityTypes=`, {
+        console.log(`Fetching - ${cal.name} (${cal.id})`)
+        const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${cal.id}&startTime=${start}&endTime=${end}`, {
             method: 'GET',
-            headers: { cookie }
+            headers: {
+                cookie,
+                "Referer": `${ACTIVITY_BASE_URL}/Calendars/View/${cal.id}`,
+                "Referrer-Policy": "strict-origin-when-cross-origin",
+                "x-requested-with": "XMLHttpRequest",
+                "accept": "application/json, text/javascript, */*; q=0.01",
+            }
         })
-        const { text, events } = postprocess(await response.text(), cal)
-        console.log(`Processed - ${cal.name}`)
 
-        const compactISO = (d: Date) => d.toISOString().replace(/[-:]|\.[0-9]+/g, '')
+        if (!response.ok) {
+            throw new Error(`Error response ${response.status} ${response.statusText}`, { cause: await response.text() })
+        }
+
+        const calendar = postprocess(response.url, await response.json() as ListedActivities, cal)
+        console.log(`Processed - ${cal.name}`)
 
         const metadata = {
             calendar_name: cal.name,
@@ -156,10 +163,10 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
             const calendar_last_uid = prev.data()?.calendar_last_uid
             const last_notifications = prev.data()?.last_notifications
 
-            const newEvents = sortBy(events, e => e.uid)
-                .filter(e => e.date >= compactISO(new Date())) // Must be in future
-                .filter(e => e.date < compactISO(addDays(new Date(), 6))) // No more than 6 days ahead
-                .filter(e => e.uid > calendar_last_uid) // Larger than last uid
+            const newEvents = sortBy(calendar.events(), e => e.uid())
+                .filter(e => e.start() >= new Date()) // Must be in future
+                .filter(e => e.start() < addDays(new Date(), 6)) // No more than 6 days ahead
+                .filter(e => e.uid() > calendar_last_uid) // Larger than last uid
 
             const newEvent = newEvents.find(e => true) // Take first
 
@@ -168,14 +175,14 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                 JSON.stringify({
                     calendar_last_date,
                     calendar_last_uid,
-                    next_event: newEvent,
+                    next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
                     next_events: newEvents,
                 }))
             if (newEvent) {
-                const out = await notifyNewEvent(text, newEvent, cal.id, cal.name)
-                metadata.calendar_last_date = newEvent.date
-                metadata.calendar_last_uid = newEvent.uid
-                metadata.last_notifications = [...last_notifications, { at: new Date().toISOString(), ...newEvent, ...out }].slice(0, 5)
+                const out = await notifyNewEvent(newEvent, cal.id, cal.name)
+                metadata.calendar_last_date = newEvent.start() as string
+                metadata.calendar_last_uid = newEvent.uid()
+                metadata.last_notifications = [...last_notifications, { at: new Date().toISOString(), id: newEvent.id(), ...out }].slice(0, 5)
             } else {
                 console.warn("No next event found")
             }
@@ -198,20 +205,16 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
 
             console.log(`Uploading - ${cal.name} (${cal.id}) to ${bucket.cloudStorageURI}/${destination}`)
             await bucket.file(destination)
-                .save(text, { metadata: { metadata: { ...metadata, calendar_self  } }})
+                .save(calendar.toString(), { metadata: { metadata: { ...metadata, calendar_self  } }})
         }
     }
 
     if (bucket) {
         const [files] = await bucket.getFiles({ prefix: 'cal_' })
-
         const metadatas = await Promise.all(files.map(f => f.getMetadata()))
         const data = metadatas.map(([{ metadata }]) => mapKeys(metadata, (_, k) => k.replace('calendar_', '')))
         const payload = JSON.stringify(data, null, 2)
-
-        const file = `/tmp/index.json`
-        await writeFile(file, payload)
-        await bucket.upload(file, { destination: 'index.json' })
+        await bucket.file('index.json').save(payload)
     }
 }
 
@@ -219,43 +222,46 @@ function sleep(ms: number = 20000) {
     return new Promise((res, rej) => setTimeout(res, ms))
 }
 
-export function postprocess(content: string, calendar: { name: string }) {
-    const new_fields = [
-        'URL:https://nackswinget.se/Kalender',
-        `NAME:${calendar.name}`,
-    ]
-    const text = content.replace(/(X-WR-CALNAME):.*/gi, `\$1:${calendar.name}\n${new_fields.join('\n')}`)
+export function postprocess(url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
+    const calendar = new ICalCalendar()
+    calendar.name(subject.name)
+    calendar.prodId({
+        company: 'DK Nackswinget',
+        product: subject.name,
+        language: 'SV'
+    })
+    calendar.url('https://nackswinget.se/Kalender')
+    calendar.timezone('Europe/Stockholm')
+    calendar.source(url)
 
-    const dates = [...text.matchAll(/DTSTART:.*/gi)].map(s => s[0].replace('DTSTART:', ''))
-    const uids = [...text.matchAll(/UID:.*/gi)].map(s => s[0].replace('UID:', ''))
+    for (const { listedActivity } of activities) {
+        const { shared, activityId, startTime, endTime, name, venueName, description } = listedActivity
 
-    const events = zip(dates, uids).map(([date, uid]) => ({ date, uid })) as { date: string, uid: string }[]
-    return { text, events }
-}
+        // Ignore shared events
+        if (shared) continue
 
-async function notifyNewEvent(text: string, e: { date: string, uid: string }, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
-
-    const event = [...text.matchAll(/BEGIN:VEVENT[\s\S]+?UID:(\d+)[\s\S]+?END:VEVENT/ig)]
-        .map(s => s[0])
-        .filter(evt => evt.includes(`UID:${e.uid}`))
-        .find(() => true)
-
-    const start = (event ?? '').match(/DTSTART:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
-    const end = (event ?? '').match(/DTEND:(.*)/)?.reverse().map(s => parseISO(s)).find(() => true)
-    const summary = (event ?? '').match(/SUMMARY:(.*)/)?.reverse().find(() => true)
-    const duration = end && start ? differenceInMinutes(end, start) : null
-
-    if (!start || !end) {
-        console.log('Event without start & end', { start, end, duration, summary })
-        throw new Error('Event without start & end' +  JSON.stringify({ start, end, duration, summary }))
+        calendar.createEvent({
+            start: parseISO(startTime),
+            end: parseISO(endTime),
+            summary: name,
+            description: description,
+            location: venueName ?? '',
+            id: activityId
+        });
     }
 
+    return calendar
+}
+
+async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
+
+    const duration = differenceInMinutes(event.end() as Date, event.start() as Date)
     const topicName = `calendar-${calendar_id}`;
 
     const message: Message = {
         notification: {
             title: getNotificationTitle(calendar_name),
-            body: getNotificationBody(start, end, duration),
+            body: getNotificationBody(event.start() as Date, event.end() as Date, duration),
         },
         webpush: {
             notification: {
@@ -265,7 +271,7 @@ async function notifyNewEvent(text: string, e: { date: string, uid: string }, ca
         },
         topic: topicName,
     }
-    console.log('New event!', JSON.stringify({ ...message.notification, summary }))
+    console.log('New event!', JSON.stringify({ ...message.notification, ...pick(event, 'id', 'start') }))
 
     await getMessaging().send(message)
 
