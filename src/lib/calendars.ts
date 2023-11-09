@@ -185,7 +185,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                     next_events: newEvents,
                 }))
             if (newEvent) {
-                const out = await notifyNewEvent(newEvent, cal.id, cal.name)
+                const eventNotifiation = await notifyNewEvent(newEvent, cal.id, cal.name)
                 metadata.calendar_last_date = newEvent.start() as string
                 metadata.calendar_last_uid = newEvent.uid()
                 const notification = {
@@ -193,7 +193,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                     id: newEvent.id(),
                     start: newEvent.start(),
                     desc: newEvent.description(),
-                    ...out
+                    notification: eventNotifiation
                 }
                 metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
 
