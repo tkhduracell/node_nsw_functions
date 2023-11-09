@@ -52,7 +52,7 @@ export async function login(browser: Browser, db?: Firestore) {
     return cookies
 }
 
-export async function restoreCookies(page: Page, db: Firestore) {
+export async function fetchCookies(page: Page, db: Firestore) {
     const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
     const document = await db.collection('browser')
@@ -67,10 +67,10 @@ export async function restoreCookies(page: Page, db: Firestore) {
 
     console.info(`Restored ${cookies.length} cookies`)
 
-    await page.setCookie(...cookies)
+    return cookies
 }
 
-async function calendars(page: Page) {
+async function fetchCalendars(page: Page) {
     const {
         ACTIVITY_ORG_ID,
         ACTIVITY_BASE_URL,
@@ -86,14 +86,13 @@ async function calendars(page: Page) {
     const calendarTds = await page.$$('td[data-title="Kalender"]')
     const calendars = calendarTds.map(d => d.$eval('a', a => ({
         name: a.innerText,
-        link: a.attributes.getNamedItem('href')?.textContent ?? '(not found)',
         id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '') ?? '(not found)'
     })))
 
     return Promise.all(calendars)
 }
 
-export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore, useSavedCookies = false) {
+export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore, useSavedCookies = false, cals?: { id: string, name: string }[]) {
     const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
 
     const page = await browser.newPage();
@@ -102,21 +101,22 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
 
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
+    let cookies = null
     if (db && useSavedCookies) {
         console.log('Fetching previous cookies')
-        await restoreCookies(page, db)
+        cookies = await fetchCookies(page, db)
     } else {
         console.log('Logging in')
-        const coookies = await login(browser, db)
-        page.setCookie(...coookies)
+        cookies = await login(browser, db)
     }
 
-    console.log('Finding calendars')
-    const cals = await calendars(page)
+    if (!cals || cals.length === 0) {
+        console.log('Restroing old cookies')
+        page.setCookie(...cookies)
 
-    console.log('Extracting cookies')
-    const cookies = await page.cookies();
-    const cookie = cookies.map(ck => ck.name + '=' + ck.value).join(';');
+        console.log('Finding calendars')
+        cals = await fetchCalendars(page)
+    }
 
     for (const cal of cals) {
 
@@ -124,14 +124,14 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
         const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
 
-        const start = `${lastquater.toISOString().replace(/(.*)T.*/, '$1')}+00%3A00%3A00`
-        const end = `${inayear.toISOString().replace(/(.*)T.*/, '$1')}+00%3A00%3A00`
+        const start = `${lastquater.toISOString().replace(/(.*)T.*/, '$1')}+${encodeURIComponent('00:00:00')}`
+        const end = `${inayear.toISOString().replace(/(.*)T.*/, '$1')}+${encodeURIComponent('00:00:00')}`
 
         console.log(`Fetching - ${cal.name} (${cal.id})`)
         const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${cal.id}&startTime=${start}&endTime=${end}`, {
             method: 'GET',
             headers: {
-                cookie,
+                "cookie": cookies.map(ck => ck.name + '=' + ck.value).join(';'),
                 "Referer": `${ACTIVITY_BASE_URL}/Calendars/View/${cal.id}`,
                 "Referrer-Policy": "strict-origin-when-cross-origin",
                 "x-requested-with": "XMLHttpRequest",
@@ -143,7 +143,12 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
             throw new Error(`Error response ${response.status} ${response.statusText}`, { cause: await response.text() })
         }
 
-        const calendar = postprocess(response.url, await response.json() as ListedActivities, cal)
+        const data = await response.json()
+        if (!(typeof data === 'object')) {
+            throw new Error("No json response from API:", { cause: response.statusText })
+        }
+
+        const calendar = postprocess(response.url, data as ListedActivities, cal)
         console.log(`Processed - ${cal.name}`)
 
         const metadata = {
@@ -156,12 +161,13 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         }
 
         if (db) {
-            const prev = await db.collection('calendars')
+            const previous = await db.collection('calendars')
                 .doc(cal.id ?? '')
                 .get()
-            const calendar_last_date = prev.data()?.calendar_last_date
-            const calendar_last_uid = prev.data()?.calendar_last_uid
-            const last_notifications = prev.data()?.last_notifications
+                .then(d => d.data())
+            const calendar_last_date = previous?.calendar_last_date
+            const calendar_last_uid = previous?.calendar_last_uid
+            const last_notifications = previous?.last_notifications
 
             const newEvents = sortBy(calendar.events(), e => e.uid())
                 .filter(e => e.start() >= new Date()) // Must be in future
@@ -182,16 +188,25 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
                 const out = await notifyNewEvent(newEvent, cal.id, cal.name)
                 metadata.calendar_last_date = newEvent.start() as string
                 metadata.calendar_last_uid = newEvent.uid()
-                metadata.last_notifications = [...last_notifications, { at: new Date().toISOString(), id: newEvent.id(), ...out }].slice(0, 5)
+                const notification = {
+                    at: new Date().toISOString(),
+                    id: newEvent.id(),
+                    start: newEvent.start(),
+                    desc: newEvent.description(),
+                    ...out
+                }
+                metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
+
+                await db.collection('calendars')
+                    .doc(cal.id ?? '')
+                    .set(metadata, { merge: true })
             } else {
                 console.warn("No next event found")
-            }
-        }
 
-        if (db) {
-            await db.collection('calendars')
-                .doc(cal.id ?? '')
-                .set(metadata, { merge: true })
+                await db.collection('calendars')
+                    .doc(cal.id ?? '')
+                    .set({ updated_at: FieldValue.serverTimestamp()}, { merge: true })
+            }
         }
 
         if (bucket) {
