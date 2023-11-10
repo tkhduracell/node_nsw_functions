@@ -4,10 +4,11 @@
 
 import { launch } from 'puppeteer';
 import { calendar } from './lib/calendars'
+import { bookActivityRaw } from './lib/booking';
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore';
-import { formatDistanceStrict, parseISO } from 'date-fns';
+import { addMinutes, formatDistanceStrict, parseISO } from 'date-fns';
 
 config();
 
@@ -24,7 +25,25 @@ initializeApp({ projectId: 'nackswinget-af7ef' });
     await browser.close()
 
     process.exit(0)
-})();
+});
+
+(async () => {
+
+    const start = new Date("2023-11-09 14:00:00")
+    const end = addMinutes(start, 60)
+
+    const db = getFirestore()
+    const result = await bookActivityRaw(db, '337667', {
+        name: 'Friträning',
+        description: 'Filip 0702683230',
+        start,
+        end,
+        venueName: 'Ceylon'
+    })
+
+    console.debug(JSON.stringify(result, null, 2))
+    process.exit(0)
+});
 
 
 (async () => {
