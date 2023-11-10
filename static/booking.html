@@ -2,6 +2,8 @@
 <html>
 
 <head>
+    <title>Boka friträning</title>
+    <link rel="icon" href="https://nackswinget.se/wp-content/uploads/2022/10/favicon.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css?family=Open+Sans:300,regular,500,600,700,800,300italic,italic,500italic,600italic,700italic,800italic&amp;subset=latin,latin-ext&amp;display=swap"
@@ -13,7 +15,7 @@
   <div id="app">
     <v-app>
         <v-sheet max-width="500px" width="100%" class="mx-auto pt-4 pl-4 pr-4 pb-4">
-            <div class="text-h2 mb-4">Boka friträning</div>
+            <div class="text-h2 mb-4" v-if="showHeader">Boka friträning</div>
 
             <v-form fast-fail @submit.prevent>
                 <v-text-field
@@ -128,7 +130,12 @@
                         alert(JSON.stringify(result.json(), null, 2))
                     }
                 }
-                return { form, minDate: date.addDays(date.startOfDay(date.date()), 1), submit }
+                return {
+                    form,
+                    showHeader: !document.location.search.includes('no-header'),
+                    minDate: date.addDays(date.startOfDay(date.date()), 1),
+                    submit
+                }
             }
         }).use(vuetify).mount('#app')
     </script>
