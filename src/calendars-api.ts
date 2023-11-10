@@ -70,10 +70,10 @@ app.post('/book', async (req, res) => {
             id: activityId
         })
     } else {
-        console.error(data.error.flatten().fieldErrors)
+        console.error('Invalid request', data.error.flatten().fieldErrors)
         res.status(400).send(JSON.stringify({
             sucesss: false,
-            error: data.error.name
+            error: 'Invalid request: invalid ' + Object.keys(data.error.flatten().fieldErrors).join(',')
         }))
     }
  });
