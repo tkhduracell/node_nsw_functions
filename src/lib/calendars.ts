@@ -52,7 +52,7 @@ export async function login(browser: Browser, db?: Firestore) {
     return cookies
 }
 
-export async function fetchCookies(page: Page, db: Firestore) {
+export async function fetchCookies(db: Firestore) {
     const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
     const document = await db.collection('browser')
@@ -104,7 +104,7 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
     let cookies = null
     if (db && useSavedCookies) {
         console.log('Fetching previous cookies')
-        cookies = await fetchCookies(page, db)
+        cookies = await fetchCookies(db)
     } else {
         console.log('Logging in')
         cookies = await login(browser, db)
