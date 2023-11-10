@@ -6,7 +6,7 @@ import { IDOActivityOptions } from '../env';
 import { ActivityCreateResponse } from './types';
 
 export type ActivityBooking = {
-    venueName: string,
+    location: string,
     /* 2023-11-15T23:00:00.000Z */
     date: string,
     time: string,
@@ -15,7 +15,7 @@ export type ActivityBooking = {
     description: string
 }
 
-export async function bookActivity(db: Firestore, calendarId: string = "337667", { venueName, date, time, duration, title, description }: ActivityBooking): Promise<ActivityCreateResponse['activities'][0]> {
+export async function bookActivity(db: Firestore, calendarId: string = "337667", { location, date, time, duration, title, description }: ActivityBooking): Promise<ActivityCreateResponse['activities'][0]> {
     const [hh, mm] = time.split(/[:$]/)
 
     const start = addMinutes(addHours(startOfDay(parseISO(date)), parseInt(hh)), parseInt(mm))
@@ -24,7 +24,7 @@ export async function bookActivity(db: Firestore, calendarId: string = "337667",
     return bookActivityRaw(db, calendarId, {
         name: title,
         description,
-        venueName,
+        venueName: location,
         start,
         end
     })

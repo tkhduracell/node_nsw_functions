@@ -51,7 +51,7 @@ app.post('/book', async (req, res) => {
     const BookingSchema = z.object({
         title: z.string().min(3),
         description: z.string().min(3),
-        venueName: z.string().default(""),
+        location: z.string().default(""),
         date: z.string().regex(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/),
         time: z.string().regex(/[0-9][0-9]:[0-9][0-9].*/),
         duration: z.number().min(30).max(300),
