@@ -32,13 +32,19 @@
                 ></v-text-field>
 
                 <v-text-field
-                    v-model="form.description"
-                    label="Beskrivning t.ex. Namn & Tel"
+                    v-model="form.responsible"
+                    label="Ansvarig"
+                ></v-text-field>
+
+                <v-text-field
+                    v-model="form.tel"
+                    label="Telefonnummer"
                 ></v-text-field>
 
                 <v-text-field
                     v-model="form.location"
                     readonly
+                    disabled
                     label="Plats"
                 ></v-text-field>
 
@@ -51,7 +57,6 @@
                     :min="minDate"
                     text="text" title=""
                     ></v-date-picker>
-
 
                     <div class="text-caption mb-4">Dubbelkolla att ingen annan aktivitet krockar<br/>
                     <a href="https://nackswinget.se/kalender/" _target="blank">Nackswingets Kalender (nytt fönster)</a>
@@ -84,7 +89,7 @@
 
             </div>
                 <v-btn type="submit" color="primary" block height="48" @click="submit" :loading="loading"
-                    :disabled="!form.title || !form.description || !form.date || !form.duration || !form.time || !form.password">
+                    :disabled="!form.title || !form.responsible || !form.tel || !form.date || !form.duration || !form.time || !form.password">
                     Boka
                 </v-btn>
             </v-form>
@@ -106,7 +111,7 @@
     </script>
 
     <script type="module">
-        import { reactive, ref, createApp, onMounted } from 'vue'
+        import { reactive, ref, createApp, onMounted, watch } from 'vue'
         import { createVuetify, useDate } from 'vuetify'
 
         const vuetify = createVuetify()
@@ -117,16 +122,26 @@
                 const loading = ref(false)
                 const form = reactive({
                     title: 'Friträning',
-                    description: '',
+                    responsible: null,
+                    tel: null,
+                    location: 'Ceylon',
+                    password: null,
                     date: null,
                     time: null,
                     duration: null,
-                    location: 'Ceylon',
-                    password: null
                 })
+
+                const savedKeys = ['responsible', 'tel', 'password']
+                for (const key of savedKeys) {
+                    const nsKey = 'booking:' + key
+                    onMounted(() => { if (nsKey in localStorage) form[key] = localStorage.getItem(nsKey) })
+                    watch(() => form[key], value => { if(value) localStorage.setItem(nsKey, value) })
+                }
+
                 async function submit() {
                     loading.value = true
-                    const body = { ...form }
+                    const { tel,  responsible, ...values } = form
+                    const body = { ...values, description: responsible + ' - ' + tel }
                     const result = await fetch('./book', {
                         method: 'POST',
                         headers: { 'content-type': 'application/json' },
