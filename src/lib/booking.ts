@@ -1,9 +1,41 @@
 import { Firestore } from 'firebase-admin/firestore';
 import { fetchCookies } from "./calendars";
-import {addHours, startOfDay, addMinutes, format, parseISO} from 'date-fns'
+import {addHours, startOfDay, addMinutes, format, parseISO, formatISO} from 'date-fns'
 
 import { IDOActivityOptions } from '../env';
-import { ActivityCreateResponse } from './types';
+import { ActivityCreateResponse, ListedActivities } from './types';
+import { zonedTimeToUtc } from 'date-fns-tz';
+import { Protocol } from 'puppeteer';
+import { fetch } from 'cross-fetch'
+
+export async function fetchActivities(start: Date, end: Date, calendarId: string, cookies: Protocol.Network.CookieParam[]) {
+    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
+
+    const startFmt = `${formatISO(start, { representation: 'date' })}+${encodeURIComponent('00:00:00')}`
+    const endFmt = `${formatISO(end, { representation: 'date' })}+${encodeURIComponent('00:00:00')}`
+    console.log(startFmt, endFmt)
+    const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${calendarId}&startTime=${startFmt}&endTime=${endFmt}`, {
+        method: 'GET',
+        headers: {
+            "cookie": cookies.map(ck => ck.name + '=' + ck.value).join(';'),
+            "Referer": `${ACTIVITY_BASE_URL}/Calendars/View/${calendarId}`,
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "x-requested-with": "XMLHttpRequest",
+            "accept": "application/json, text/javascript, */*; q=0.01",
+        }
+    })
+
+    if (!response.ok) {
+        throw new Error(`Error response ${response.status} ${response.statusText}`, { cause: await response.text() })
+    }
+
+    const data = await response.json()
+    if (!(typeof data === 'object')) {
+        throw new Error("No json response from API:", { cause: response.statusText })
+    }
+
+    return { data: data as ListedActivities, response }
+}
 
 export type ActivityBooking = {
     location: string,
@@ -57,8 +89,8 @@ export async function bookActivityRaw(db: Firestore, calendarId: string = "33766
           shared: false,
           venue: { venueName },
           activityTypeId: '1',
-          startDateTimeString: format(start, "yyyy-LL-dd HH:mm:ss"), // '2023-11-12 17:21:00',
-          endDateTimeString: format(end, "yyyy-LL-dd HH:mm:ss"), // '2023-11-12 18:00:00',
+          startDateTimeString: format(zonedTimeToUtc(start, 'Europe/Stockholm'), "yyyy-LL-dd HH:mm:ss"), // '2023-11-12 17:21:00',
+          endDateTimeString: format(zonedTimeToUtc(end, 'Europe/Stockholm'), "yyyy-LL-dd HH:mm:ss"), // '2023-11-12 18:00:00',
           allDayActivity: false,
           name,
           description,
