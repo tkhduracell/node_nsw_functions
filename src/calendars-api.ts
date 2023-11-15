@@ -4,8 +4,11 @@ import express from 'express'
 import {join} from 'path'
 
 import { GCloudOptions } from './env'
-import { bookActivity } from './lib/booking'
+import { bookActivity, fetchActivities } from './lib/booking'
 import { getFirestore } from 'firebase-admin/firestore'
+import { fetchCookies } from './lib/calendars'
+import { addDays, differenceInMinutes, formatISO, parseISO, startOfDay } from 'date-fns'
+import { zonedTimeToUtc } from 'date-fns-tz'
 
 const app = express()
 app.use(express.json())
@@ -40,6 +43,46 @@ app.get('/', async (req, res) => {
         .pipe(res, { end: true })
 });
 
+app.get('/book/search', async (req, res) => {
+    const QuerySchema = z.object({
+        date: z.string().regex(/\d{4}-\d{2}-\d{2}/),
+        calendarId: z.enum(['337667']).default('337667')
+    })
+
+    const query = await QuerySchema.safeParseAsync(req.query)
+    if (!query.success) {
+        console.error('Invalid request', query.error.flatten().fieldErrors)
+        return res.status(400).send(JSON.stringify({
+            sucesss: false,
+            error: 'Invalid request: invalid ' + Object.keys(query.error.flatten().fieldErrors).join(',')
+        }))
+    }
+
+    const db = getFirestore()
+    const cookies = await fetchCookies(db)
+
+    const { date, calendarId } = query.data
+    const start = startOfDay(zonedTimeToUtc(parseISO(date), 'Europe/Stockholm'))
+    const end = startOfDay(addDays(start, 1))
+
+    console.log('Fetching activities', {
+        start: formatISO(start, { representation: 'date' }),
+        end: formatISO(end, { representation: 'date' })
+    })
+    const { data } = await fetchActivities(start, end, calendarId, cookies)
+    const activities = data.map(e => e.listedActivity)
+
+    const out = activities.map(({ name, startTime, endTime }) => {
+        return {
+            name,
+            startTime,
+            endTime,
+            duration: differenceInMinutes(new Date(endTime), new Date(startTime))
+        }
+    })
+
+    res.json(out)
+})
 
 app.get('/book', async (req, res) => {
    res.sendFile(join(__dirname, '..', 'static', 'booking.html'), {  })
@@ -71,12 +114,12 @@ app.post('/book', async (req, res) => {
         })
     } else {
         console.error('Invalid request', data.error.flatten().fieldErrors)
-        res.status(400).send(JSON.stringify({
+        res.status(400).json({
             sucesss: false,
             error: 'Invalid request: invalid ' + Object.keys(data.error.flatten().fieldErrors).join(',')
-        }))
+        })
     }
- });
+});
 
 
 export default app
