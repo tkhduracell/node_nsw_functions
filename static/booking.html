@@ -158,7 +158,7 @@
 
                 watch(() => form.date, async  (date) => {
                     console.info('Fetching activities', { date })
-                    const resp = await fetch('/book/search?date=' + date.toISOString())
+                    const resp = await fetch('book/search?date=' + date.toISOString())
                     if (resp.ok) {
                         const data = await resp.json()
                         console.info('Fetched activities', data)
@@ -174,7 +174,7 @@
                     loading.value = true
                     const { tel,  responsible, ...values } = form
                     const body = { ...values, description: responsible + ' - ' + tel }
-                    const result = await fetch('./book', {
+                    const result = await fetch('book', {
                         method: 'POST',
                         headers: { 'content-type': 'application/json' },
                         body: JSON.stringify(body)
