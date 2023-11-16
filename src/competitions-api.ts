@@ -1,8 +1,15 @@
 import { fetchCompetitions } from './lib/competitions'
 import z from 'zod'
 import express from 'express'
+import { initializeApp } from 'firebase-admin/app'
 
 const app = express()
+
+if (require.main === module) {
+    const port = process.env.PORT ?? 8080
+    initializeApp()
+    app.listen(port, () => console.log(`Listening on port ${port}`))
+}
 
 app.get('/', async (req, res) => {
     const classTypes = z.enum(['X', 'N', 'R', '']).default('').parse(req.query.classTypes)

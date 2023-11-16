@@ -9,10 +9,17 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { fetchCookies } from './lib/calendars'
 import { addDays, differenceInMinutes, formatISO, parseISO, startOfDay } from 'date-fns'
 import { zonedTimeToUtc } from 'date-fns-tz'
+import { initializeApp } from 'firebase-admin/app'
 
 const app = express()
-app.use(express.json())
 
+if (require.main === module) {
+    const port = process.env.PORT ?? 8080
+    initializeApp()
+    app.listen(port, () => console.log(`Listening on port ${port}`))
+}
+
+app.use(express.json())
 app.get('/', async (req, res) => {
     const {
         GCLOUD_PROJECT,
