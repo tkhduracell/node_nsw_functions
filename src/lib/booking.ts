@@ -11,9 +11,14 @@ import { fetch } from 'cross-fetch'
 export async function fetchActivities(start: Date, end: Date, calendarId: string, cookies: Protocol.Network.CookieParam[]) {
     const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
 
-    const startFmt = `${formatISO(start, { representation: 'date' })}+${encodeURIComponent('00:00:00')}`
-    const endFmt = `${formatISO(end, { representation: 'date' })}+${encodeURIComponent('00:00:00')}`
-    console.log(startFmt, endFmt)
+    const startFmt = `${formatISO(zonedTimeToUtc(start, 'Europe/Stockholm'), { representation: 'date' })}+${encodeURIComponent('00:00:00')}`
+    const endFmt = `${formatISO(zonedTimeToUtc(end, 'Europe/Stockholm'), { representation: 'date' })}+${encodeURIComponent('00:00:00')}`
+
+    console.log({
+        start, startZoned: zonedTimeToUtc(start, 'Europe/Stockholm'), startFmt,
+        end, endZoned: zonedTimeToUtc(end, 'Europe/Stockholm'), endFmt
+    })
+
     const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${calendarId}&startTime=${startFmt}&endTime=${endFmt}`, {
         method: 'GET',
         headers: {
