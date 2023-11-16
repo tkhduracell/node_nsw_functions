@@ -67,4 +67,4 @@ initializeApp({ projectId: 'nackswinget-af7ef' });
         });
     })
 
-})();
+});
