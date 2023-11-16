@@ -8,9 +8,9 @@ import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { GCloudOptions, IDOActivityOptions } from '../env'
 
+import fetch from 'cross-fetch'
 import { ICalCalendar, ICalEvent } from 'ical-generator'
 import { ListedActivities } from './types'
-import { fetchActivities } from './booking'
 
 const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
 
@@ -93,6 +93,8 @@ async function fetchCalendars(page: Page) {
 }
 
 export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore, useSavedCookies = false, cals?: { id: string, name: string }[]) {
+    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
+
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(1000 * 60 * 5);
     page.setDefaultTimeout(1000 * 60 * 1);
@@ -122,10 +124,31 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
         const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
 
-        console.log(`Fetching - ${cal.name} (${cal.id})`)
-        const {data, response} = await fetchActivities(lastquater, inayear, cal.id, cookies)
+        const start = `${lastquater.toISOString().replace(/(.*)T.*/, '$1')}+${encodeURIComponent('00:00:00')}`
+        const end = `${inayear.toISOString().replace(/(.*)T.*/, '$1')}+${encodeURIComponent('00:00:00')}`
 
-        const calendar = postprocess(response.url, data, cal)
+        console.log(`Fetching - ${cal.name} (${cal.id})`)
+        const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${cal.id}&startTime=${start}&endTime=${end}`, {
+            method: 'GET',
+            headers: {
+                "cookie": cookies.map(ck => ck.name + '=' + ck.value).join(';'),
+                "Referer": `${ACTIVITY_BASE_URL}/Calendars/View/${cal.id}`,
+                "Referrer-Policy": "strict-origin-when-cross-origin",
+                "x-requested-with": "XMLHttpRequest",
+                "accept": "application/json, text/javascript, */*; q=0.01",
+            }
+        })
+
+        if (!response.ok) {
+            throw new Error(`Error response ${response.status} ${response.statusText}`, { cause: await response.text() })
+        }
+
+        const data = await response.json()
+        if (!(typeof data === 'object')) {
+            throw new Error("No json response from API:", { cause: response.statusText })
+        }
+
+        const calendar = postprocess(response.url, data as ListedActivities, cal)
         console.log(`Processed - ${cal.name}`)
 
         const metadata = {
