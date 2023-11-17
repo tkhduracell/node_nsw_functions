@@ -1,10 +1,10 @@
 /*
-*   npx ts-node -T src/test.ts
+*   npx ts-node -T src/demo.ts
 */
 
-import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 import { launch } from 'puppeteer';
-import { calendar } from './lib/calendars'
+import { calendar, fetchCookies } from './lib/calendars'
 import { bookActivityRaw } from './lib/booking';
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
@@ -23,7 +23,7 @@ const end = startOfDay(addDays(start, 1))
 
 console.log({ start, end })
 console.log({
-    start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
+    start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss', ),
     end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
 })
 ;
@@ -46,13 +46,14 @@ console.log({
     const end = addMinutes(start, 60)
 
     const db = getFirestore()
-    const result = await bookActivityRaw(db, '337667', {
+    const cookies = await fetchCookies(db)
+    const result = await bookActivityRaw('337667', {
         name: 'Friträning',
         description: 'Filip 0702683230',
         start,
         end,
         venueName: 'Ceylon'
-    })
+    }, cookies)
 
     console.debug(JSON.stringify(result, null, 2))
     process.exit(0)

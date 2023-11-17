@@ -1,19 +1,24 @@
-import { Firestore } from 'firebase-admin/firestore';
-import { fetchCookies } from "./calendars";
-import {addHours, startOfDay, addMinutes, format, parseISO, formatISO} from 'date-fns'
+import {addHours, startOfDay, addMinutes, parseISO, addDays} from 'date-fns'
 
 import { IDOActivityOptions } from '../env';
 import { ActivityCreateResponse, ListedActivities } from './types';
-import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { formatInTimeZone } from 'date-fns-tz';
 import { Protocol } from 'puppeteer';
 import { fetch } from 'cross-fetch'
+
+
+export async function fetchActivitiesOnDate(date: string, calendarId: string, cookies: Protocol.Network.CookieParam[]) {
+    const start = startOfDay(parseISO(date))
+    const end = startOfDay(addDays(start, 1))
+    return fetchActivities(start, end, calendarId, cookies)
+}
 
 export async function fetchActivities(start: Date, end: Date, calendarId: string, cookies: Protocol.Network.CookieParam[]) {
     const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
 
     const suffix = encodeURIComponent('00:00:00')
     const startTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
-    const endTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
+    const endTime = `${formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
 
     const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
         method: 'GET',
@@ -48,7 +53,7 @@ export type ActivityBooking = {
     description: string
 }
 
-export async function bookActivity(db: Firestore, calendarId: string = "337667", { location, date, time, duration, title, description }: ActivityBooking): Promise<ActivityCreateResponse['activities'][0]> {
+export async function bookActivity(calendarId: string = "337667", { location, date, time, duration, title, description }: ActivityBooking, cookies: Protocol.Network.CookieParam[]): Promise<ActivityCreateResponse['activities'][0]> {
     const [hh, mm] = time.split(/[:$]/)
 
     const startOfDate = startOfDay(parseISO(date))
@@ -56,13 +61,13 @@ export async function bookActivity(db: Firestore, calendarId: string = "337667",
     const end = addMinutes(start, duration)
 
     console.log('Calling bookActivityRaw',  { startOfDate, start, end })
-    return bookActivityRaw(db, calendarId, {
+    return bookActivityRaw(calendarId, {
         name: title,
         description,
         venueName: location,
         start,
         end
-    })
+    }, cookies)
 }
 
 export type ActivityBookingRaw = {
@@ -74,15 +79,11 @@ export type ActivityBookingRaw = {
 
 }
 
-export async function bookActivityRaw(db: Firestore, calendarId: string = "337667", { venueName, start, end, name, description }: ActivityBookingRaw): Promise<ActivityCreateResponse['activities'][0]> {
+export async function bookActivityRaw(calendarId: string = "337667", { venueName, start, end, name, description }: ActivityBookingRaw, cookies: Protocol.Network.CookieParam[]): Promise<ActivityCreateResponse['activities'][0]> {
     const {
         ACTIVITY_ORG_ID,
         ACTIVITY_BASE_URL,
     } = IDOActivityOptions.parse(process.env)
-
-
-    const cookies = await fetchCookies(db);
-    const cookie = cookies.map(ck => ck.name + '=' + ck.value).join(';')
 
     const startDateTimeString = formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
     const endDateTimeString = formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
@@ -114,7 +115,7 @@ export async function bookActivityRaw(db: Firestore, calendarId: string = "33766
             "accept-language": "en-US,en;q=0.9,sv-SE;q=0.8,sv;q=0.7",
             "content-type": "application/json",
             "x-requested-with": "XMLHttpRequest",
-            cookie,
+            "cookie": cookies.map(ck => ck.name + '=' + ck.value).join(';'),
         },
         body: JSON.stringify(body),
         method: "POST"

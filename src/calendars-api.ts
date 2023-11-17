@@ -4,10 +4,10 @@ import express from 'express'
 import {join} from 'path'
 
 import { GCloudOptions } from './env'
-import { bookActivity, fetchActivities } from './lib/booking'
+import { bookActivity, fetchActivitiesOnDate } from './lib/booking'
 import { getFirestore } from 'firebase-admin/firestore'
 import { fetchCookies } from './lib/calendars'
-import { addDays, differenceInMinutes, formatISO, parseISO, startOfDay } from 'date-fns'
+import { differenceInMinutes } from 'date-fns'
 import { initializeApp } from 'firebase-admin/app'
 
 const app = express()
@@ -69,10 +69,7 @@ app.get('/book/search', async (req, res) => {
 
     const { date, calendarId } = query.data
 
-    const start = startOfDay(parseISO(date))
-    const end = startOfDay(addDays(start, 1))
-
-    const { data } = await fetchActivities(start, end, calendarId, cookies)
+    const { data } = await fetchActivitiesOnDate(date, calendarId, cookies)
     const activities = data.map(e => e.listedActivity)
 
     const out = activities.map(({ name, startTime, endTime }) => {
@@ -109,8 +106,10 @@ app.post('/book', async (req, res) => {
     if (data.success) {
         const { password, calendarId, ...event } = data.data
 
+        const cookies = await fetchCookies(db)
+
         console.log('Booking activity', event)
-        const { activityId } = await bookActivity(db, calendarId, event)
+        const { activityId } = await bookActivity(calendarId, event, cookies)
         res.status(200).send({
             success: true,
             id: activityId
