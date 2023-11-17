@@ -56,7 +56,7 @@ export type ActivityBooking = {
 export async function bookActivity(calendarId: string = "337667", { location, date, time, duration, title, description }: ActivityBooking, cookies: Protocol.Network.CookieParam[]): Promise<ActivityCreateResponse['activities'][0]> {
     const [hh, mm] = time.split(/[:$]/)
 
-    const startOfDate = startOfDay(parseISO(date))
+    const startOfDate = parseISO(date)
     const start = addMinutes(addHours(startOfDate, parseInt(hh)), parseInt(mm))
     const end = addMinutes(start, duration)
 
