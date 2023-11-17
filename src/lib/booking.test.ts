@@ -15,11 +15,11 @@ beforeAll(() => {
 test('should fetch activities', () => {
   jest.mocked(fetch).mockImplementationOnce(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response))
 
-  fetchActivitiesOnDate('2023-01-01', '1', [])
+  fetchActivitiesOnDate('2023-11-18T23:00:00.000Z', '1', [])
 
   const [call] = jest.mocked(fetch).mock.calls
   const [url, opts] = call
-  expect(url).toBe("http://mock.app/activities/getactivities?calendarId=1&startTime=2023-01-01+00%3A00%3A00&endTime=2023-01-02+00%3A00%3A00")
+  expect(url).toBe("http://mock.app/activities/getactivities?calendarId=1&startTime=2023-11-19+00%3A00%3A00&endTime=2023-11-20+00%3A00%3A00")
   expect(opts).toHaveProperty('method', 'GET')
 });
 

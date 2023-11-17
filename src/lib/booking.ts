@@ -8,8 +8,9 @@ import { fetch } from 'cross-fetch'
 
 
 export async function fetchActivitiesOnDate(date: string, calendarId: string, cookies: Protocol.Network.CookieParam[]) {
-    const start = startOfDay(parseISO(date))
-    const end = startOfDay(addDays(start, 1))
+    const start = parseISO(date)
+    const end = addDays(start, 1)
+    console.log('Calling fetchActivities',  { start, end })
     return fetchActivities(start, end, calendarId, cookies)
 }
 
@@ -20,6 +21,7 @@ export async function fetchActivities(start: Date, end: Date, calendarId: string
     const startTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
     const endTime = `${formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
 
+    console.log("Fetching activities", { startTime, endTime })
     const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
         method: 'GET',
         headers: {
