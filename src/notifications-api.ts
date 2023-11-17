@@ -10,7 +10,7 @@ import cors from 'cors'
 const app = express()
 
 if (require.main === module) {
-    const port = process.env.PORT ?? 3000
+    const port = process.env.PORT ?? 8080
     initializeApp()
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }

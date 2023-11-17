@@ -8,11 +8,16 @@
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css?family=Open+Sans:300,regular,500,600,700,800,300italic,italic,500italic,600italic,700italic,800italic&amp;subset=latin,latin-ext&amp;display=swap"
         type="text/css" media="all">
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/vuetify@3.4.0/dist/vuetify.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/vuetify@3.4.1/dist/vuetify.min.css">
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
-  <div id="app">
+  <div id="app" v-cloak>
     <v-app>
         <v-sheet max-width="500px" width="100%" min-height="80%" class="mx-auto pt-4 pl-4 pr-4 pb-4">
             <div class="text-h2 mb-4" v-if="showHeader">Boka friträning</div>
@@ -51,14 +56,26 @@
                 <div class="text-h4">
                     Välj Datum / Tid
                 </div>
-                <v-date-picker show-adjacent-months class="mx-auto"
+
+                <v-date-picker show-adjacent-months  width="100%"
                     v-model="form.date"
                     hide-header
                     :min="minDate"
                     text="text" title=""
-                    ></v-date-picker>
+                ></v-date-picker>
 
-                    <div class="text-caption mb-4">Dubbelkolla att ingen annan aktivitet krockar<br/>
+                <div v-if="activities" class="mb-6 ml-8">
+                    <b v-if="activities.length > 0">Andra aktiviteter denna dag<br/></b>
+                    <b v-else>✅ Inga andra aktiviteter denna dag</b>
+                    <div v-for="act in activities" class="activity">
+                        <div class="startTime">{{ act.startTime.replace(/.*T(\d\d:\d\d).*/gi, '$1') }}</div>
+                        <div class="name ml-2">{{ act.name }}</div>
+                        <div class="duration ml-2"> — {{ act.duration }} minuter</div>
+                    </div>
+                </div>
+
+                <div v-else-if="activities === false" class="mb-6">
+                    <div class="text-caption mb-4">Dubbelkolla att ingen annan aktivitet krockar<br/></div>
                     <a href="https://nackswinget.se/kalender/" _target="blank">Nackswingets Kalender (nytt fönster)</a>
                 </div>
 
@@ -87,12 +104,12 @@
                     label="Lösenord (Vårt gemensama lösenord)"
                 ></v-text-field>
 
-            </div>
                 <v-btn type="submit" color="primary" block height="48" @click="submit" :loading="loading"
                     :disabled="!form.title || !form.responsible || !form.tel || !form.date || !form.duration || !form.time || !form.password">
                     Boka
                 </v-btn>
             </v-form>
+            </div>
             <div class="text-caption mt-4">© Filip Lindqvist 2023</div>
         </v-sheet>
     </v-app>
@@ -105,7 +122,7 @@
     {
         "imports": {
             "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
-            "vuetify": "https://unpkg.com/vuetify@3.4.0/dist/vuetify.esm.js"
+            "vuetify": "https://unpkg.com/vuetify@3.4.1/dist/vuetify.esm.js"
         }
     }
     </script>
@@ -120,6 +137,7 @@
             setup() {
                 const date = useDate()
                 const loading = ref(false)
+                const activities = ref()
                 const form = reactive({
                     title: 'Friträning',
                     responsible: null,
@@ -138,11 +156,25 @@
                     watch(() => form[key], value => { if(value) localStorage.setItem(nsKey, value) })
                 }
 
+                watch(() => form.date, async  (date) => {
+                    console.info('Fetching activities', { date })
+                    const resp = await fetch('book/search?date=' + date.toISOString())
+                    if (resp.ok) {
+                        const data = await resp.json()
+                        console.info('Fetched activities', data)
+                        activities.value = data
+                    } else {
+                        activities.value = false
+                        const {url, status, statusText} = resp
+                        console.warn('Failed to fetch activities', {url, status, statusText})
+                    }
+                })
+
                 async function submit() {
                     loading.value = true
                     const { tel,  responsible, ...values } = form
                     const body = { ...values, description: responsible + ' - ' + tel }
-                    const result = await fetch('./book', {
+                    const result = await fetch('book', {
                         method: 'POST',
                         headers: { 'content-type': 'application/json' },
                         body: JSON.stringify(body)
@@ -162,6 +194,7 @@
                     showHeader: !document.location.search.includes('no-header'),
                     minDate: date.addDays(date.startOfDay(date.date()), 1),
                     loading,
+                    activities,
                     submit
                 }
             }
@@ -178,6 +211,7 @@
             font-family: 'Open Sans',Helvetica,Arial,Lucida,sans-serif;
             margin: 0 !important;
         }
+        .activity div { display: inline-block }
     </style>
 </body>
 

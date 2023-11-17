@@ -1,9 +1,42 @@
 import { Firestore } from 'firebase-admin/firestore';
 import { fetchCookies } from "./calendars";
-import {addHours, startOfDay, addMinutes, format, parseISO} from 'date-fns'
+import {addHours, startOfDay, addMinutes, format, parseISO, formatISO} from 'date-fns'
 
 import { IDOActivityOptions } from '../env';
-import { ActivityCreateResponse } from './types';
+import { ActivityCreateResponse, ListedActivities } from './types';
+import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { Protocol } from 'puppeteer';
+import { fetch } from 'cross-fetch'
+
+export async function fetchActivities(start: Date, end: Date, calendarId: string, cookies: Protocol.Network.CookieParam[]) {
+    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
+
+    const suffix = encodeURIComponent('00:00:00')
+    const startTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
+    const endTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
+
+    const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
+        method: 'GET',
+        headers: {
+            "cookie": cookies.map(ck => ck.name + '=' + ck.value).join(';'),
+            "Referer": `${ACTIVITY_BASE_URL}/Calendars/View/${calendarId}`,
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "x-requested-with": "XMLHttpRequest",
+            "accept": "application/json, text/javascript, */*; q=0.01",
+        }
+    })
+
+    if (!response.ok) {
+        throw new Error(`Error response ${response.status} ${response.statusText}`, { cause: await response.text() })
+    }
+
+    const data = await response.json()
+    if (!(typeof data === 'object')) {
+        throw new Error("No json response from API:", { cause: response.statusText })
+    }
+
+    return { data: data as ListedActivities, response }
+}
 
 export type ActivityBooking = {
     location: string,
@@ -18,9 +51,11 @@ export type ActivityBooking = {
 export async function bookActivity(db: Firestore, calendarId: string = "337667", { location, date, time, duration, title, description }: ActivityBooking): Promise<ActivityCreateResponse['activities'][0]> {
     const [hh, mm] = time.split(/[:$]/)
 
-    const start = addMinutes(addHours(startOfDay(parseISO(date)), parseInt(hh)), parseInt(mm))
+    const startOfDate = startOfDay(parseISO(date))
+    const start = addMinutes(addHours(startOfDate, parseInt(hh)), parseInt(mm))
     const end = addMinutes(start, duration)
 
+    console.log('Calling bookActivityRaw',  { startOfDate, start, end })
     return bookActivityRaw(db, calendarId, {
         name: title,
         description,
@@ -49,6 +84,9 @@ export async function bookActivityRaw(db: Firestore, calendarId: string = "33766
     const cookies = await fetchCookies(db);
     const cookie = cookies.map(ck => ck.name + '=' + ck.value).join(';')
 
+    const startDateTimeString = formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
+    const endDateTimeString = formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
+
     const body = {
         activity: {
           calendarId,
@@ -57,8 +95,8 @@ export async function bookActivityRaw(db: Firestore, calendarId: string = "33766
           shared: false,
           venue: { venueName },
           activityTypeId: '1',
-          startDateTimeString: format(start, "yyyy-LL-dd HH:mm:ss"), // '2023-11-12 17:21:00',
-          endDateTimeString: format(end, "yyyy-LL-dd HH:mm:ss"), // '2023-11-12 18:00:00',
+          startDateTimeString, // '2023-11-12 17:21:00',
+          endDateTimeString, // '2023-11-12 18:00:00',
           allDayActivity: false,
           name,
           description,
@@ -66,6 +104,7 @@ export async function bookActivityRaw(db: Firestore, calendarId: string = "33766
         },
         reSendSummon: false,
     }
+    console.info('Boking activity', body.activity)
 
     const result = await fetch(`${ACTIVITY_BASE_URL}/Activities/SaveActivity`, {
         "headers": {

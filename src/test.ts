@@ -2,18 +2,31 @@
 *   npx ts-node -T src/test.ts
 */
 
+import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
 import { launch } from 'puppeteer';
 import { calendar } from './lib/calendars'
 import { bookActivityRaw } from './lib/booking';
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore';
-import { addMinutes, formatDistanceStrict, parseISO } from 'date-fns';
+import { addDays, addMinutes, formatDistanceStrict, formatISO, formatISO9075, parseISO, startOfDay } from 'date-fns';
 
 config();
 
 initializeApp({ projectId: 'nackswinget-af7ef' });
 
+const time = '23:45';
+const date = '2023-11-18T23:00:00.000Z';
+
+const start = startOfDay(parseISO(date))
+const end = startOfDay(addDays(start, 1))
+
+console.log({ start, end })
+console.log({
+    start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
+    end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
+})
+;
 (async () => {
 
     const browser = await launch({ headless: false });
@@ -67,4 +80,4 @@ initializeApp({ projectId: 'nackswinget-af7ef' });
         });
     })
 
-})();
+});

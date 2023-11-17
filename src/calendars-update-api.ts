@@ -6,8 +6,15 @@ import { getFirestore } from 'firebase-admin/firestore'
 
 import { Browser, TimeoutError, launch } from 'puppeteer'
 import express from 'express'
+import { initializeApp } from 'firebase-admin/app'
 
 const app = express()
+
+if (require.main === module) {
+    const port = process.env.PORT ?? 8080
+    initializeApp()
+    app.listen(port, () => console.log(`Listening on port ${port}`))
+}
 
 app.post('/update', async (req, res) => {
     const {
