@@ -4,7 +4,7 @@ import { GCloudOptions } from './env'
 import { calendar } from './lib/calendars'
 import { getFirestore } from 'firebase-admin/firestore'
 
-import { Browser, TimeoutError, launch } from 'puppeteer'
+import { Browser, launch } from 'puppeteer'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
 

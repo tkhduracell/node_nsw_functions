@@ -1,5 +1,5 @@
 import { writeFile as _writeFile } from 'fs'
-import { Browser, Page, Protocol } from 'puppeteer'
+import { Browser, Page } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
 import { FieldValue, Firestore } from 'firebase-admin/firestore'
@@ -11,6 +11,7 @@ import { GCloudOptions, IDOActivityOptions } from '../env'
 import { ICalCalendar, ICalEvent } from 'ical-generator'
 import { ListedActivities } from './types'
 import { fetchActivities } from './booking'
+import { fetchCookies } from './cookies'
 
 const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
 
@@ -48,24 +49,6 @@ export async function login(browser: Browser, db?: Firestore) {
         .doc(`org-${ACTIVITY_ORG_ID}`)
         .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
     }
-
-    return cookies
-}
-
-export async function fetchCookies(db: Firestore) {
-    const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
-
-    const document = await db.collection('browser')
-        .doc(`org-${ACTIVITY_ORG_ID}`)
-        .get()
-
-    if (!document.exists) {
-        console.warn('No cookies in database')
-    }
-
-    const { data: cookies } = document.data()! as { data: Protocol.Network.CookieParam[] }
-
-    console.info(`Restored ${cookies.length} cookies`)
 
     return cookies
 }

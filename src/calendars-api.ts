@@ -6,7 +6,7 @@ import {join} from 'path'
 import { GCloudOptions } from './env'
 import { bookActivity, fetchActivitiesOnDate } from './lib/booking'
 import { getFirestore } from 'firebase-admin/firestore'
-import { fetchCookies } from './lib/calendars'
+import { fetchCookies } from './lib/cookies'
 import { differenceInMinutes } from 'date-fns'
 import { initializeApp } from 'firebase-admin/app'
 
