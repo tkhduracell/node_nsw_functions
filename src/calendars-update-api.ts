@@ -29,7 +29,7 @@ app.post('/update', async (req, res) => {
     }
 
     const db = getFirestore()
-    const browser = await launch({ headless: 'new' });
+    const browser = await launch({ headless: 'new', protocolTimeout: 240_000 });
 
     try {
         await calendar(browser, bucket, db, false)
@@ -57,7 +57,7 @@ app.post('/update-lean', async (req, res) => {
     }
 
     const db = getFirestore()
-    const browser = await launch({ headless: 'new' });
+    const browser = await launch({ headless: 'new', protocolTimeout: 240_000 });
     try {
         await calendar(browser, bucket, db, true)
     } catch (err) {
