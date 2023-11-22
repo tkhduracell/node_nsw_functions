@@ -4,12 +4,13 @@
 
 import { formatInTimeZone } from 'date-fns-tz';
 import { launch } from 'puppeteer';
-import { calendar, fetchCookies } from './lib/calendars'
+import { calendar } from './lib/calendars'
 import { bookActivityRaw } from './lib/booking';
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore';
-import { addDays, addMinutes, formatDistanceStrict, formatISO, formatISO9075, parseISO, startOfDay } from 'date-fns';
+import { addDays, addMinutes, formatDistanceStrict, parseISO, startOfDay } from 'date-fns';
+import { fetchCookies } from './lib/cookies';
 
 config();
 
