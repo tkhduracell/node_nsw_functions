@@ -14,7 +14,7 @@
     "dev:calendars-api": "node --loader ts-node/esm --inspect src/calendars-api.ts",
     "dev:calendars-update-api": "node --loader ts-node/esm --inspect src/calendars-update-api.ts",
     "dev:notifications-api": "node --loader ts-node/esm --inspect src/notifications-api.ts",
-    "dev": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
+    "dev:index": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
     "dev-napi": "node --loader ts-node/esm --inspect src/notifications-api.ts",
     "clean": "rm -rf dist"
   },
