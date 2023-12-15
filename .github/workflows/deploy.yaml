@@ -197,7 +197,7 @@ jobs:
             --source=. \
             --entry-point=calendars-update-api \
             --trigger-http \
-            --memory=4GiB \
+            --memory=1GiB \
             --max-instances=2 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
