@@ -31,15 +31,17 @@ app.post('/update', async (req, res) => {
     const db = getFirestore()
     const browser = await launch({ headless: 'new', protocolTimeout: 240_000 });
 
+    await tryClosePages(browser)
+
     try {
         await calendar(browser, bucket, db, false)
     } catch (err) {
         console.error(err)
         await dumpScreenshots(browser, bucket, 'update')
         throw new Error("Error in /update", { cause: err })
+    } finally {
+        await browser.close()
     }
-
-    await browser.close()
 
     res.sendStatus(200)
 });
@@ -58,15 +60,18 @@ app.post('/update-lean', async (req, res) => {
 
     const db = getFirestore()
     const browser = await launch({ headless: 'new', protocolTimeout: 240_000 });
+
+    await tryClosePages(browser)
+
     try {
         await calendar(browser, bucket, db, true)
     } catch (err) {
         console.error(err)
         await dumpScreenshots(browser, bucket, 'update-lean')
         throw new Error("Error in /update-lean", { cause: err })
+    } finally {
+        await browser.close()
     }
-
-    await browser.close()
 
     res.sendStatus(200)
 });
@@ -84,5 +89,15 @@ async function dumpScreenshots(browser: Browser, bucket: Bucket, prefix: string)
         const file = bucket.file(imageName)
         console.info('Writing error screenshot to', file.publicUrl())
         await file.save(img, { contentType: 'image/png' })
+    }
+}
+
+async function tryClosePages(browser: Browser): Promise<void> {
+    try {
+        while ((await browser.pages()).length > 0) {
+            (await browser.pages())[0].close()
+        }
+    } catch (error) {
+        console.warn('Failed to close pages')
     }
 }

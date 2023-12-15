@@ -50,6 +50,8 @@ export async function login(browser: Browser, db?: Firestore) {
         .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
     }
 
+    await page.close()
+
     return cookies
 }
 
@@ -76,12 +78,6 @@ async function fetchCalendars(page: Page) {
 }
 
 export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore, useSavedCookies = false, cals?: { id: string, name: string }[]) {
-    const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(1000 * 60 * 5);
-    page.setDefaultTimeout(1000 * 60 * 1);
-
-    await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
-
     let cookies = null
     if (db && useSavedCookies) {
         console.log('Fetching previous cookies')
@@ -90,6 +86,12 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         console.log('Logging in')
         cookies = await login(browser, db)
     }
+
+    const page = await browser.newPage();
+    page.setDefaultNavigationTimeout(1000 * 60 * 5);
+    page.setDefaultTimeout(1000 * 60 * 1);
+
+    await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
     if (!cals || cals.length === 0) {
         console.log('Restroing old cookies')
