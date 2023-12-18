@@ -12,22 +12,36 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { addDays, addMinutes, formatDistanceStrict, parseISO, startOfDay } from 'date-fns';
 import { fetchCookies } from './lib/cookies';
 import { launchBrowser } from './calendars-update-api';
+import { orderBy } from 'lodash';
 
 config();
 
 initializeApp({ projectId: 'nackswinget-af7ef' });
 
-const date = '2023-11-18T23:00:00.000Z';
 
-const start = startOfDay(parseISO(date))
-const end = startOfDay(addDays(start, 1))
+(async () => {
+    const date = '2023-11-18T23:00:00.000Z';
 
-console.log({ start, end })
-console.log({
-    start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss', ),
-    end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
-})
-;
+    const start = startOfDay(parseISO(date))
+    const end = startOfDay(addDays(start, 1))
+
+    console.log({ start, end })
+    console.log({
+        start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss', ),
+        end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
+    })
+});
+
+(async () => {
+    const db = getFirestore()
+    const cookies = await fetchCookies(db)
+
+    for (const cookie of orderBy(cookies, c => c.expires)) {
+        if ((cookie as any).session) continue
+        console.log(new Date((cookie.expires ?? 0) * 1000), cookie.name, cookie.value)
+    }
+
+})();
 
 (async () => {
 
@@ -42,7 +56,7 @@ console.log({
     }
 
     process.exit(0)
-})();
+});
 
 (async () => {
 
