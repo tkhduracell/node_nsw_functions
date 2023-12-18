@@ -18,9 +18,6 @@ if (require.main === module) {
 
 export async function launchBrowser() {
     const args = [
-        '--no-sandbox',
-        '--no-zygote',
-        '--single-process',
         '--disable-setuid-sandbox',
         '--disable-infobars',
         '--no-first-run',
@@ -30,7 +27,7 @@ export async function launchBrowser() {
         '--disable-notifications',
         '--disable-extensions',
         '--mute-audio',
-        '--force-gpu-mem-available-mb=512'
+        '--force-gpu-mem-available-mb=500'
     ]
     return await launch({
         headless: 'new',

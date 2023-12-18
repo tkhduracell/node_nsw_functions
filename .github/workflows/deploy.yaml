@@ -234,7 +234,7 @@ jobs:
             --source=. \
             --entry-point=calendars-update-api \
             --trigger-http \
-            --memory=2GiB \
+            --memory=1GiB \
             --max-instances=1 \
             --concurrency=1 \
             --allow-unauthenticated \
