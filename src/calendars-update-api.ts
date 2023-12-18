@@ -16,12 +16,39 @@ if (require.main === module) {
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
 
-export async function launchBrowser() {
+export async function launchBrowser(width?: number, height?: number) {
+    const args = [
+        '--no-sandbox',
+        '--no-zygote',
+        '--single-process',
+        '--disable-setuid-sandbox',
+        '--disable-infobars',
+        '--no-first-run',
+        `--window-size=${width || 1280},${height || 800}`,
+        '--window-position=0,0',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
+        '--hide-scrollbars',
+        '--disable-notifications',
+        '--disable-extensions',
+        '--force-color-profile=srgb',
+        '--mute-audio',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-breakpad',
+        '--disable-component-extensions-with-background-pages',
+        '--disable-features=TranslateUI,BlinkGenPropertyTrees,IsolateOrigins,site-per-process',
+        '--disable-ipc-flooding-protection',
+        '--disable-renderer-backgrounding',
+        '--enable-features=NetworkService,NetworkServiceInProcess'
+    ]
     return await launch({
         headless: 'new',
         timeout: 180_000,
         protocolTimeout: 240_000,
-        args: [`--js-flags="--max_old_space_size=500" --disable-gl-drawing-for-tests`]
+        devtools: false,
+        args: [...args, `--js-flags="--max-old-space-size=500"`]
     });
 }
 
