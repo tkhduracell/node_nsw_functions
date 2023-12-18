@@ -16,6 +16,14 @@ if (require.main === module) {
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
 
+async function launchBrowser() {
+    return await launch({
+        headless: 'new',
+        timeout: 180_000,
+        protocolTimeout: 240_000
+    });
+}
+
 app.post('/update', async (req, res) => {
     const {
         GCLOUD_PROJECT,
@@ -29,7 +37,7 @@ app.post('/update', async (req, res) => {
     }
 
     const db = getFirestore()
-    const browser = await launch({ headless: 'new', protocolTimeout: 240_000 });
+    const browser = await launchBrowser()
 
     await tryClosePages(browser)
 
@@ -59,7 +67,7 @@ app.post('/update-lean', async (req, res) => {
     }
 
     const db = getFirestore()
-    const browser = await launch({ headless: 'new', protocolTimeout: 240_000 });
+    const browser = await launchBrowser()
 
     await tryClosePages(browser)
 
