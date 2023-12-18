@@ -16,11 +16,12 @@ if (require.main === module) {
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
 
-async function launchBrowser() {
+export async function launchBrowser() {
     return await launch({
-        headless: true,
+        headless: 'new',
         timeout: 180_000,
-        protocolTimeout: 240_000
+        protocolTimeout: 240_000,
+        args: [`--js-flags="--max_old_space_size=500" --disable-gl-drawing-for-tests`]
     });
 }
 
