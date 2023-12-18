@@ -65,11 +65,15 @@ app.post('/update', async (req, res) => {
     }
 
     const db = getFirestore()
+
+    console.log('Launching browser')
     const browser = await launchBrowser()
 
+    console.log('Closing pages')
     await tryClosePages(browser)
 
     try {
+        console.log('Updating calendar')
         await calendar(browser, bucket, db, false)
     } catch (err) {
         console.error(err)

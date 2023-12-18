@@ -101,12 +101,11 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         cals = await fetchCalendars(page)
     }
 
+    const today = new Date()
+    const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
+    const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
+
     for (const cal of cals) {
-
-        const today = new Date()
-        const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
-        const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
-
         console.log(`Fetching - ${cal.name} (${cal.id})`)
         const {data, response} = await fetchActivities(lastquater, inayear, cal.id, cookies)
 
