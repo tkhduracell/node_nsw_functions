@@ -4,19 +4,19 @@
 
 import { formatInTimeZone } from 'date-fns-tz';
 import { launch } from 'puppeteer';
-import { calendar } from './lib/calendars'
+import { calendar, login } from './lib/calendars'
 import { bookActivityRaw } from './lib/booking';
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore';
 import { addDays, addMinutes, formatDistanceStrict, parseISO, startOfDay } from 'date-fns';
 import { fetchCookies } from './lib/cookies';
+import { launchBrowser } from './calendars-update-api';
 
 config();
 
 initializeApp({ projectId: 'nackswinget-af7ef' });
 
-const time = '23:45';
 const date = '2023-11-18T23:00:00.000Z';
 
 const start = startOfDay(parseISO(date))
@@ -28,6 +28,22 @@ console.log({
     end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
 })
 ;
+
+(async () => {
+
+    const browser = await launchBrowser();
+    const db = getFirestore()
+    try {
+        await login(browser, db)
+    } catch (err) {
+        console.error(err)
+    } finally {
+        await browser.close()
+    }
+
+    process.exit(0)
+})();
+
 (async () => {
 
     const browser = await launch({ headless: false });
