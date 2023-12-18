@@ -15,7 +15,7 @@ import { fetchCookies } from './cookies'
 
 const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
 
-export async function login(browser: Browser, db?: Firestore) {
+export async function login(browser: Browser, db: Firestore) {
     const {
         ACTIVITY_ORG_ID,
         ACTIVITY_BASE_URL,
@@ -44,11 +44,9 @@ export async function login(browser: Browser, db?: Firestore) {
 
     const cookies = await page.cookies()
 
-    if (db) {
-        await db.collection('browser')
+    await db.collection('browser')
         .doc(`org-${ACTIVITY_ORG_ID}`)
         .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
-    }
 
     await page.close()
 
@@ -105,7 +103,7 @@ export async function updateLean(bucket: Bucket, db: Firestore) {
         const cals = await fetchPreviousCalendars(db)
         await updateCalendarContent(cals, cookies, bucket, db)
 
-    } catch (err){
+    } catch (err) {
         throw new Error("Unable to do a lean update", { cause: err })
     }
 }
