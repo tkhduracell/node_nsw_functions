@@ -117,8 +117,16 @@ async function dumpScreenshots(browser: Browser, bucket: Bucket, prefix: string)
         const img = await page.screenshot({ fullPage: true, type: 'png'  })
         const imageName = `errors/${prefix}/${date.toISOString()}-page-${i++}.png`
         const file = bucket.file(imageName)
-        console.info('Writing error screenshot to', file.publicUrl())
+
+        console.info('Writing error screenshot ' + i + ' to ' + file.cloudStorageURI)
         await file.save(img, { contentType: 'image/png' })
+
+        const [url] = await file.getSignedUrl({
+            version: 'v4',
+            action: 'read',
+            expires: Date.now() + 3600 * 1000,
+        })
+        console.info('Screenshot uploaded:', url)
     }
 }
 
