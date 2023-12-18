@@ -30,7 +30,7 @@ export async function launchBrowser() {
         '--disable-notifications',
         '--disable-extensions',
         '--mute-audio',
-        '--force-gpu-mem-available-mb=1024'
+        '--force-gpu-mem-available-mb=512'
     ]
     return await launch({
         headless: 'new',
