@@ -223,3 +223,7 @@ jobs:
             --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update-lean \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description "calendars-update-api: Lean update NSW GCS .ics files (5m)"
+
+      - name: Trigger update
+        run: |
+          curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update
