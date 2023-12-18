@@ -59,7 +59,7 @@ app.post('/update', async (req, res) => {
     const browser = await launchBrowser()
 
     console.log('Closing pages')
-    // await tryClosePages(browser)
+    await tryClosePages(browser)
 
     try {
         console.log('Updating calendar')
@@ -90,7 +90,8 @@ app.post('/update-lean', async (req, res) => {
     const db = getFirestore()
     const browser = await launchBrowser()
 
-    // await tryClosePages(browser)
+    console.log('Closing pages')
+    await tryClosePages(browser)
 
     try {
         await calendar(browser, bucket, db, true)
@@ -123,8 +124,12 @@ async function dumpScreenshots(browser: Browser, bucket: Bucket, prefix: string)
 
 async function tryClosePages(browser: Browser): Promise<void> {
     try {
-        while ((await browser.pages()).length > 0) {
+        let i = 0
+        while ((await browser.pages()).length > 0 && i++ < 5) {
             (await browser.pages())[0].close()
+        }
+        if (i >= 5) {
+            console.warn('Closed pages 5 times, giving up')
         }
     } catch (error) {
         console.warn('Failed to close pages')
