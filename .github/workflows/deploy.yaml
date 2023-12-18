@@ -188,6 +188,16 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
+      - name: Update scheduler calendar-update-lean-5m
+        run: |
+          gcloud scheduler jobs update http calendar-update-lean-5m \
+            --schedule "*/5 0-1,7-23 * * *" \
+            --time-zone "Europe/Stockholm" \
+            --http-method POST \
+            --uri $(gcloud functions describe calendars-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update \
+            --location ${GCLOUD_SCHEDULER_REGION} \
+            --description "calendars-api: Lean update NSW GCS .ics files (5m)"
+
   deploy-calendar-update-api:
     runs-on: ubuntu-latest
     needs: 'build'
@@ -239,7 +249,7 @@ jobs:
             --concurrency=1 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendars-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
       - name: Trigger update
         run: |
@@ -254,13 +264,3 @@ jobs:
             --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")/update \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description "calendars-update-api: Update NSW GCS .ics files (30m)"
-
-      - name: Update scheduler calendar-update-lean-5m
-        run: |
-          gcloud scheduler jobs update http calendar-update-lean-5m \
-            --schedule "*/5 0-1,7-23 * * *" \
-            --time-zone "Europe/Stockholm" \
-            --http-method POST \
-            --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update-lean \
-            --location ${GCLOUD_SCHEDULER_REGION} \
-            --description "calendars-update-api: Lean update NSW GCS .ics files (5m)"

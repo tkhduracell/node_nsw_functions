@@ -2,7 +2,7 @@ import { Firestore } from "firebase-admin/firestore"
 import { IDOActivityOptions } from "../env"
 import { Protocol } from "puppeteer"
 
-export async function fetchCookies(db: Firestore) {
+export async function fetchCookies(db: Firestore): Promise<Protocol.Network.CookieParam[]> {
     const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
     const document = await db.collection('browser')
@@ -10,10 +10,14 @@ export async function fetchCookies(db: Firestore) {
         .get()
 
     if (!document.exists) {
-        console.warn('No cookies in database')
+        throw new Error('No cookies in database')
     }
 
-    const { data: cookies } = document.data()! as { data: Protocol.Network.CookieParam[] }
+    const data = document.data()! as { data: Protocol.Network.CookieParam[] }
 
-    return cookies
+    if ('data' in data) {
+        return data.data
+    }
+
+    throw new Error('No cookies in database')
 }

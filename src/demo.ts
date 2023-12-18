@@ -4,7 +4,7 @@
 
 import { formatInTimeZone } from 'date-fns-tz';
 import { launch } from 'puppeteer';
-import { calendar, login } from './lib/calendars'
+import { login } from './lib/calendars'
 import { bookActivityRaw } from './lib/booking';
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
@@ -43,19 +43,6 @@ console.log({
 
     process.exit(0)
 })();
-
-(async () => {
-
-    const browser = await launch({ headless: false });
-    const db = getFirestore()
-
-    await calendar(browser, undefined, db, true, [
-        { name: 'Friträning', id: '337667' }
-    ])
-    await browser.close()
-
-    process.exit(0)
-});
 
 (async () => {
 

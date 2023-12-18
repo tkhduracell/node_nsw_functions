@@ -2,7 +2,7 @@ import { Storage } from '@google-cloud/storage'
 import z from 'zod'
 import express from 'express'
 import {join} from 'path'
-
+import { updateLean } from './lib/calendars'
 import { GCloudOptions } from './env'
 import { bookActivity, fetchActivitiesOnDate } from './lib/booking'
 import { getFirestore } from 'firebase-admin/firestore'
@@ -47,6 +47,24 @@ app.get('/', async (req, res) => {
         .file(`cal_${id}.ics`)
         .createReadStream()
         .pipe(res, { end: true })
+});
+
+app.post('/update', async (req, res) => {
+    const {
+        GCLOUD_PROJECT,
+        GCLOUD_BUCKET,
+    } = GCloudOptions.parse(process.env)
+    const storage = new Storage({ projectId: GCLOUD_PROJECT });
+    const bucket = storage.bucket(GCLOUD_BUCKET)
+    const db = getFirestore()
+
+    try {
+        await updateLean(bucket, db)
+    } catch (err) {
+        throw new Error("Error in " + req.url, { cause: err })
+    }
+
+    res.status(200).end()
 });
 
 app.get('/book/search', async (req, res) => {

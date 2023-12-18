@@ -1,5 +1,5 @@
 import { writeFile as _writeFile } from 'fs'
-import { Browser, Page } from 'puppeteer'
+import { Browser, Page, Protocol } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
 import { FieldValue, Firestore } from 'firebase-admin/firestore'
@@ -77,15 +77,8 @@ async function fetchCalendars(page: Page) {
     return Promise.all(calendars)
 }
 
-export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore, useSavedCookies = false, cals?: { id: string, name: string }[]) {
-    let cookies = null
-    if (db && useSavedCookies) {
-        console.log('Fetching previous cookies')
-        cookies = await fetchCookies(db)
-    } else {
-        console.log('Logging in')
-        cookies = await login(browser, db)
-    }
+export async function update(browser: Browser, bucket: Bucket, db: Firestore) {
+    const cookies = await login(browser, db)
 
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(1000 * 60 * 5);
@@ -93,13 +86,32 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
 
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-    if (!cals || cals.length === 0) {
-        console.log('Restroing old cookies')
-        page.setCookie(...cookies)
+    console.log('Restroing old cookies')
+    page.setCookie(...cookies)
 
-        console.log('Finding calendars')
-        cals = await fetchCalendars(page)
+    console.log('Finding calendars')
+    const cals = await fetchCalendars(page)
+
+    await updateCalendarContent(cals, cookies, bucket, db)
+}
+
+type Calendars = { id: string, name: string }[]
+
+export async function updateLean(bucket: Bucket, db: Firestore) {
+    try {
+        console.log('Fetching previous cookies')
+        const cookies = await fetchCookies(db)
+
+        const cals = await fetchPreviousCalendars(db)
+        await updateCalendarContent(cals, cookies, bucket, db)
+
+    } catch (err){
+        throw new Error("Unable to do a lean update", { cause: err })
     }
+}
+
+async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
+    const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
     const today = new Date()
     const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
@@ -112,86 +124,106 @@ export async function calendar(browser: Browser, bucket?: Bucket, db?: Firestore
         const calendar = postprocess(response.url, data, cal)
         console.log(`Processed - ${cal.name}`)
 
-        const metadata = {
+        const metadata: CalendarMetadata = {
             calendar_name: cal.name,
             calendar_id: cal.id,
+            calendar_org_id: ACTIVITY_ORG_ID,
             calendar_last_uid: '',
             calendar_last_date: '',
-            last_notifications: [] as (Awaited<ReturnType<typeof notifyNewEvent>> & { at: string })[],
-            updated_at: FieldValue.serverTimestamp()
+            last_notifications: [],
+            updated_at: FieldValue.serverTimestamp() as unknown as Date
         }
 
-        if (db) {
-            const previous = await db.collection('calendars')
-                .doc(cal.id ?? '')
-                .get()
-                .then(d => d.data())
-            const calendar_last_date = previous?.calendar_last_date
-            const calendar_last_uid = previous?.calendar_last_uid
-            const last_notifications = previous?.last_notifications
+        const previous = await db.collection('calendars')
+            .doc(cal.id ?? '')
+            .get()
+            .then(d => d.data())
+        const calendar_last_date = previous?.calendar_last_date
+        const calendar_last_uid = previous?.calendar_last_uid
+        const last_notifications = previous?.last_notifications
 
-            const newEvents = sortBy(calendar.events(), e => e.uid())
-                .filter(e => e.start() >= new Date()) // Must be in future
-                .filter(e => e.start() < addDays(new Date(), 6)) // No more than 6 days ahead
-                .filter(e => e.uid() > calendar_last_uid) // Larger than last uid
+        const newEvents = sortBy(calendar.events(), e => e.uid())
+            .filter(e => e.start() >= new Date()) // Must be in future
+            .filter(e => e.start() < addDays(new Date(), 6)) // No more than 6 days ahead
+            .filter(e => e.uid() > calendar_last_uid) // Larger than last uid
 
-            const newEvent = newEvents.find(e => true) // Take first
+        const newEvent = newEvents.find(e => true) // Take first
 
-            console.log(
-                'Found', newEvents.length,
-                JSON.stringify({
-                    calendar_last_date,
-                    calendar_last_uid,
-                    next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
-                    next_events: newEvents,
-                }))
-            if (newEvent) {
-                const eventNotifiation = await notifyNewEvent(newEvent, cal.id, cal.name)
-                metadata.calendar_last_date = newEvent.start() as string
-                metadata.calendar_last_uid = newEvent.uid()
-                const notification = {
-                    at: new Date().toISOString(),
-                    id: newEvent.id(),
-                    start: newEvent.start(),
-                    desc: newEvent.description(),
-                    notification: eventNotifiation
-                }
-                metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
+        console.log(
+            'Found', newEvents.length,
+            JSON.stringify({
+                calendar_last_date,
+                calendar_last_uid,
+                next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
+                next_events: newEvents,
+            }))
 
-                await db.collection('calendars')
-                    .doc(cal.id ?? '')
-                    .set(metadata, { merge: true })
-            } else {
-                console.warn("No next event found")
-
-                await db.collection('calendars')
-                    .doc(cal.id ?? '')
-                    .set({ updated_at: FieldValue.serverTimestamp()}, { merge: true })
+        if (newEvent) {
+            const eventNotifiation = await notifyNewEvent(newEvent, cal.id, cal.name)
+            metadata.calendar_last_date = newEvent.start() as string
+            metadata.calendar_last_uid = newEvent.uid()
+            const notification = {
+                at: new Date().toISOString(),
+                id: newEvent.id(),
+                start: newEvent.start(),
+                desc: newEvent.description(),
+                notification: eventNotifiation
             }
+            metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
+
+            await db.collection('calendars')
+                .doc(cal.id ?? '')
+                .set(metadata, { merge: true })
+        } else {
+            console.warn("No next event found")
+
+            await db.collection('calendars')
+                .doc(cal.id ?? '')
+                .set({ updated_at: FieldValue.serverTimestamp()}, { merge: true })
         }
 
-        if (bucket) {
-            const {
-                GCLOUD_FUNCITON_GET_URL
-            } = GCloudOptions.parse(process.env)
-
-            const destination = `cal_${cal.id}.ics`
-            const calendar_self = GCLOUD_FUNCITON_GET_URL ?
-                `webcal://${GCLOUD_FUNCITON_GET_URL.replace(/https:\/\//gi, '')}?id=${cal.id}` : undefined
-
-            console.log(`Uploading - ${cal.name} (${cal.id}) to ${bucket.cloudStorageURI}/${destination}`)
-            await bucket.file(destination)
-                .save(calendar.toString(), { metadata: { metadata: { ...metadata, calendar_self  } }})
-        }
+        const destination = `cal_${cal.id}.ics`
+        const file = bucket.file(destination)
+        console.log(`Uploading - ${cal.name} (${cal.id}) to ${file.cloudStorageURI}`)
+        await file
+            .save(calendar.toString(), { metadata: { metadata }})
     }
 
-    if (bucket) {
-        const [files] = await bucket.getFiles({ prefix: 'cal_' })
-        const metadatas = await Promise.all(files.map(f => f.getMetadata()))
-        const data = metadatas.map(([{ metadata }]) => mapKeys(metadata, (_, k) => k.replace('calendar_', '')))
-        const payload = JSON.stringify(data, null, 2)
-        await bucket.file('index.json').save(payload)
+    const [files] = await bucket.getFiles({ prefix: 'cal_' })
+    const metadatas = await Promise.all(files.map(f => f.getMetadata()))
+    const data = metadatas.map(([{ metadata }]) => mapKeys(metadata, (_, k) => k.replace('calendar_', '')))
+    const payload = JSON.stringify(data, null, 2)
+    await bucket.file('index.json').save(payload)
+}
+
+type CalendarMetadata = {
+    calendar_id: string;
+    calendar_last_date: string;
+    calendar_last_uid: string;
+    calendar_name: string;
+    calendar_org_id: string;
+    last_notifications?: {
+        at: string;
+        body: string;
+        id: string;
+        title: string;
+    }[];
+    updated_at: Date;
+};
+
+async function fetchPreviousCalendars(db: Firestore): Promise<Calendars> {
+    const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
+
+    const results = await db.collection('calendars')
+        .where('org', '==', ACTIVITY_ORG_ID)
+        .get()
+
+    if (results.size == 0) {
+        throw new Error('No calendars in database')
     }
+
+    return results.docs.map(d => d.data() as CalendarMetadata)
+        .map(({ calendar_id: id, calendar_name: name }) => ({ name, id }))
 }
 
 function sleep(ms: number = 20000) {
