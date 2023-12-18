@@ -16,7 +16,7 @@ if (require.main === module) {
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
 
-export async function launchBrowser(width?: number, height?: number) {
+export async function launchBrowser() {
     const args = [
         '--no-sandbox',
         '--no-zygote',
@@ -24,24 +24,13 @@ export async function launchBrowser(width?: number, height?: number) {
         '--disable-setuid-sandbox',
         '--disable-infobars',
         '--no-first-run',
-        `--window-size=${width || 1280},${height || 800}`,
-        '--window-position=0,0',
         '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
         '--disable-gpu',
-        '--hide-scrollbars',
         '--disable-notifications',
         '--disable-extensions',
-        '--force-color-profile=srgb',
         '--mute-audio',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-breakpad',
-        '--disable-component-extensions-with-background-pages',
-        '--disable-features=TranslateUI,BlinkGenPropertyTrees,IsolateOrigins,site-per-process',
-        '--disable-ipc-flooding-protection',
-        '--disable-renderer-backgrounding',
-        '--enable-features=NetworkService,NetworkServiceInProcess'
+        '--force-gpu-mem-available-mb=1024'
     ]
     return await launch({
         headless: 'new',
