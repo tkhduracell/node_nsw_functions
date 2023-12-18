@@ -59,15 +59,20 @@ app.post('/', async (req, res) => {
     try {
         console.log('Updating calendar')
         await update(browser, bucket, db)
-    } catch (err) {
-        console.error(err)
+    } catch (err: any) {
+        console.error('Error in update()', err)
+
         await dumpScreenshots(browser, bucket, 'update')
-        throw new Error("Error in /update", { cause: err })
+
+        return res.status(500)
+            .send({ message: "Unable to perform update:" + err?.message })
+            .end()
+
     } finally {
         await browser.close()
     }
 
-    res.sendStatus(200)
+    res.status(200).end()
 });
 
 export default app

@@ -60,9 +60,13 @@ app.post('/update', async (req, res) => {
 
     try {
         await updateLean(bucket, db)
-    } catch (err) {
+    } catch (err: any) {
         console.error('Error in updateLean()', err)
-        return res.status(500).end()
+
+        return res.status(500)
+            .send({ message: "Unable to perform update:" + err?.message })
+            .end()
+
     }
 
     res.status(200).end()
