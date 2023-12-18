@@ -59,7 +59,7 @@ app.post('/update', async (req, res) => {
     const browser = await launchBrowser()
 
     console.log('Closing pages')
-    await tryClosePages(browser)
+    // await tryClosePages(browser)
 
     try {
         console.log('Updating calendar')
@@ -90,7 +90,7 @@ app.post('/update-lean', async (req, res) => {
     const db = getFirestore()
     const browser = await launchBrowser()
 
-    await tryClosePages(browser)
+    // await tryClosePages(browser)
 
     try {
         await calendar(browser, bucket, db, true)
