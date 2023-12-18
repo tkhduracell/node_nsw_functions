@@ -18,7 +18,7 @@ if (require.main === module) {
 
 async function launchBrowser() {
     return await launch({
-        headless: 'new',
+        headless: true,
         timeout: 180_000,
         protocolTimeout: 240_000
     });
