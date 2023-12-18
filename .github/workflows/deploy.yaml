@@ -174,20 +174,6 @@ jobs:
       - name: Setup default project
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
-      - name: Deploy calendars-api
-        run: |
-          gcloud functions deploy calendars-api \
-            --gen2 \
-            --runtime=nodejs20 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=calendars-api \
-            --trigger-http \
-            --max-instances=2 \
-            --allow-unauthenticated \
-            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
-
       - name: Deploy calendars-update-api
         run: |
           gcloud functions deploy calendars-update-api \
@@ -203,6 +189,24 @@ jobs:
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GCLOUD_FUNCITON_GET_URL=$(gcloud functions describe calendars-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")
+
+      - name: Trigger update
+        run: |
+          curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update
+
+      - name: Deploy calendars-api
+        run: |
+          gcloud functions deploy calendars-api \
+            --gen2 \
+            --runtime=nodejs20 \
+            --region="${GCLOUD_REGION}" \
+            --source=. \
+            --entry-point=calendars-api \
+            --trigger-http \
+            --max-instances=2 \
+            --allow-unauthenticated \
+            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
       - name: Update scheduler calendar-update-30m
         run: |
@@ -223,7 +227,3 @@ jobs:
             --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update-lean \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description "calendars-update-api: Lean update NSW GCS .ics files (5m)"
-
-      - name: Trigger update
-        run: |
-          curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update
