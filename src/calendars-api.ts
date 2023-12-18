@@ -61,7 +61,8 @@ app.post('/update', async (req, res) => {
     try {
         await updateLean(bucket, db)
     } catch (err) {
-        throw new Error("Error in " + req.url, { cause: err })
+        console.error('Error in updateLean()', err)
+        return res.status(500).end()
     }
 
     res.status(200).end()
