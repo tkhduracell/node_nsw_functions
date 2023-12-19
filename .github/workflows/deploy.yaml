@@ -263,4 +263,6 @@ jobs:
             --http-method POST \
             --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
             --location ${GCLOUD_SCHEDULER_REGION} \
+            --max-retry-attempts 3 \
+            --min-backoff 1m \
             --description "calendars-update-api: Update NSW GCS .ics files (30m)"
