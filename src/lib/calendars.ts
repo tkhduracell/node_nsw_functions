@@ -213,7 +213,7 @@ async function fetchPreviousCalendars(db: Firestore): Promise<Calendars> {
     const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
     const results = await db.collection('calendars')
-        .where('org', '==', ACTIVITY_ORG_ID)
+        .where('calendar_org_id', '==', ACTIVITY_ORG_ID)
         .get()
 
     if (results.size == 0) {
