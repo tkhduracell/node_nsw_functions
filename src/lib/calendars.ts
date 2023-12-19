@@ -6,7 +6,7 @@ import { FieldValue, Firestore } from 'firebase-admin/firestore'
 import { addDays, differenceInDays, differenceInMinutes, format, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
-import { GCloudOptions, IDOActivityOptions } from '../env'
+import { IDOActivityOptions } from '../env'
 
 import { ICalCalendar, ICalEvent } from 'ical-generator'
 import { ListedActivities } from './types'
@@ -108,7 +108,7 @@ export async function updateLean(bucket: Bucket, db: Firestore) {
     }
 }
 
-async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
+export async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
     const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
     const today = new Date()
@@ -138,11 +138,12 @@ async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.
             .then(d => d.data())
         const calendar_last_date = previous?.calendar_last_date
         const calendar_last_uid = previous?.calendar_last_uid
-        const last_notifications = previous?.last_notifications
+        const last_notifications = previous?.last_notifications ?? []
 
+        const now = new Date()
         const newEvents = sortBy(calendar.events(), e => e.uid())
-            .filter(e => e.start() >= new Date()) // Must be in future
-            .filter(e => e.start() < addDays(new Date(), 6)) // No more than 6 days ahead
+            .filter(e => e.start() >= now) // Must be in future
+            .filter(e => e.start() < addDays(now, 6)) // No more than 6 days ahead
             .filter(e => e.uid() > calendar_last_uid) // Larger than last uid
 
         const newEvent = newEvents.find(e => true) // Take first
@@ -157,6 +158,11 @@ async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.
             }))
 
         if (newEvent) {
+            let creator = null as string | null
+            let contact = null as string | null
+            if (newEvent.description()?.plain.match(/.* - \+?[0-9 ]+/gi)) {
+                [creator, contact] = newEvent.description()!.plain.split(' - ')
+            }
             const eventNotifiation = await notifyNewEvent(newEvent, cal.id, cal.name)
             metadata.calendar_last_date = newEvent.start() as string
             metadata.calendar_last_uid = newEvent.uid()
@@ -164,9 +170,12 @@ async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.
                 at: new Date().toISOString(),
                 id: newEvent.id(),
                 start: newEvent.start(),
-                desc: newEvent.description(),
-                notification: eventNotifiation
+                desc: newEvent.description()?.plain as string,
+                notification: eventNotifiation,
+                creator,
+                contact
             }
+
             metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
         } else {
             console.warn("No next event found")
