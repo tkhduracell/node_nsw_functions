@@ -54,7 +54,7 @@ export async function login(browser: Browser, db: Firestore, orgId: string) {
     return cookies
 }
 
-async function fetchCalendars(page: Page, orgId: string) {
+async function fetchCalendars(page: Page, orgId: string): Promise<Calendars> {
     const {
         ACTIVITY_BASE_URL,
     } = IDOActivityOptions.parse(process.env)
@@ -69,11 +69,10 @@ async function fetchCalendars(page: Page, orgId: string) {
     const calendarTds = await page.$$('td[data-title="Kalender"]')
     const calendars = calendarTds.map(d => d.$eval('a', a => ({
         id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '') ?? '(not found)',
-        orgId,
         name: a.innerText,
     })))
 
-    return Promise.all(calendars)
+    return Promise.all(calendars).then(cals => cals.map(cal => ({...cal, orgId })))
 }
 
 export async function update(browser: Browser, bucket: Bucket, db: Firestore, orgId: string) {
