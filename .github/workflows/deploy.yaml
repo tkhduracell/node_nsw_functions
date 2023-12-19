@@ -253,7 +253,7 @@ jobs:
 
       - name: Trigger update
         run: |
-          curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update
+          curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})
 
       - name: Update scheduler calendar-update-30m
         run: |
@@ -261,6 +261,6 @@ jobs:
             --schedule "*/30 0-1,6-23 * * *" \
             --time-zone "Europe/Stockholm" \
             --http-method POST \
-            --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")/update \
+            --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description "calendars-update-api: Update NSW GCS .ics files (30m)"
