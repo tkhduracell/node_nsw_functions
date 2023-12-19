@@ -3,7 +3,7 @@ import { Browser, Page, Protocol } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
 import { FieldValue, Firestore } from 'firebase-admin/firestore'
-import { addDays, differenceInDays, differenceInMinutes, format, parseISO } from 'date-fns'
+import { addDays, differenceInDays, differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { IDOActivityOptions } from '../env'
@@ -108,6 +108,23 @@ export async function updateLean(bucket: Bucket, db: Firestore) {
     }
 }
 
+export async function status(db: Firestore, orgId: string) {
+    const calendars = await db.collection('calendars')
+        .where('calendar_org_id', '==', orgId)
+        .get()
+
+    const data = calendars.docs.map(d => d.data())
+
+    return data.map(cal => {
+        return { ...cal,
+            calendar_last_uid: undefined,
+            calendar_last_date: undefined,
+            updated_at: cal.updated_at.toDate(),
+            updated_ago: formatDistance(cal.updated_at.toDate(), new Date(), { locale: sv, addSuffix: true }),
+        }
+    })
+}
+
 export async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
     const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
 
@@ -183,7 +200,7 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
 
         await db.collection('calendars')
             .doc(cal.id ?? '')
-            .set({ ...metadata, updated_at: FieldValue.serverTimestamp()}, { merge: true })
+            .set({ ...metadata, updated_at: FieldValue.serverTimestamp()} , { merge: true })
 
         const destination = `cal_${cal.id}.ics`
         const file = bucket.file(destination)

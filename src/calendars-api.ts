@@ -2,8 +2,8 @@ import { Storage } from '@google-cloud/storage'
 import z from 'zod'
 import express from 'express'
 import {join} from 'path'
-import { updateLean } from './lib/calendars'
-import { GCloudOptions } from './env'
+import { updateLean, status } from './lib/calendars'
+import { GCloudOptions, IDOActivityOptions } from './env'
 import { bookActivity, fetchActivitiesOnDate } from './lib/booking'
 import { getFirestore } from 'firebase-admin/firestore'
 import { fetchCookies } from './lib/cookies'
@@ -70,6 +70,26 @@ app.post('/update', async (req, res) => {
     }
 
     res.status(200).end()
+});
+
+app.get('/update', async (req, res) => {
+    const {
+        ACTIVITY_ORG_ID
+    } = IDOActivityOptions.parse(process.env)
+    const db = getFirestore()
+
+    try {
+        const result = await status(db, ACTIVITY_ORG_ID)
+        return res.status(200)
+            .json(result)
+
+    } catch (err: any) {
+        console.error('Error in ()', err)
+
+        return res.status(500)
+            .json({ message: "Unable to perform update:" + err?.message })
+
+    }
 });
 
 app.get('/book/search', async (req, res) => {
