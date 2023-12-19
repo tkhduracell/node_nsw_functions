@@ -7,7 +7,7 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { launch } from 'puppeteer'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
-import { dumpScreenshots } from './screenshots'
+import { dumpScreenshots } from './lib/screenshots'
 import { prettyJson } from './middleware'
 
 const app = express()
