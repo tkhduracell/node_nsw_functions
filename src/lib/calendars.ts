@@ -85,7 +85,7 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, or
 
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-    console.log('Restroing old cookies', { orgId })
+    console.log('Restoring old cookies', { orgId })
     page.setCookie(...cookies)
 
     console.log('Finding calendars', { orgId })
@@ -151,7 +151,7 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
             .doc(cal.id ?? '')
             .get()
             .then(d => d.data())
-        const calendar_last_date = previous?.calendar_last_date
+
         const calendar_last_uid = previous?.calendar_last_uid
         const last_notifications = previous?.last_notifications ?? []
 

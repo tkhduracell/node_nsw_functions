@@ -78,21 +78,19 @@ app.post('/update', async (req, res) => {
 });
 
 app.get('/update', async (req, res) => {
-    const {
-        ACTIVITY_ORG_ID
-    } = IDOActivityOptions.parse(process.env)
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
 
     try {
-        const result = await status(db, ACTIVITY_ORG_ID)
+        const result = await status(db, orgId)
         return res.status(200)
             .json(result)
 
     } catch (err: any) {
-        console.error('Error in ()', err)
+        console.error('Error in status()', err)
 
         return res.status(500)
-            .json({ message: "Unable to perform update:" + err?.message })
+            .json({ message: `Unable to perform update: ${err?.message}` })
 
     }
 });
