@@ -43,6 +43,9 @@ export async function login(browser: Browser, db: Firestore, orgId: string) {
     // Verify login state
     await page.waitForSelector('#PageHeader_Start > h1')
 
+    // Add a delay to ensure the login process is completed
+    await sleep(2000);
+
     const cookies = await page.cookies()
 
     await db.collection('browser')
