@@ -168,17 +168,13 @@ async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.
                 notification: eventNotifiation
             }
             metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
-
-            await db.collection('calendars')
-                .doc(cal.id ?? '')
-                .set(metadata, { merge: true })
         } else {
             console.warn("No next event found")
-
-            await db.collection('calendars')
-                .doc(cal.id ?? '')
-                .set({ updated_at: FieldValue.serverTimestamp()}, { merge: true })
         }
+
+        await db.collection('calendars')
+            .doc(cal.id ?? '')
+            .set({ ...metadata, updated_at: FieldValue.serverTimestamp()}, { merge: true })
 
         const destination = `cal_${cal.id}.ics`
         const file = bucket.file(destination)
