@@ -141,3 +141,20 @@ export type ActivityCreateResponse = {
     };
   }[];
 };
+
+export type Calendars = { id: string, name: string, orgId: string }[]
+
+export type CalendarMetadata = {
+  calendar_id: string;
+  calendar_last_date: string;
+  calendar_last_uid: string;
+  calendar_name: string;
+  calendar_org_id: string;
+  last_notifications?: {
+      at: string;
+      body: string;
+      id: string;
+      title: string;
+  }[];
+  updated_at: Date;
+};

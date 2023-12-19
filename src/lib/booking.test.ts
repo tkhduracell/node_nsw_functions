@@ -28,7 +28,7 @@ test('should book activities', async () => {
 
   jest.mocked(fetch).mockImplementationOnce(() => Promise.resolve({ ok: true, json: () => Promise.resolve(resp) } as Response))
 
-  const out = await bookActivity('1', {
+  const out = await bookActivity('1234','4567', {
     duration: 60,
     time: '21:00',
     date: '2023-11-21T23:00:00.000Z',
@@ -49,8 +49,8 @@ test('should book activities', async () => {
   const { activity } = body
   expect(activity).toStrictEqual(
     {
-      calendarId: '1',
       organisationId: 1234,
+      calendarId: '4567',
       sportId: '63',
       shared: false,
       venue: { venueName: 'Ceylon' },
@@ -71,7 +71,7 @@ test('should book activities with right datetime', async () => {
 
   jest.mocked(fetch).mockImplementationOnce(() => Promise.resolve({ ok: true, json: () => Promise.resolve(resp) } as Response))
 
-  const out = await bookActivity('1', {"title":"Friträning","location":"Ceylon","date":"2023-11-17T23:00:00.000Z","time":"13:37","duration":60,"description":"Filip - 0702683230"}, [])
+  const out = await bookActivity("1234", '1', {"title":"Friträning","location":"Ceylon","date":"2023-11-17T23:00:00.000Z","time":"13:37","duration":60,"description":"Filip - 0702683230"}, [])
 
   const [call] = jest.mocked(fetch).mock.calls
   const [url, opts] = call

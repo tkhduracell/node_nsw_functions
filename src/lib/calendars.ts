@@ -3,21 +3,22 @@ import { Browser, Page, Protocol } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, Message } from 'firebase-admin/messaging'
 import { FieldValue, Firestore } from 'firebase-admin/firestore'
-import { addDays, differenceInDays, differenceInMinutes, format, formatDistance, parseISO } from 'date-fns'
+import { addDays, formatDistance } from 'date-fns'
 import { Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { IDOActivityOptions } from '../env'
 
-import { ICalCalendar, ICalEvent } from 'ical-generator'
-import { ListedActivities } from './types'
+import { ICalEvent } from 'ical-generator'
 import { fetchActivities } from './booking'
 import { fetchCookies } from './cookies'
+import { getNotificationBody, getNotificationTitle } from './notification-builder'
+import { buildCalendar } from './ical-builder'
+import { CalendarMetadata, Calendars } from './types'
 
 const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
 
-export async function login(browser: Browser, db: Firestore) {
+export async function login(browser: Browser, db: Firestore, orgId: string) {
     const {
-        ACTIVITY_ORG_ID,
         ACTIVITY_BASE_URL,
         ACTIVITY_USERNAME,
         ACTIVITY_PASSWORD,
@@ -36,7 +37,7 @@ export async function login(browser: Browser, db: Firestore) {
 
     // Select org
     await page.waitForSelector('#OrganisationSelect2')
-    await page.select('#OrganisationSelect2', ACTIVITY_ORG_ID)
+    await page.select('#OrganisationSelect2', orgId)
     await navigate(page, () => page.click('#login-button'));
 
     // Verify login state
@@ -45,7 +46,7 @@ export async function login(browser: Browser, db: Firestore) {
     const cookies = await page.cookies()
 
     await db.collection('browser')
-        .doc(`org-${ACTIVITY_ORG_ID}`)
+        .doc(`org-${orgId}`)
         .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
 
     await page.close()
@@ -53,13 +54,12 @@ export async function login(browser: Browser, db: Firestore) {
     return cookies
 }
 
-async function fetchCalendars(page: Page) {
+async function fetchCalendars(page: Page, orgId: string) {
     const {
-        ACTIVITY_ORG_ID,
         ACTIVITY_BASE_URL,
     } = IDOActivityOptions.parse(process.env)
 
-    await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${ACTIVITY_ORG_ID}`)
+    await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${orgId}`)
 
     console.log('Waiting for search button')
     await page.waitForSelector('#btnSearchKalender')
@@ -68,15 +68,16 @@ async function fetchCalendars(page: Page) {
     console.log('Locating calendars in table')
     const calendarTds = await page.$$('td[data-title="Kalender"]')
     const calendars = calendarTds.map(d => d.$eval('a', a => ({
+        id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '') ?? '(not found)',
+        orgId,
         name: a.innerText,
-        id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '') ?? '(not found)'
     })))
 
     return Promise.all(calendars)
 }
 
-export async function update(browser: Browser, bucket: Bucket, db: Firestore) {
-    const cookies = await login(browser, db)
+export async function update(browser: Browser, bucket: Bucket, db: Firestore, orgId: string) {
+    const cookies = await login(browser, db, orgId)
 
     const page = await browser.newPage();
     page.setDefaultNavigationTimeout(1000 * 60 * 5);
@@ -88,19 +89,17 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore) {
     page.setCookie(...cookies)
 
     console.log('Finding calendars')
-    const cals = await fetchCalendars(page)
+    const cals = await fetchCalendars(page, orgId)
 
     await updateCalendarContent(cals, cookies, bucket, db)
 }
 
-type Calendars = { id: string, name: string }[]
-
-export async function updateLean(bucket: Bucket, db: Firestore) {
+export async function updateLean(bucket: Bucket, db: Firestore, orgId: string) {
     try {
         console.log('Fetching previous cookies')
-        const cookies = await fetchCookies(db)
+        const cookies = await fetchCookies(db, orgId)
 
-        const cals = await fetchPreviousCalendars(db)
+        const cals = await fetchPreviousCalendars(db, orgId)
         await updateCalendarContent(cals, cookies, bucket, db)
 
     } catch (err) {
@@ -126,8 +125,6 @@ export async function status(db: Firestore, orgId: string) {
 }
 
 export async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
-    const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
-
     const today = new Date()
     const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
     const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
@@ -136,13 +133,13 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
         console.log(`Fetching - ${cal.name} (${cal.id})`)
         const {data, response} = await fetchActivities(lastquater, inayear, cal.id, cookies)
 
-        const calendar = postprocess(response.url, data, cal)
+        const calendar = buildCalendar(response.url, data, cal)
         console.log(`Processed - ${cal.name}`)
 
         const metadata: CalendarMetadata = {
             calendar_name: cal.name,
             calendar_id: cal.id,
-            calendar_org_id: ACTIVITY_ORG_ID,
+            calendar_org_id: cal.orgId,
             calendar_last_uid: '',
             calendar_last_date: '',
             last_notifications: [],
@@ -216,26 +213,9 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
     await bucket.file('index.json').save(payload)
 }
 
-type CalendarMetadata = {
-    calendar_id: string;
-    calendar_last_date: string;
-    calendar_last_uid: string;
-    calendar_name: string;
-    calendar_org_id: string;
-    last_notifications?: {
-        at: string;
-        body: string;
-        id: string;
-        title: string;
-    }[];
-    updated_at: Date;
-};
-
-async function fetchPreviousCalendars(db: Firestore): Promise<Calendars> {
-    const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
-
+async function fetchPreviousCalendars(db: Firestore, orgId: string): Promise<Calendars> {
     const results = await db.collection('calendars')
-        .where('calendar_org_id', '==', ACTIVITY_ORG_ID)
+        .where('calendar_org_id', '==', orgId)
         .get()
 
     if (results.size == 0) {
@@ -243,53 +223,21 @@ async function fetchPreviousCalendars(db: Firestore): Promise<Calendars> {
     }
 
     return results.docs.map(d => d.data() as CalendarMetadata)
-        .map(({ calendar_id: id, calendar_name: name }) => ({ name, id }))
+        .map(({ calendar_id: id, calendar_name: name }) => ({ name, id, orgId }))
 }
 
 function sleep(ms: number = 20000) {
     return new Promise((res, rej) => setTimeout(res, ms))
 }
 
-export function postprocess(url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
-    const calendar = new ICalCalendar()
-    calendar.name(subject.name)
-    calendar.prodId({
-        company: 'DK Nackswinget',
-        product: subject.name,
-        language: 'SV'
-    })
-    calendar.url('https://nackswinget.se/Kalender')
-    calendar.timezone('Europe/Stockholm')
-    calendar.source(url)
-
-    for (const { listedActivity } of activities) {
-        const { shared, activityId, startTime, endTime, name, venueName, description } = listedActivity
-
-        // Ignore shared events
-        if (shared) continue
-
-        calendar.createEvent({
-            start: parseISO(startTime),
-            end: parseISO(endTime),
-            summary: name,
-            description: description,
-            location: venueName ?? '',
-            id: activityId
-        });
-    }
-
-    return calendar
-}
-
 async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
 
-    const duration = differenceInMinutes(event.end() as Date, event.start() as Date)
     const topicName = `calendar-${calendar_id}`;
 
     const message: Message = {
         notification: {
             title: getNotificationTitle(calendar_name),
-            body: getNotificationBody(event.start() as Date, event.end() as Date, duration),
+            body: getNotificationBody(event.start() as Date, event.end() as Date),
         },
         webpush: {
             notification: {
@@ -304,22 +252,4 @@ async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_na
     await getMessaging().send(message)
 
     return message.notification
-}
-
-function getNotificationTitle(calendar_name: string) {
-    return calendar_name === 'Friträning' ?  'Ny friträning bokad!' : `${calendar_name} uppdaterad`
-}
-function getNotificationBody(start: Date, end: Date, durationMin: number | null) {
-    const date = format(start, 'do MMMM', { locale: sv })
-    const hhmm = format(start, 'HH:mm',  { locale: sv })
-    const hhmm_end = format(end, 'HH:mm',  { locale: sv })
-    const inDays = differenceInDays(start, new Date())
-    const weekday = format(start, 'EEEE', { locale: sv }).replace(/^./, s => s.toUpperCase())
-
-    const suffix = `kl ${hhmm}-${hhmm_end}, ${durationMin} min`
-    if (inDays < 7) {
-        return `${weekday}, ${suffix}`
-    } else {
-        return `${weekday}, ${date}\n${suffix}`
-    }
 }

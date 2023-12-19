@@ -1,4 +1,4 @@
-import {addHours, startOfDay, addMinutes, parseISO, addDays} from 'date-fns'
+import {addHours, addMinutes, parseISO, addDays} from 'date-fns'
 
 import { IDOActivityOptions } from '../env';
 import { ActivityCreateResponse, ListedActivities } from './types';
@@ -55,7 +55,7 @@ export type ActivityBooking = {
     description: string
 }
 
-export async function bookActivity(calendarId: string = "337667", { location, date, time, duration, title, description }: ActivityBooking, cookies: Protocol.Network.CookieParam[]): Promise<ActivityCreateResponse['activities'][0]> {
+export async function bookActivity(orgId: string, calendarId: string, { location, date, time, duration, title, description }: ActivityBooking, cookies: Protocol.Network.CookieParam[]): Promise<ActivityCreateResponse['activities'][0]> {
     const [hh, mm] = time.split(/[:$]/)
 
     const startOfDate = parseISO(date)
@@ -63,7 +63,7 @@ export async function bookActivity(calendarId: string = "337667", { location, da
     const end = addMinutes(start, duration)
 
     console.log('Calling bookActivityRaw',  { startOfDate, start, end })
-    return bookActivityRaw(calendarId, {
+    return bookActivityRaw(orgId, calendarId, {
         name: title,
         description,
         venueName: location,
@@ -81,9 +81,8 @@ export type ActivityBookingRaw = {
 
 }
 
-export async function bookActivityRaw(calendarId: string = "337667", { venueName, start, end, name, description }: ActivityBookingRaw, cookies: Protocol.Network.CookieParam[]): Promise<ActivityCreateResponse['activities'][0]> {
+export async function bookActivityRaw(orgId: string, calendarId: string, { venueName, start, end, name, description }: ActivityBookingRaw, cookies: Protocol.Network.CookieParam[]): Promise<ActivityCreateResponse['activities'][0]> {
     const {
-        ACTIVITY_ORG_ID,
         ACTIVITY_BASE_URL,
     } = IDOActivityOptions.parse(process.env)
 
@@ -93,7 +92,7 @@ export async function bookActivityRaw(calendarId: string = "337667", { venueName
     const body = {
         activity: {
           calendarId,
-          organisationId: parseInt(ACTIVITY_ORG_ID),
+          organisationId: parseInt(orgId),
           sportId: '63',
           shared: false,
           venue: { venueName },

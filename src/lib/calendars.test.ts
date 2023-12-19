@@ -49,8 +49,8 @@ describe('updateCalendarContent', () => {
     it('should update calendar content successfully', async () => {
         // Mock necessary dependencies
         const mockCalendars = [
-            { id: 'calendar1', name: 'Calendar 1' },
-            { id: 'calendar2', name: 'Calendar 2' },
+            { id: 'calendar1', name: 'Calendar 1', orgId: '1' },
+            { id: 'calendar2', name: 'Calendar 2', orgId: '1' },
         ];
 
         jest.mocked(fetchActivities).mockImplementation(() => Promise.resolve({
@@ -75,7 +75,7 @@ describe('updateCalendarContent', () => {
     it('should notify new event', async () => {
         // Mock necessary dependencies
         const mockCalendars = [
-            { id: 'calendar1', name: 'Calendar 1' }
+            { id: 'calendar1', name: 'Calendar 1', orgId: '1' },
         ];
 
         const startTime = new DateClass().getTime() + 1000 * 60 * 60 * 24 * 3

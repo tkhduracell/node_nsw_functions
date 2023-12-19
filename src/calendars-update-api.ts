@@ -1,6 +1,6 @@
 import { Storage } from '@google-cloud/storage'
 
-import { GCloudOptions } from './env'
+import { GCloudOptions, IDOActivityOptions } from './env'
 import { update } from './lib/calendars'
 import { getFirestore } from 'firebase-admin/firestore'
 
@@ -51,6 +51,7 @@ app.post('/', async (req, res) => {
         await bucket.create()
     }
 
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
 
     console.log('Launching browser')
@@ -58,11 +59,11 @@ app.post('/', async (req, res) => {
 
     try {
         console.log('Updating calendar')
-        await update(browser, bucket, db)
+        await update(browser, bucket, db, orgId)
     } catch (err: any) {
         console.error('Error in update()', err)
 
-        await dumpScreenshots(browser, bucket, 'update')
+        await dumpScreenshots(browser, bucket, `org-${orgId}-update`)
 
         return res.status(500)
             .send({ message: "Unable to perform update:" + err?.message })

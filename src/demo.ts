@@ -1,9 +1,8 @@
 /*
-*   npx ts-node -T src/demo.ts
+*   npm run demo
 */
 
 import { formatInTimeZone } from 'date-fns-tz';
-import { launch } from 'puppeteer';
 import { login } from './lib/calendars'
 import { bookActivityRaw } from './lib/booking';
 import { config } from 'dotenv'
@@ -13,6 +12,7 @@ import { addDays, addMinutes, formatDistanceStrict, parseISO, startOfDay } from 
 import { fetchCookies } from './lib/cookies';
 import { launchBrowser } from './calendars-update-api';
 import { orderBy } from 'lodash';
+import { IDOActivityOptions } from './env';
 
 config();
 
@@ -33,8 +33,9 @@ initializeApp({ projectId: 'nackswinget-af7ef' });
 });
 
 (async () => {
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
-    const cookies = await fetchCookies(db)
+    const cookies = await fetchCookies(db, orgId)
 
     for (const cookie of orderBy(cookies, c => c.expires)) {
         if ((cookie as any).session) continue
@@ -44,11 +45,12 @@ initializeApp({ projectId: 'nackswinget-af7ef' });
 })();
 
 (async () => {
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
 
     const browser = await launchBrowser();
     const db = getFirestore()
     try {
-        await login(browser, db)
+        await login(browser, db, orgId)
     } catch (err) {
         console.error(err)
     } finally {
@@ -59,13 +61,14 @@ initializeApp({ projectId: 'nackswinget-af7ef' });
 });
 
 (async () => {
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
 
     const start = new Date("2023-11-09 14:00:00")
     const end = addMinutes(start, 60)
 
     const db = getFirestore()
-    const cookies = await fetchCookies(db)
-    const result = await bookActivityRaw('337667', {
+    const cookies = await fetchCookies(db, orgId)
+    const result = await bookActivityRaw(orgId, '337667', {
         name: 'Friträning',
         description: 'Filip 0702683230',
         start,

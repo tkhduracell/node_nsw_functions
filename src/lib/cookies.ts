@@ -1,12 +1,9 @@
 import { Firestore } from "firebase-admin/firestore"
-import { IDOActivityOptions } from "../env"
 import { Protocol } from "puppeteer"
 
-export async function fetchCookies(db: Firestore): Promise<Protocol.Network.CookieParam[]> {
-    const { ACTIVITY_ORG_ID } = IDOActivityOptions.parse(process.env)
-
+export async function fetchCookies(db: Firestore, orgId: string): Promise<Protocol.Network.CookieParam[]> {
     const document = await db.collection('browser')
-        .doc(`org-${ACTIVITY_ORG_ID}`)
+        .doc(`org-${orgId}`)
         .get()
 
     if (!document.exists) {

@@ -58,8 +58,10 @@ app.post('/update', async (req, res) => {
     const bucket = storage.bucket(GCLOUD_BUCKET)
     const db = getFirestore()
 
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+
     try {
-        await updateLean(bucket, db)
+        await updateLean(bucket, db, orgId)
     } catch (err: any) {
         console.error('Error in updateLean()', err)
 
@@ -107,8 +109,10 @@ app.get('/book/search', async (req, res) => {
         }))
     }
 
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+
     const db = getFirestore()
-    const cookies = await fetchCookies(db)
+    const cookies = await fetchCookies(db, orgId)
 
     const { date, calendarId } = query.data
 
@@ -145,14 +149,16 @@ app.post('/book', async (req, res) => {
         calendarId: z.enum(['337667']).default('337667')
     })
 
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+
     const data = await BookingSchema.safeParseAsync(req.body)
     if (data.success) {
         const { password, calendarId, ...event } = data.data
 
-        const cookies = await fetchCookies(db)
+        const cookies = await fetchCookies(db, orgId)
 
         console.log('Booking activity', event)
-        const { activityId } = await bookActivity(calendarId, event, cookies)
+        const { activityId } = await bookActivity(orgId, calendarId, event, cookies)
         res.status(200).send({
             success: true,
             id: activityId
