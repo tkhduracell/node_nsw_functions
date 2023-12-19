@@ -58,14 +58,14 @@ app.post('/', async (req, res) => {
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
 
-    console.log('Launching browser')
+    console.log('Launching browser', { orgId })
     const browser = await launchBrowser()
 
     try {
-        console.log('Updating calendar')
+        console.log('Updating calendar', { orgId })
         await update(browser, bucket, db, orgId)
     } catch (err: any) {
-        console.error('Error in update()', err)
+        console.error('Error in update()', { orgId }, err)
 
         await dumpScreenshots(browser, bucket, `org-${orgId}-update`)
 

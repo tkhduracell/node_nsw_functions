@@ -85,10 +85,10 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, or
 
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-    console.log('Restroing old cookies')
+    console.log('Restroing old cookies', { orgId })
     page.setCookie(...cookies)
 
-    console.log('Finding calendars')
+    console.log('Finding calendars', { orgId })
     const cals = await fetchCalendars(page, orgId)
 
     await updateCalendarContent(cals, cookies, bucket, db)
@@ -96,7 +96,7 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, or
 
 export async function updateLean(bucket: Bucket, db: Firestore, orgId: string) {
     try {
-        console.log('Fetching previous cookies')
+        console.log('Fetching previous cookies', { orgId })
         const cookies = await fetchCookies(db, orgId)
 
         const cals = await fetchPreviousCalendars(db, orgId)
@@ -130,11 +130,11 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
     const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
 
     for (const cal of cals) {
-        console.log(`Fetching - ${cal.name} (${cal.id})`)
+        console.log(`Fetching activities`, cal)
         const {data, response} = await fetchActivities(lastquater, inayear, cal.id, cookies)
 
         const calendar = buildCalendar(response.url, data, cal)
-        console.log(`Processed - ${cal.name}`)
+        console.log(`Built ICalendar successfully`, cal)
 
         const metadata: CalendarMetadata = {
             calendar_name: cal.name,
@@ -146,6 +146,7 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
             updated_at: FieldValue.serverTimestamp() as unknown as Date
         }
 
+        console.log(`Reading old data`, cal)
         const previous = await db.collection('calendars')
             .doc(cal.id ?? '')
             .get()
@@ -154,6 +155,7 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
         const calendar_last_uid = previous?.calendar_last_uid
         const last_notifications = previous?.last_notifications ?? []
 
+        console.log(`Findning new events`, cal)
         const now = new Date()
         const newEvents = sortBy(calendar.events(), e => e.uid())
             .filter(e => e.start() >= now) // Must be in future
@@ -162,16 +164,15 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
 
         const newEvent = newEvents.find(e => true) // Take first
 
-        console.log(
-            'Found', newEvents.length,
-            JSON.stringify({
-                calendar_last_date,
-                calendar_last_uid,
-                next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
-                next_events: newEvents,
-            }))
-
         if (newEvent) {
+            console.log(
+                'Found', newEvents.length, 'new events', cal,
+                JSON.stringify({
+                    next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
+                    next_events: newEvents,
+                })
+            )
+
             let creator = null as string | null
             let contact = null as string | null
             if (newEvent.description()?.plain.match(/.* - \+?[0-9 ]+/gi)) {
@@ -195,13 +196,14 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
             console.warn("No next event found")
         }
 
+        console.log('Saving metadata', cal)
         await db.collection('calendars')
             .doc(cal.id ?? '')
             .set({ ...metadata, updated_at: FieldValue.serverTimestamp()} , { merge: true })
 
         const destination = `cal_${cal.id}.ics`
         const file = bucket.file(destination)
-        console.log(`Uploading - ${cal.name} (${cal.id}) to ${file.cloudStorageURI}`)
+        console.log(`Uploading to ${file.cloudStorageURI}`, cal)
         await file
             .save(calendar.toString(), { metadata: { metadata }})
     }
