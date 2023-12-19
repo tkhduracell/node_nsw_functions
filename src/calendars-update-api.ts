@@ -8,6 +8,7 @@ import { launch } from 'puppeteer'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
 import { dumpScreenshots } from './screenshots'
+import { prettyJson } from './middleware'
 
 const app = express()
 
@@ -16,6 +17,9 @@ if (require.main === module) {
     initializeApp()
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
+
+app.use(express.json())
+app.use(prettyJson)
 
 export async function launchBrowser() {
     const args = [

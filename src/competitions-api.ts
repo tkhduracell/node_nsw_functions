@@ -2,6 +2,7 @@ import { fetchCompetitions } from './lib/competitions'
 import z from 'zod'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
+import { prettyJson } from './middleware'
 
 const app = express()
 
@@ -10,6 +11,9 @@ if (require.main === module) {
     initializeApp()
     app.listen(port, () => console.log(`Listening on port ${port}`))
 }
+
+app.use(express.json())
+app.use(prettyJson)
 
 app.get('/', async (req, res) => {
     const classTypes = z.enum(['X', 'N', 'R', '']).default('').parse(req.query.classTypes)

@@ -1,6 +1,5 @@
 import { Storage } from '@google-cloud/storage'
 import z from 'zod'
-import express from 'express'
 import {join} from 'path'
 import { updateLean, status } from './lib/calendars'
 import { GCloudOptions, IDOActivityOptions } from './env'
@@ -9,6 +8,8 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { fetchCookies } from './lib/cookies'
 import { differenceInMinutes } from 'date-fns'
 import { initializeApp } from 'firebase-admin/app'
+import express from 'express'
+import { prettyJson } from './middleware'
 
 const app = express()
 
@@ -19,6 +20,8 @@ if (require.main === module) {
 }
 
 app.use(express.json())
+app.use(prettyJson)
+
 app.get('/', async (req, res) => {
     const {
         GCLOUD_PROJECT,

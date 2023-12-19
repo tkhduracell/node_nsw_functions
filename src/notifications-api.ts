@@ -6,6 +6,7 @@ import { initializeApp } from 'firebase-admin/app'
 import { Message, getMessaging } from 'firebase-admin/messaging'
 import { getFirestore } from 'firebase-admin/firestore'
 import cors from 'cors'
+import { prettyJson } from './middleware'
 
 const app = express()
 
@@ -16,6 +17,9 @@ if (require.main === module) {
 }
 
 app.use(cors({ origin: 'https://nackswinget.se' }))
+app.use(express.json())
+app.use(prettyJson)
+
 app.post('/status', async (req, res) => {
     const { token } = z.object({ token: z.string() }).parse(req.query)
     const db = getFirestore()
