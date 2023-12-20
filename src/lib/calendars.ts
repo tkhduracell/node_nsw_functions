@@ -12,7 +12,7 @@ import { fetchActivities } from './booking'
 import { fetchCookies } from './cookies'
 import { getNotificationBody, getNotificationTitle } from './notification-builder'
 import { buildCalendar } from './ical-builder'
-import { type CalendarMetadataData, type CalendarMetadata, type Calendars } from './types'
+import { type CalendarMetadataData, type CalendarMetadata, type Calendars, type CalendarNotification } from './types'
 
 const navigate = async <T>(page: Page, action: () => Promise<T>): Promise<T> => await Promise.all([page.waitForNavigation(), action()]).then(results => results[1] as T)
 
@@ -147,15 +147,15 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             calendar_org_id: cal.orgId,
             calendar_last_uid: '',
             calendar_last_date: '',
-            last_notifications: [],
+            last_notifications: [] as CalendarMetadata['last_notifications'],
             updated_at: FieldValue.serverTimestamp() as unknown as Date
         }
 
-        console.log('Reading old data', cal)
         const previous = await db.collection('calendars')
             .doc(cal.id ?? '')
             .get()
-            .then(d => d.data())
+            .then(d => d.data()) as CalendarMetadata
+        console.log('Read old metadata', cal, previous)
 
         const calendar_last_uid = previous?.calendar_last_uid
         const last_notifications = previous?.last_notifications ?? []
@@ -187,14 +187,14 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             const eventNotifiation = await notifyNewEvent(newEvent, cal.id, cal.name)
             metadata.calendar_last_date = newEvent.start() as string
             metadata.calendar_last_uid = newEvent.uid()
-            const notification = {
+            const notification: CalendarNotification = {
                 at: new Date().toISOString(),
                 id: newEvent.id(),
-                start: newEvent.start(),
-                desc: description,
-                notification: eventNotifiation,
-                creator,
-                contact
+                start: (newEvent.start() as Date).toISOString(),
+                body: eventNotifiation?.body ?? '',
+                title: eventNotifiation?.title ?? '',
+                creator: creator?.trim() ?? '',
+                contact: contact?.trim() ?? ''
             }
 
             metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
@@ -202,7 +202,7 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             console.warn('No next event found')
         }
 
-        console.log('Saving metadata', cal)
+        console.log('Saving metadata', cal, metadata)
         await db.collection('calendars')
             .doc(cal.id ?? '')
             .set({ ...metadata, updated_at: FieldValue.serverTimestamp() }, { merge: true })

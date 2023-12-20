@@ -147,17 +147,23 @@ export interface ActivityCreateResponse {
 export type Calendars = Array<{ id: string, name: string, orgId: string }>
 
 export type CalendarMetadataData = Omit<CalendarMetadata, 'updated_at'> & { updated_at: Timestamp }
+
+export interface CalendarNotification {
+    at: string
+    start: string
+    body: string
+    id: string
+    title: string
+    creator: string
+    contact: string
+}
+
 export interface CalendarMetadata {
     calendar_id: string
     calendar_last_date: string
     calendar_last_uid: string
     calendar_name: string
     calendar_org_id: string
-    last_notifications?: Array<{
-        at: string
-        body: string
-        id: string
-        title: string
-    }>
+    last_notifications: CalendarNotification[]
     updated_at: Date
 }
