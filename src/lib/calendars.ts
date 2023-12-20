@@ -197,7 +197,7 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
                 contact: contact?.trim() ?? ''
             }
 
-            metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
+            metadata.last_notifications = [notification, ...last_notifications].slice(0, 5)
         } else {
             console.warn('No next event found')
         }
