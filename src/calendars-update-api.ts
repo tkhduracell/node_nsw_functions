@@ -21,7 +21,7 @@ if (require.main === module) {
 app.use(express.json())
 app.use(prettyJson)
 
-export async function launchBrowser() {
+export async function launchBrowser () {
     const args = [
         '--disable-setuid-sandbox',
         '--disable-infobars',
@@ -39,16 +39,16 @@ export async function launchBrowser() {
         timeout: 180_000,
         protocolTimeout: 240_000,
         devtools: false,
-        args: [...args, `--js-flags="--max-old-space-size=500"`]
-    });
+        args: [...args, '--js-flags="--max-old-space-size=500"']
+    })
 }
 
 app.post('/', async (req, res) => {
     const {
         GCLOUD_PROJECT,
-        GCLOUD_BUCKET,
+        GCLOUD_BUCKET
     } = GCloudOptions.parse(process.env)
-    const storage = new Storage({ projectId: GCLOUD_PROJECT });
+    const storage = new Storage({ projectId: GCLOUD_PROJECT })
     const bucket = storage.bucket(GCLOUD_BUCKET)
 
     if (!(await bucket.exists())) {
@@ -70,14 +70,13 @@ app.post('/', async (req, res) => {
         await dumpScreenshots(browser, bucket, `org-${orgId}-update`)
 
         return res.status(500)
-            .send({ message: "Unable to perform update:" + err?.message })
+            .send({ message: `Unable to perform update: ${err?.message}` })
             .end()
-
     } finally {
         await browser.close()
     }
 
     res.status(200).end()
-});
+})
 
 export default app

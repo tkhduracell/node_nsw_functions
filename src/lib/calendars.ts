@@ -1,50 +1,49 @@
-import { writeFile as _writeFile } from 'fs'
-import { Browser, Page, Protocol } from 'puppeteer'
+import { type Browser, type Page, type Protocol } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
-import { getMessaging, Message } from 'firebase-admin/messaging'
-import { FieldValue, Firestore } from 'firebase-admin/firestore'
+import { getMessaging, type Message } from 'firebase-admin/messaging'
+import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import { addDays, formatDistance } from 'date-fns'
-import { Bucket } from '@google-cloud/storage'
+import { type Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { IDOActivityOptions } from '../env'
 
-import { ICalEvent } from 'ical-generator'
+import { type ICalEvent } from 'ical-generator'
 import { fetchActivities } from './booking'
 import { fetchCookies } from './cookies'
 import { getNotificationBody, getNotificationTitle } from './notification-builder'
 import { buildCalendar } from './ical-builder'
-import { CalendarMetadata, Calendars } from './types'
+import { type CalendarMetadataData, type CalendarMetadata, type Calendars } from './types'
 
-const navigate = <T>(page: Page, action: () => Promise<T>): Promise<T> => Promise.all([ page.waitForNavigation(), action() ]).then(results => results[1] as T);
+const navigate = async <T>(page: Page, action: () => Promise<T>): Promise<T> => await Promise.all([page.waitForNavigation(), action()]).then(results => results[1] as T)
 
-export async function login(browser: Browser, db: Firestore, orgId: string) {
+export async function login (browser: Browser, db: Firestore, orgId: string) {
     const {
         ACTIVITY_BASE_URL,
         ACTIVITY_USERNAME,
-        ACTIVITY_PASSWORD,
+        ACTIVITY_PASSWORD
     } = IDOActivityOptions.parse(process.env)
 
-    const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(1000 * 60 * 5);
-    page.setDefaultTimeout(1000 * 60 * 1);
+    const page = await browser.newPage()
+    page.setDefaultNavigationTimeout(1000 * 60 * 5)
+    page.setDefaultTimeout(1000 * 60 * 1)
     await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
     // Login
-    await page.goto(ACTIVITY_BASE_URL + '/');
+    await page.goto(ACTIVITY_BASE_URL + '/')
     await page.type('#userName', ACTIVITY_USERNAME)
     await page.type('#loginForm > div:nth-child(4) > input', ACTIVITY_PASSWORD)
-    await navigate(page, () => page.click('#loginForm > button'));
+    await navigate(page, async () => { await page.click('#loginForm > button') })
 
     // Select org
     await page.waitForSelector('#OrganisationSelect2')
     await page.select('#OrganisationSelect2', orgId)
-    await navigate(page, () => page.click('#login-button'));
+    await navigate(page, async () => { await page.click('#login-button') })
 
     // Verify login state
     await page.waitForSelector('#PageHeader_Start > h1')
 
     // Add a delay to ensure the login process is completed
-    await sleep(2000);
+    await sleep(2000)
 
     const cookies = await page.cookies()
 
@@ -57,9 +56,9 @@ export async function login(browser: Browser, db: Firestore, orgId: string) {
     return cookies
 }
 
-async function fetchCalendars(page: Page, orgId: string): Promise<Calendars> {
+async function fetchCalendars (page: Page, orgId: string): Promise<Calendars> {
     const {
-        ACTIVITY_BASE_URL,
+        ACTIVITY_BASE_URL
     } = IDOActivityOptions.parse(process.env)
 
     await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${orgId}`)
@@ -70,73 +69,77 @@ async function fetchCalendars(page: Page, orgId: string): Promise<Calendars> {
 
     console.log('Locating calendars in table')
     const calendarTds = await page.$$('td[data-title="Kalender"]')
-    const calendars = calendarTds.map(d => d.$eval('a', a => ({
+    const calendars = calendarTds.map(async d => await d.$eval('a', a => ({
         id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '') ?? '(not found)',
-        name: a.innerText,
+        name: a.innerText
     })))
 
-    return Promise.all(calendars).then(cals => cals.map(cal => ({...cal, orgId })))
+    return await Promise.all(calendars).then(cals => cals.map(cal => ({ ...cal, orgId })))
 }
 
-export async function update(browser: Browser, bucket: Bucket, db: Firestore, orgId: string) {
-    const cookies = await login(browser, db, orgId)
+export async function update (browser: Browser, bucket: Bucket, db: Firestore, orgId: string) {
+    try {
+        const cookies = await login(browser, db, orgId)
 
-    const page = await browser.newPage();
-    page.setDefaultNavigationTimeout(1000 * 60 * 5);
-    page.setDefaultTimeout(1000 * 60 * 1);
+        const page = await browser.newPage()
+        page.setDefaultNavigationTimeout(1000 * 60 * 5)
+        page.setDefaultTimeout(1000 * 60 * 1)
 
-    await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
+        await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-    console.log('Restoring old cookies', { orgId })
-    page.setCookie(...cookies)
+        console.log('Restoring old cookies', { orgId })
+        await page.setCookie(...cookies)
 
-    console.log('Finding calendars', { orgId })
-    const cals = await fetchCalendars(page, orgId)
+        console.log('Finding calendars', { orgId })
+        const cals = await fetchCalendars(page, orgId)
 
-    await updateCalendarContent(cals, cookies, bucket, db)
+        await updateCalendarContent(cals, cookies, bucket, db)
+    } catch (err) {
+        throw new Error('Unable to do a full update', { cause: err })
+    }
 }
 
-export async function updateLean(bucket: Bucket, db: Firestore, orgId: string) {
+export async function updateLean (bucket: Bucket, db: Firestore, orgId: string) {
     try {
         console.log('Fetching previous cookies', { orgId })
         const cookies = await fetchCookies(db, orgId)
 
         const cals = await fetchPreviousCalendars(db, orgId)
         await updateCalendarContent(cals, cookies, bucket, db)
-
     } catch (err) {
-        throw new Error("Unable to do a lean update", { cause: err })
+        throw new Error('Unable to do a lean update', { cause: err })
     }
 }
 
-export async function status(db: Firestore, orgId: string) {
+export async function status (db: Firestore, orgId: string) {
     const calendars = await db.collection('calendars')
         .where('calendar_org_id', '==', orgId)
         .get()
 
-    const data = calendars.docs.map(d => d.data())
+    const data = calendars.docs.map(d => d.data() as CalendarMetadataData)
 
     return data.map(cal => {
-        return { ...cal,
+        return {
+            ...cal,
             calendar_last_uid: undefined,
             calendar_last_date: undefined,
             updated_at: cal.updated_at.toDate(),
-            updated_ago: formatDistance(cal.updated_at.toDate(), new Date(), { locale: sv, addSuffix: true }),
+            updated_ago: formatDistance(cal.updated_at.toDate(), new Date(), { locale: sv, addSuffix: true })
         }
     })
 }
 
-export async function updateCalendarContent(cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
+export async function updateCalendarContent (cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
     const today = new Date()
     const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
     const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
 
     for (const cal of cals) {
-        console.log(`Fetching activities`, cal)
-        const {data, response} = await fetchActivities(lastquater, inayear, cal.id, cookies)
+        console.log('Fetching activities', cal)
+        const { data, response } = await fetchActivities(lastquater, inayear, cal.id, cookies)
 
         const calendar = buildCalendar(response.url, data, cal)
-        console.log(`Built ICalendar successfully`, cal)
+        console.log('Built ICalendar successfully', cal)
 
         const metadata: CalendarMetadata = {
             calendar_name: cal.name,
@@ -148,7 +151,7 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
             updated_at: FieldValue.serverTimestamp() as unknown as Date
         }
 
-        console.log(`Reading old data`, cal)
+        console.log('Reading old data', cal)
         const previous = await db.collection('calendars')
             .doc(cal.id ?? '')
             .get()
@@ -157,7 +160,7 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
         const calendar_last_uid = previous?.calendar_last_uid
         const last_notifications = previous?.last_notifications ?? []
 
-        console.log(`Findning new events`, cal)
+        console.log('Findning new events', cal)
         const now = new Date()
         const newEvents = sortBy(calendar.events(), e => e.uid())
             .filter(e => e.start() >= now) // Must be in future
@@ -171,14 +174,15 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
                 'Found', newEvents.length, 'new events', cal,
                 JSON.stringify({
                     next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
-                    next_events: newEvents,
+                    next_events: newEvents
                 })
             )
 
+            const description = newEvent.description()?.plain ?? ''
             let creator = null as string | null
             let contact = null as string | null
-            if (newEvent.description()?.plain.match(/.* - \+?[0-9 ]+/gi)) {
-                [creator, contact] = newEvent.description()!.plain.split(' - ')
+            if (description.match(/.* - \+?[0-9 ]+/gi)) {
+                [creator, contact] = description.split(' - ')
             }
             const eventNotifiation = await notifyNewEvent(newEvent, cal.id, cal.name)
             metadata.calendar_last_date = newEvent.start() as string
@@ -187,7 +191,7 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
                 at: new Date().toISOString(),
                 id: newEvent.id(),
                 start: newEvent.start(),
-                desc: newEvent.description()?.plain as string,
+                desc: description,
                 notification: eventNotifiation,
                 creator,
                 contact
@@ -195,34 +199,34 @@ export async function updateCalendarContent(cals: Calendars, cookies: Protocol.N
 
             metadata.last_notifications = [...last_notifications, notification].slice(0, 5)
         } else {
-            console.warn("No next event found")
+            console.warn('No next event found')
         }
 
         console.log('Saving metadata', cal)
         await db.collection('calendars')
             .doc(cal.id ?? '')
-            .set({ ...metadata, updated_at: FieldValue.serverTimestamp()} , { merge: true })
+            .set({ ...metadata, updated_at: FieldValue.serverTimestamp() }, { merge: true })
 
         const destination = `cal_${cal.id}.ics`
         const file = bucket.file(destination)
-        console.log(`Uploading to ${file.cloudStorageURI}`, cal)
+        console.log(`Uploading to ${file.cloudStorageURI.toString()}`, cal)
         await file
-            .save(calendar.toString(), { metadata: { metadata }})
+            .save(calendar.toString(), { metadata: { metadata } })
     }
 
     const [files] = await bucket.getFiles({ prefix: 'cal_' })
-    const metadatas = await Promise.all(files.map(f => f.getMetadata()))
+    const metadatas = await Promise.all(files.map(async f => await f.getMetadata()))
     const data = metadatas.map(([{ metadata }]) => mapKeys(metadata, (_, k) => k.replace('calendar_', '')))
     const payload = JSON.stringify(data, null, 2)
     await bucket.file('index.json').save(payload)
 }
 
-async function fetchPreviousCalendars(db: Firestore, orgId: string): Promise<Calendars> {
+async function fetchPreviousCalendars (db: Firestore, orgId: string): Promise<Calendars> {
     const results = await db.collection('calendars')
         .where('calendar_org_id', '==', orgId)
         .get()
 
-    if (results.size == 0) {
+    if (results.size === 0) {
         throw new Error('No calendars in database')
     }
 
@@ -230,26 +234,25 @@ async function fetchPreviousCalendars(db: Firestore, orgId: string): Promise<Cal
         .map(({ calendar_id: id, calendar_name: name }) => ({ name, id, orgId }))
 }
 
-function sleep(ms: number = 20000) {
-    return new Promise((res, rej) => setTimeout(res, ms))
+async function sleep (ms: number = 20000) {
+    return await new Promise((resolve, reject) => setTimeout(resolve, ms))
 }
 
-async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
-
-    const topicName = `calendar-${calendar_id}`;
+async function notifyNewEvent (event: ICalEvent, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
+    const topicName = `calendar-${calendar_id}`
 
     const message: Message = {
         notification: {
             title: getNotificationTitle(calendar_name),
-            body: getNotificationBody(event.start() as Date, event.end() as Date),
+            body: getNotificationBody(event.start() as Date, event.end() as Date)
         },
         webpush: {
             notification: {
                 tag: 'nsw-' + topicName,
-                icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
+                icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg'
             }
         },
-        topic: topicName,
+        topic: topicName
     }
     console.log('New event!', JSON.stringify({ ...message.notification, ...pick(event, 'id', 'start') }))
 

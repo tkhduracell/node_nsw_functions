@@ -1,8 +1,8 @@
-import { ICalCalendar } from "ical-generator"
-import { ListedActivities } from "./types"
-import { parseISO } from "date-fns"
+import { ICalCalendar } from 'ical-generator'
+import { type ListedActivities } from './types'
+import { parseISO } from 'date-fns'
 
-export function buildCalendar(url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
+export function buildCalendar (url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
     const calendar = new ICalCalendar()
     calendar.name(subject.name)
     calendar.prodId({
@@ -24,10 +24,10 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
             start: parseISO(startTime),
             end: parseISO(endTime),
             summary: name,
-            description: description,
+            description,
             location: venueName ?? '',
             id: activityId
-        });
+        })
     }
 
     return calendar

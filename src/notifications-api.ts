@@ -3,7 +3,7 @@ import { join } from 'path'
 import z from 'zod'
 
 import { initializeApp } from 'firebase-admin/app'
-import { Message, getMessaging } from 'firebase-admin/messaging'
+import { type Message, getMessaging } from 'firebase-admin/messaging'
 import { getFirestore } from 'firebase-admin/firestore'
 import cors from 'cors'
 import { prettyJson } from './middleware'
@@ -13,7 +13,7 @@ const app = express()
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => console.log(`Listening on port ${port}`))
+    app.listen(port, () => { console.log(`Listening on port ${port}`) })
 }
 
 app.use(cors({ origin: 'https://nackswinget.se' }))
@@ -68,27 +68,23 @@ app.post('/trigger', async (req, res) => {
 
 app.use(express.static(join(__dirname, '..', 'static')))
 
-export async function mockNotification(
-        topicName = 'calendar-337667',
-        title = undefined as string | undefined,
-        body = undefined as string | undefined
-    ) {
-
-    if (!body) body = `Test av notification`
-    if (!title) title = 'Ny notis'
-
+export async function mockNotification (
+    topicName = 'calendar-337667',
+    title = undefined as string | undefined,
+    body = undefined as string | undefined
+) {
     const message: Message = {
         notification: {
-            title,
-            body,
+            title: title ?? 'Ny notis',
+            body: body ?? 'Test av notification'
             // imageUrl: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg"
         },
         webpush: {
             notification: {
-                icon: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg",
+                icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg'
             }
         },
-        topic: topicName,
+        topic: topicName
     }
     console.log({ message })
     const resp = await getMessaging().send(message)

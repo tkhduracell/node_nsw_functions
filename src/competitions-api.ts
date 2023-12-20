@@ -9,7 +9,7 @@ const app = express()
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => console.log(`Listening on port ${port}`))
+    app.listen(port, () => { console.log(`Listening on port ${port}`) })
 }
 
 app.use(express.json())
@@ -22,7 +22,7 @@ app.get('/', async (req, res) => {
 
     res
         .header('Content-Type', 'text/calendar')
-        .header('Content-Disposition', `attachment; filename="comp_${classTypes || 'all'}.ics"`)
+        .header('Content-Disposition', `attachment; filename="comp_${classTypes ?? 'all'}.ics"`)
         .send(cal.toString())
 })
 

@@ -18,4 +18,4 @@ import notifications from './notifications-api'
 http('notifications-api', notifications)
 
 import competitions from './competitions-api'
-http('competitions-api', competitions);
+http('competitions-api', competitions)
