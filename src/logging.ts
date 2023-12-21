@@ -28,14 +28,14 @@ export const logger = winston.createLogger({
             winston.format.json()
         )
         : winston.format.combine(
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format(info => {
                 const traceId = asyncLocalStorage.getStore() as string
                 return traceId
-                    ? { ...info, traceId }
-                    : info
+                ? { ...info, traceId }
+                : info
             })(),
             winston.format.json(),
+            winston.format.timestamp(),
             winston.format.colorize({ message: true, level: true })
         )
 })

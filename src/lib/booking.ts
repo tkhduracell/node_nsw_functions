@@ -5,11 +5,12 @@ import { type ActivityCreateResponse, type ListedActivities } from './types'
 import { formatInTimeZone } from 'date-fns-tz'
 import { type Protocol } from 'puppeteer'
 import { fetch } from 'cross-fetch'
+import { logger } from '../logging'
 
 export async function fetchActivitiesOnDate (date: string, calendarId: string, cookies: Protocol.Network.CookieParam[]) {
     const start = parseISO(date)
     const end = addDays(start, 1)
-    console.log('Calling fetchActivities', { start, end })
+    logger.info('Calling fetchActivities', { start, end })
     return await fetchActivities(start, end, calendarId, cookies)
 }
 
@@ -20,7 +21,7 @@ export async function fetchActivities (start: Date, end: Date, calendarId: strin
     const startTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
     const endTime = `${formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
 
-    console.log('Fetching activities', { startTime, endTime })
+    logger.info('Fetching activities', { startTime, endTime })
     const response = await fetch(`${ACTIVITY_BASE_URL}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
         method: 'GET',
         headers: {
@@ -61,7 +62,7 @@ export async function bookActivity (orgId: string, calendarId: string, { locatio
     const start = addMinutes(addHours(startOfDate, parseInt(hh)), parseInt(mm))
     const end = addMinutes(start, duration)
 
-    console.log('Calling bookActivityRaw', { startOfDate, start, end })
+    logger.info('Calling bookActivityRaw', { startOfDate, start, end })
     return await bookActivityRaw(orgId, calendarId, {
         name: title,
         description,
@@ -105,7 +106,7 @@ export async function bookActivityRaw (orgId: string, calendarId: string, { venu
         },
         reSendSummon: false
     }
-    console.info('Boking activity', body.activity)
+    logger.info('Boking activity', body.activity)
 
     const result = await fetch(`${ACTIVITY_BASE_URL}/Activities/SaveActivity`, {
         headers: {

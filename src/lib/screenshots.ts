@@ -1,5 +1,6 @@
 import { type Bucket } from '@google-cloud/storage'
 import { type Browser } from 'puppeteer'
+import { logger } from '../logging'
 
 export async function dumpScreenshots (browser: Browser, bucket: Bucket, prefix: string) {
     let i = 0
@@ -11,7 +12,7 @@ export async function dumpScreenshots (browser: Browser, bucket: Bucket, prefix:
         const imageName = `errors/${prefix}/${date.toISOString()}-page-${i++}.png`
         const file = bucket.file(imageName)
 
-        console.info(`Writing error screenshot ${i} to ${file.cloudStorageURI.toString()}`)
+        logger.info(`Writing error screenshot ${i} to ${file.cloudStorageURI.toString()}`)
         await file.save(img, { contentType: 'image/png' })
 
         const [url] = await file.getSignedUrl({
@@ -19,6 +20,6 @@ export async function dumpScreenshots (browser: Browser, bucket: Bucket, prefix:
             action: 'read',
             expires: Date.now() + 3600 * 1000
         })
-        console.info('Screenshot uploaded:', url)
+        logger.info('Screenshot uploaded:', url)
     }
 }

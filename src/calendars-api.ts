@@ -67,7 +67,7 @@ app.post('/update', async (req, res) => {
     try {
         await updateLean(bucket, db, orgId)
     } catch (err: any) {
-        console.error('Error in updateLean()', err)
+        logger.error('Error in updateLean()', err)
 
         return res.status(500)
             .send({ message: `Unable to perform update: ${err?.message}` })
@@ -87,7 +87,7 @@ app.get('/update', async (req, res) => {
         return res.status(200)
             .json(result)
     } catch (err: any) {
-        console.error('Error in status()', err)
+        logger.error('Error in status()', err)
 
         return res.status(500)
             .json({ message: `Unable to perform update: ${err?.message}` })
@@ -102,7 +102,7 @@ app.get('/book/search', async (req, res) => {
 
     const query = await QuerySchema.safeParseAsync(req.query)
     if (!query.success) {
-        console.error('Invalid request', query.error.flatten().fieldErrors)
+        logger.error('Invalid request', query.error.flatten().fieldErrors)
         return res.status(400).send(JSON.stringify({
             sucesss: false,
             error: 'Invalid request: invalid ' + Object.keys(query.error.flatten().fieldErrors).join(',')
@@ -164,7 +164,7 @@ app.post('/book', async (req, res) => {
             id: activityId
         })
     } else {
-        console.error('Invalid request', data.error.flatten().fieldErrors)
+        logger.error('Invalid request', data.error.flatten().fieldErrors)
         res.status(400).json({
             sucesss: false,
             error: 'Invalid request: invalid ' + Object.keys(data.error.flatten().fieldErrors).join(',')

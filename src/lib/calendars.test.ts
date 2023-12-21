@@ -3,6 +3,9 @@ import { type Firestore } from 'firebase-admin/firestore'
 import { type Bucket } from '@google-cloud/storage'
 import { type ListedActivities, type ListedActivity } from './types'
 
+import { logger } from '../logging'
+jest.mock('../logging')
+
 import { fetch } from 'cross-fetch'
 jest.mock('cross-fetch')
 
@@ -31,6 +34,7 @@ describe('updateCalendarContent', () => {
         jest.mocked(fetchActivities).mockReset()
         jest.mocked(getMessaging).mockReset()
         jest.spyOn(global, 'Date').mockRestore()
+        jest.mocked(logger)
 
         mockFirestore = {
             collection: jest.fn().mockReturnThis(),

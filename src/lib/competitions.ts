@@ -5,6 +5,7 @@ import z from 'zod'
 
 import { load } from 'cheerio'
 import ical from 'ical-generator'
+import { logger } from '../logging'
 
 export async function fetchCompetitions (classTypes?: 'R' | 'N' | 'X' | '') {
     const body = new URLSearchParams([
@@ -110,7 +111,7 @@ export async function fetchCompetitions (classTypes?: 'R' | 'N' | 'X' | '') {
         const result = com.safeParse(raw)
 
         if (!result.success) {
-            console.warn(raw, result.error.flatten())
+            logger.warn(raw, result.error.flatten())
             continue
         }
         const { data } = result
@@ -136,10 +137,10 @@ export async function fetchCompetitions (classTypes?: 'R' | 'N' | 'X' | '') {
         try {
             calendar.createEvent(event)
         } catch (err) {
-            console.error('Invalid event', event, err)
+            logger.error('Invalid event', event, err)
         }
 
-        console.log([data.name, data.start_date, data.classes, data.city].join(' '))
+        logger.info([data.name, data.start_date, data.classes, data.city].join(' '))
     }
     return calendar
 }

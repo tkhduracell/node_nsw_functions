@@ -13,6 +13,7 @@ import { fetchCookies } from './cookies'
 import { getNotificationBody, getNotificationTitle } from './notification-builder'
 import { buildCalendar } from './ical-builder'
 import { type CalendarMetadataData, type CalendarMetadata, type Calendars, type CalendarNotification } from './types'
+import { logger } from '../logging'
 
 const navigate = async <T>(page: Page, action: () => Promise<T>): Promise<T> => await Promise.all([page.waitForNavigation(), action()]).then(results => results[1] as T)
 
@@ -63,11 +64,11 @@ async function fetchCalendars (page: Page, orgId: string): Promise<Calendars> {
 
     await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${orgId}`)
 
-    console.log('Waiting for search button')
+    logger.info('Waiting for search button')
     await page.waitForSelector('#btnSearchKalender')
     await sleep(5000)
 
-    console.log('Locating calendars in table')
+    logger.info('Locating calendars in table')
     const calendarTds = await page.$$('td[data-title="Kalender"]')
     const calendars = calendarTds.map(async d => await d.$eval('a', a => ({
         id: a.attributes.getNamedItem('href')?.textContent?.replace('/Calendars/View/', '') ?? '(not found)',
@@ -87,10 +88,10 @@ export async function update (browser: Browser, bucket: Bucket, db: Firestore, o
 
         await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-        console.log('Restoring old cookies', { orgId })
+        logger.info('Restoring old cookies', { orgId })
         await page.setCookie(...cookies)
 
-        console.log('Finding calendars', { orgId })
+        logger.info('Finding calendars', { orgId })
         const cals = await fetchCalendars(page, orgId)
 
         await updateCalendarContent(cals, cookies, bucket, db)
@@ -101,7 +102,7 @@ export async function update (browser: Browser, bucket: Bucket, db: Firestore, o
 
 export async function updateLean (bucket: Bucket, db: Firestore, orgId: string) {
     try {
-        console.log('Fetching previous cookies', { orgId })
+        logger.info('Fetching previous cookies', { orgId })
         const cookies = await fetchCookies(db, orgId)
 
         const cals = await fetchPreviousCalendars(db, orgId)
@@ -135,11 +136,11 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
     const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
 
     for (const cal of cals) {
-        console.log('Fetching activities', cal)
+        logger.info('Fetching activities', cal)
         const { data, response } = await fetchActivities(lastquater, inayear, cal.id, cookies)
 
         const calendar = buildCalendar(response.url, data, cal)
-        console.log('Built ICalendar successfully', cal)
+        logger.info('Built ICalendar successfully', cal)
 
         const metadata: CalendarMetadata = {
             calendar_name: cal.name,
@@ -155,12 +156,12 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             .doc(cal.id ?? '')
             .get()
             .then(d => d.data()) as CalendarMetadata
-        console.log('Read old metadata', cal, previous)
+        logger.info('Read old metadata', cal, previous)
 
         const calendar_last_uid = previous?.calendar_last_uid
         const last_notifications = previous?.last_notifications ?? []
 
-        console.log('Findning new events', cal)
+        logger.info('Findning new events', cal)
         const now = new Date()
         const newEvents = sortBy(calendar.events(), e => e.uid())
             .filter(e => e.start() >= now) // Must be in future
@@ -170,7 +171,7 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
         const newEvent = newEvents.find(e => true) // Take first
 
         if (newEvent) {
-            console.log(
+            logger.info(
                 'Found', newEvents.length, 'new events', cal,
                 JSON.stringify({
                     next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
@@ -199,17 +200,17 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
 
             metadata.last_notifications = [notification, ...last_notifications].slice(0, 5)
         } else {
-            console.warn('No next event found')
+            logger.warn('No next event found')
         }
 
-        console.log('Saving metadata', cal, metadata)
+        logger.info('Saving metadata', cal, metadata)
         await db.collection('calendars')
             .doc(cal.id ?? '')
             .set({ ...metadata, updated_at: FieldValue.serverTimestamp() }, { merge: true })
 
         const destination = `cal_${cal.id}.ics`
         const file = bucket.file(destination)
-        console.log(`Uploading to ${file.cloudStorageURI.toString()}`, cal)
+        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, cal)
         await file
             .save(calendar.toString(), { metadata: { metadata } })
     }
@@ -254,7 +255,7 @@ async function notifyNewEvent (event: ICalEvent, calendar_id: string, calendar_n
         },
         topic: topicName
     }
-    console.log('New event!', JSON.stringify({ ...message.notification, ...pick(event, 'id', 'start') }))
+    logger.info('New event!', JSON.stringify({ ...message.notification, ...pick(event, 'id', 'start') }))
 
     await getMessaging().send(message)
 

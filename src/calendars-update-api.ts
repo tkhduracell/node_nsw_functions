@@ -66,7 +66,7 @@ app.post('/', async (req, res) => {
         logger.info('Updating calendar', { orgId })
         await update(browser, bucket, db, orgId)
     } catch (err: any) {
-        console.error('Error in update()', { orgId }, err)
+        logger.error('Error in update()', { orgId }, err)
 
         await dumpScreenshots(browser, bucket, `org-${orgId}-update`)
 

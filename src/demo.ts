@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 /*
 *   npm run demo
 */
@@ -7,94 +9,97 @@ import { login } from './lib/calendars'
 import { bookActivityRaw } from './lib/booking'
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
-import { getFirestore } from 'firebase-admin/firestore'
+import { Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { addDays, addMinutes, formatDistanceStrict, parseISO, startOfDay } from 'date-fns'
 import { fetchCookies } from './lib/cookies'
 import { launchBrowser } from './calendars-update-api'
 import { orderBy } from 'lodash'
 import { IDOActivityOptions } from './env'
+import { logger } from './logging'
+import type { CalendarMetadata } from './lib/types'
 
 config()
 
 initializeApp({ projectId: 'nackswinget-af7ef' })
 
 async () => {
-  const date = '2023-11-18T23:00:00.000Z'
+    const date = '2023-11-18T23:00:00.000Z'
 
-  const start = startOfDay(parseISO(date))
-  const end = startOfDay(addDays(start, 1))
+    const start = startOfDay(parseISO(date))
+    const end = startOfDay(addDays(start, 1))
 
-  console.log({ start, end })
-  console.log({
-    start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
-    end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
-  })
+    logger.info({ start, end })
+    logger.info({
+        start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
+        end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
+    })
 };
 
 (async () => {
-  const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
-  const db = getFirestore()
-  const cookies = await fetchCookies(db, orgId)
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+    const db = getFirestore()
+    const cookies = await fetchCookies(db, orgId)
 
-  for (const cookie of orderBy(cookies, c => c.expires)) {
-    if ((cookie as any).session) continue
-    console.log(new Date((cookie.expires ?? 0) * 1000), cookie.name, cookie.value)
-  }
+    for (const cookie of orderBy(cookies, c => c.expires)) {
+        if ((cookie as any).session) continue
+        logger.info(new Date((cookie.expires ?? 0) * 1000).toISOString(), cookie.name, cookie.value)
+    }
 })()
 
 async () => {
-  const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
 
-  const browser = await launchBrowser()
-  const db = getFirestore()
-  try {
-    await login(browser, db, orgId)
-  } catch (err) {
-    console.error(err)
-  } finally {
-    await browser.close()
-  }
+    const browser = await launchBrowser()
+    const db = getFirestore()
+    try {
+        await login(browser, db, orgId)
+    } catch (err) {
+        logger.error(err)
+    } finally {
+        await browser.close()
+    }
 
-  process.exit(0)
+    process.exit(0)
 }
 
 async () => {
-  const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
 
-  const start = new Date('2023-11-09 14:00:00')
-  const end = addMinutes(start, 60)
+    const start = new Date('2023-11-09 14:00:00')
+    const end = addMinutes(start, 60)
 
-  const db = getFirestore()
-  const cookies = await fetchCookies(db, orgId)
-  const result = await bookActivityRaw(orgId, '337667', {
-    name: 'Friträning',
-    description: 'Filip 0702683230',
-    start,
-    end,
-    venueName: 'Ceylon'
-  }, cookies)
+    const db = getFirestore()
+    const cookies = await fetchCookies(db, orgId)
+    const result = await bookActivityRaw(orgId, '337667', {
+        name: 'Friträning',
+        description: 'Filip 0702683230',
+        start,
+        end,
+        venueName: 'Ceylon'
+    }, cookies)
 
-  console.debug(JSON.stringify(result, null, 2))
-  process.exit(0)
+    logger.debug(JSON.stringify(result, null, 2))
+    process.exit(0)
 }
 
 async () => {
-  const db = getFirestore()
+    const db = getFirestore()
 
-  const list = await db.collection('calendars')
-    .where('updated_at', '>=', new Date(0))
-    .get()
+    const list = await db.collection('calendars')
+        .where('updated_at', '>=', new Date(0))
+        .get()
 
-  list.forEach(d => {
-    const data = d.data()
+    list.forEach(d => {
+        const data = d.data() as CalendarMetadata
 
-    const updatedAt = data.updated_at.toDate()
-    const calendarLastDate = parseISO(data.calendar_last_date)
+        const updatedAt: Date = (data.updated_at as unknown as Timestamp).toDate()
+        const calendarLastDate = parseISO(data.calendar_last_date ?? '')
 
-    console.log({
-      ...data,
-      updated_at: formatDistanceStrict(updatedAt, new Date(), { unit: 'hour' }),
-      calendar_last_date: formatDistanceStrict(calendarLastDate, new Date(), { unit: 'hour' })
+        logger.info({
+            ...data,
+            // @ts-ignore
+            updated_at: formatDistanceStrict(updatedAt, new Date(), { unit: 'hour' }),
+            calendar_last_date: formatDistanceStrict(calendarLastDate, new Date(), { unit: 'hour' })
+        })
     })
-  })
 }
