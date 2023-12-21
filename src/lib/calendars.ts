@@ -170,14 +170,15 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
 
         const newEvent = newEvents.find(e => true) // Take first
 
+        logger.info(
+            'Found', newEvents.length, 'new events', cal,
+            {
+                next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
+                next_events: newEvents
+            }
+        )
+
         if (newEvent) {
-            logger.info(
-                'Found', newEvents.length, 'new events', cal,
-                JSON.stringify({
-                    next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
-                    next_events: newEvents
-                })
-            )
 
             const description = newEvent.description()?.plain ?? ''
             let creator = null as string | null
