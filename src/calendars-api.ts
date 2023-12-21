@@ -1,3 +1,4 @@
+import { logger, loggerMiddleware } from './logging'
 import { Storage } from '@google-cloud/storage'
 import z from 'zod'
 import { join } from 'path'
@@ -12,15 +13,15 @@ import express from 'express'
 import { prettyJson } from './middleware'
 
 const app = express()
+app.use(express.json())
+app.use(prettyJson)
+app.use(loggerMiddleware)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => console.log(`Listening on port ${port}`))
+    app.listen(port, () => logger.info(`Listening on port ${port}`))
 }
-
-app.use(express.json())
-app.use(prettyJson)
 
 app.get('/', async (req, res) => {
     const {
@@ -81,6 +82,7 @@ app.get('/update', async (req, res) => {
     const db = getFirestore()
 
     try {
+        logger.info('Getting calendar status', { orgId })
         const result = await status(db, orgId)
         return res.status(200)
             .json(result)
@@ -155,7 +157,7 @@ app.post('/book', async (req, res) => {
 
         const cookies = await fetchCookies(db, orgId)
 
-        console.log('Booking activity', event)
+        logger.info('Booking activity', event)
         const { activityId } = await bookActivity(orgId, calendarId, event, cookies)
         res.status(200).send({
             success: true,

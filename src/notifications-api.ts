@@ -1,3 +1,4 @@
+import { logger, loggerMiddleware } from './logging'
 import express from 'express'
 import { join } from 'path'
 import z from 'zod'
@@ -9,16 +10,16 @@ import cors from 'cors'
 import { prettyJson } from './middleware'
 
 const app = express()
+app.use(loggerMiddleware)
+app.use(cors({ origin: 'https://nackswinget.se' }))
+app.use(express.json())
+app.use(prettyJson)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => { console.log(`Listening on port ${port}`) })
+    app.listen(port, () => { logger.info(`Listening on port ${port}`) })
 }
-
-app.use(cors({ origin: 'https://nackswinget.se' }))
-app.use(express.json())
-app.use(prettyJson)
 
 app.post('/status', async (req, res) => {
     const { token } = z.object({ token: z.string() }).parse(req.query)
@@ -41,7 +42,7 @@ app.post('/subscribe', async (req, res) => {
     const db = getFirestore()
     await db.collection('tokens').doc(token).set({ created_at: new Date(), topic }, { merge: true })
 
-    console.log('Successfully subscribed to topic:', response)
+    logger.info('Successfully subscribed to topic:', response)
     return res.status(200).send(response)
 })
 
@@ -52,7 +53,7 @@ app.post('/unsubscribe', async (req, res) => {
     const db = getFirestore()
     await db.collection('tokens').doc(token).delete()
 
-    console.log('Successfully unsubscribed from topic:', response)
+    logger.info('Successfully unsubscribed from topic:', response)
     return res.status(200).send(response)
 })
 
@@ -86,10 +87,10 @@ export async function mockNotification (
         },
         topic: topicName
     }
-    console.log({ message })
+    logger.info({ message })
     const resp = await getMessaging().send(message)
 
-    console.log({ resp })
+    logger.info({ resp })
     return resp
 }
 

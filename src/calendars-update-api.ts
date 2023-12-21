@@ -1,3 +1,4 @@
+import { logger, loggerMiddleware } from './logging'
 import { Storage } from '@google-cloud/storage'
 
 import { GCloudOptions, IDOActivityOptions } from './env'
@@ -11,15 +12,15 @@ import { dumpScreenshots } from './lib/screenshots'
 import { prettyJson } from './middleware'
 
 const app = express()
+app.use(loggerMiddleware)
+app.use(express.json())
+app.use(prettyJson)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => console.log(`Listening on port ${port}`))
+    app.listen(port, () => logger.info(`Listening on port ${port}`))
 }
-
-app.use(express.json())
-app.use(prettyJson)
 
 export async function launchBrowser () {
     const args = [
@@ -58,11 +59,11 @@ app.post('/', async (req, res) => {
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
 
-    console.log('Launching browser', { orgId })
+    logger.info('Launching browser', { orgId })
     const browser = await launchBrowser()
 
     try {
-        console.log('Updating calendar', { orgId })
+        logger.info('Updating calendar', { orgId })
         await update(browser, bucket, db, orgId)
     } catch (err: any) {
         console.error('Error in update()', { orgId }, err)

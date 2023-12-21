@@ -1,4 +1,5 @@
 import 'source-map-support/register'
+import './logging'
 
 import { http } from '@google-cloud/functions-framework'
 import { config } from 'dotenv'

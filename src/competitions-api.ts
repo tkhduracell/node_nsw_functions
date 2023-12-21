@@ -1,3 +1,4 @@
+import { logger, loggerMiddleware } from './logging'
 import { fetchCompetitions } from './lib/competitions'
 import z from 'zod'
 import express from 'express'
@@ -5,15 +6,15 @@ import { initializeApp } from 'firebase-admin/app'
 import { prettyJson } from './middleware'
 
 const app = express()
+app.use(express.json())
+app.use(prettyJson)
+app.use(loggerMiddleware)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => { console.log(`Listening on port ${port}`) })
+    app.listen(port, () => { logger.info(`Listening on port ${port}`) })
 }
-
-app.use(express.json())
-app.use(prettyJson)
 
 app.get('/', async (req, res) => {
     const classTypes = z.enum(['X', 'N', 'R', '']).default('').parse(req.query.classTypes)
