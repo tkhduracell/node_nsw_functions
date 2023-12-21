@@ -136,11 +136,11 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
     const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
 
     for (const cal of cals) {
-        logger.info('Fetching activities', cal)
+        logger.info('Fetching activities', {cal, lastquater, inayear})
         const { data, response } = await fetchActivities(lastquater, inayear, cal.id, cookies)
 
         const calendar = buildCalendar(response.url, data, cal)
-        logger.info('Built ICalendar successfully', cal)
+        logger.info('Built ICalendar successfully', { cal })
 
         const metadata: CalendarMetadata = {
             calendar_name: cal.name,
@@ -156,30 +156,34 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             .doc(cal.id ?? '')
             .get()
             .then(d => d.data()) as CalendarMetadata
-        logger.info('Read old metadata', cal, previous)
+        logger.info('Read old metadata', {cal, previous})
 
         const calendar_last_uid = previous?.calendar_last_uid
         const last_notifications = previous?.last_notifications ?? []
 
-        logger.info('Findning new events', cal)
+        logger.info('Findning new events', { cal })
         const now = new Date()
-        const newEvents = sortBy(calendar.events(), e => e.uid())
+        const nextWeekEvents = sortBy(calendar.events(), e => e.uid())
             .filter(e => e.start() >= now) // Must be in future
             .filter(e => e.start() < addDays(now, 6)) // No more than 6 days ahead
+
+        const newEvents = nextWeekEvents
             .filter(e => e.uid() > calendar_last_uid) // Larger than last uid
 
         const newEvent = newEvents.find(e => true) // Take first
 
         logger.info(
-            'Found', newEvents.length, 'new events', cal,
+            `Found ${newEvents.length} new events`,
             {
-                next_event: pick(newEvent, 'id', 'start', 'end', 'summary'),
-                next_events: newEvents
+                cal,
+                metadata,
+                newEvent: pick(newEvent, 'id', 'start', 'end'),
+                newEvents: newEvents.map(e => pick(e, 'id', 'start', 'end', 'summary')),
+                nextWeekEvents: nextWeekEvents.map(e => pick(e, 'id', 'start', 'end', 'summary'))
             }
         )
 
         if (newEvent) {
-
             const description = newEvent.description()?.plain ?? ''
             let creator = null as string | null
             let contact = null as string | null
@@ -201,17 +205,17 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
 
             metadata.last_notifications = [notification, ...last_notifications].slice(0, 5)
         } else {
-            logger.warn('No next event found')
+            logger.warn('No next event found', { cal, metadata })
         }
 
-        logger.info('Saving metadata', cal, metadata)
+        logger.info('Saving metadata', { cal, metadata })
         await db.collection('calendars')
             .doc(cal.id ?? '')
             .set({ ...metadata, updated_at: FieldValue.serverTimestamp() }, { merge: true })
 
         const destination = `cal_${cal.id}.ics`
         const file = bucket.file(destination)
-        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, cal)
+        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`,  { cal, metadata })
         await file
             .save(calendar.toString(), { metadata: { metadata } })
     }
@@ -256,7 +260,7 @@ async function notifyNewEvent (event: ICalEvent, calendar_id: string, calendar_n
         },
         topic: topicName
     }
-    logger.info('New event!', JSON.stringify({ ...message.notification, ...pick(event, 'id', 'start') }))
+    logger.info('Sending notification for new event!', { message: message.notification, event: pick(event, 'id', 'start') })
 
     await getMessaging().send(message)
 
