@@ -179,6 +179,12 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
+      - name: Send deploy message to slack
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"NSW calendars-api has been deployed! 🚢💨"}' ${SLACK_WEBHOOK}
+
       - name: Update scheduler calendar-update-lean-5m
         run: |
           gcloud scheduler jobs update http calendar-update-lean-5m \
