@@ -255,7 +255,7 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"🚢 Function calendars-update-api has been deployed 🚢"}' ${SLACK_WEBHOOK}
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"NSW calendars-update-api has been deployed! 🚢💨"}' ${SLACK_WEBHOOK}
 
       - name: Trigger update
         run: |
