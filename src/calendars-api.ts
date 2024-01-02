@@ -132,7 +132,9 @@ app.get('/book/search', async (req, res) => {
 })
 
 app.get('/book', async (req, res) => {
-    res.sendFile(join(__dirname, '..', 'static', 'booking.html'), { })
+    res.sendFile(join(__dirname, '..', 'static', 'booking.html'), { headers: {
+        'Content-Type': 'text/html charset=utf-8'
+    } })
 })
 
 app.post('/book', async (req, res) => {
