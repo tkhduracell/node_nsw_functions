@@ -252,6 +252,12 @@ jobs:
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
       - name: Trigger update
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"🚢 Function calendars-update-api has been deployed 🚢"}' ${SLACK_WEBHOOK}
+
+      - name: Trigger update
         run: |
           curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})
 
