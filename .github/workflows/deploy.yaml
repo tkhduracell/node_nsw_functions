@@ -71,7 +71,7 @@ jobs:
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Setup default project
+      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Deploy notifications-api
@@ -122,7 +122,7 @@ jobs:
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Setup default project
+      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Deploy competitions-api
@@ -171,7 +171,7 @@ jobs:
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Setup default project (${GCLOUD_PROJECT})
+      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Deploy calendars-api
@@ -232,7 +232,7 @@ jobs:
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1
 
-      - name: Setup default project ${{ env.GCLOUD_PROJECT }}
+      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Deploy calendars-update-api
@@ -251,7 +251,7 @@ jobs:
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
 
-      - name: Trigger update
+      - name: Send deploy message to slack
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
