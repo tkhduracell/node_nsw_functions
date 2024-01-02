@@ -61,7 +61,8 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
+      - &auth
+        id: 'auth'
         name: Setup  gcloud Cloud SDK auth
         uses: 'google-github-actions/auth@v1'
         with:
@@ -112,12 +113,7 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
-        name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v1'
-        with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+      - *auth
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1
@@ -161,12 +157,7 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
-        name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v1'
-        with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+      - *auth
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1
@@ -222,12 +213,7 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
-        name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v1'
-        with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+      - *auth
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v1
