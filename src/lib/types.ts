@@ -167,3 +167,6 @@ export interface CalendarMetadata {
     last_notifications: CalendarNotification[]
     updated_at: Date
 }
+
+
+export type HttpFetch = typeof fetch

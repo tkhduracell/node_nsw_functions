@@ -7,7 +7,7 @@ import { load } from 'cheerio'
 import ical from 'ical-generator'
 import { logger } from '../logging'
 
-export async function fetchCompetitions (classTypes?: 'R' | 'N' | 'X' | '') {
+export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
     const body = new URLSearchParams([
         ['cwi_db_FilterTemplate[filterName]', ''],
         ['cwi_db_FilterTemplate[id]', '0'],

@@ -6,7 +6,7 @@
 
 import { formatInTimeZone } from 'date-fns-tz'
 import { login } from './lib/calendars'
-import { bookActivityRaw } from './lib/booking'
+
 import { config } from 'dotenv'
 import { initializeApp } from 'firebase-admin/app'
 import { Timestamp, getFirestore } from 'firebase-admin/firestore'
@@ -17,6 +17,7 @@ import { orderBy } from 'lodash'
 import { IDOActivityOptions } from './env'
 import { logger } from './logging'
 import type { CalendarMetadata } from './lib/types'
+import { ActivityApi } from './lib/booking'
 
 config()
 
@@ -70,13 +71,16 @@ async () => {
 
     const db = getFirestore()
     const cookies = await fetchCookies(db, orgId)
-    const result = await bookActivityRaw(orgId, '337667', {
+
+    const actApi = new ActivityApi(orgId, 'https://www.idrottonline.se', { get: () => cookies }, fetch)
+
+    const result = await actApi.bookActivityRaw('337667', {
         name: 'Friträning',
         description: 'Filip 0702683230',
         start,
         end,
         venueName: 'Ceylon'
-    }, cookies)
+    })
 
     logger.debug(JSON.stringify(result, null, 2))
     process.exit(0)

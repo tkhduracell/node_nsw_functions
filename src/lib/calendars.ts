@@ -1,23 +1,24 @@
-import { type Browser, type Page, type Protocol } from 'puppeteer'
+import { type Browser, type Page } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, type Message } from 'firebase-admin/messaging'
 import { FieldValue, type Firestore } from 'firebase-admin/firestore'
-import { addDays, formatDistance } from 'date-fns'
+import { addDays, formatDistance, subDays } from 'date-fns'
 import { type Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { IDOActivityOptions } from '../env'
 
 import { type ICalEvent } from 'ical-generator'
-import { fetchActivities } from './booking'
+import { ActivityApi } from './booking'
 import { fetchCookies } from './cookies'
 import { getNotificationBody, getNotificationTitle } from './notification-builder'
 import { buildCalendar } from './ical-builder'
 import { type CalendarMetadataData, type CalendarMetadata, type Calendars, type CalendarNotification } from './types'
 import { logger } from '../logging'
+import { Clock } from './clock'
 
 const navigate = async <T>(page: Page, action: () => Promise<T>): Promise<T> => await Promise.all([page.waitForNavigation(), action()]).then(results => results[1] as T)
 
-export async function login (browser: Browser, db: Firestore, orgId: string) {
+export async function login(browser: Browser, db: Firestore, orgId: string) {
     const {
         ACTIVITY_BASE_URL,
         ACTIVITY_USERNAME,
@@ -57,7 +58,7 @@ export async function login (browser: Browser, db: Firestore, orgId: string) {
     return cookies
 }
 
-async function fetchCalendars (page: Page, orgId: string): Promise<Calendars> {
+async function fetchCalendars(page: Page, orgId: string): Promise<Calendars> {
     const {
         ACTIVITY_BASE_URL
     } = IDOActivityOptions.parse(process.env)
@@ -78,7 +79,8 @@ async function fetchCalendars (page: Page, orgId: string): Promise<Calendars> {
     return await Promise.all(calendars).then(cals => cals.map(cal => ({ ...cal, orgId })))
 }
 
-export async function update (browser: Browser, bucket: Bucket, db: Firestore, orgId: string) {
+export async function update(browser: Browser, bucket: Bucket, db: Firestore, clock: Clock, orgId: string) {
+    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
     try {
         const cookies = await login(browser, db, orgId)
 
@@ -94,25 +96,28 @@ export async function update (browser: Browser, bucket: Bucket, db: Firestore, o
         logger.info('Finding calendars', { orgId })
         const cals = await fetchCalendars(page, orgId)
 
-        await updateCalendarContent(cals, cookies, bucket, db)
+        const actApi = new ActivityApi(orgId, ACTIVITY_BASE_URL, { get: () => cookies }, fetch)
+        await updateCalendarContent(cals, actApi, clock, bucket, db)
     } catch (err) {
         throw new Error('Unable to do a full update', { cause: err })
     }
 }
 
-export async function updateLean (bucket: Bucket, db: Firestore, orgId: string) {
+export async function updateLean(bucket: Bucket, db: Firestore, clock: Clock, orgId: string) {
+    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
     try {
         logger.info('Fetching previous cookies', { orgId })
         const cookies = await fetchCookies(db, orgId)
 
+        const actApi = new ActivityApi(orgId, ACTIVITY_BASE_URL, { get: () => cookies }, fetch)
         const cals = await fetchPreviousCalendars(db, orgId)
-        await updateCalendarContent(cals, cookies, bucket, db)
+        await updateCalendarContent(cals, actApi, clock, bucket, db)
     } catch (err) {
         throw new Error('Unable to do a lean update', { cause: err })
     }
 }
 
-export async function status (db: Firestore, orgId: string) {
+export async function status(db: Firestore, orgId: string, clock: Clock) {
     const calendars = await db.collection('calendars')
         .where('calendar_org_id', '==', orgId)
         .get()
@@ -125,19 +130,20 @@ export async function status (db: Firestore, orgId: string) {
             calendar_last_uid: undefined,
             calendar_last_date: undefined,
             updated_at: cal.updated_at.toDate(),
-            updated_ago: formatDistance(cal.updated_at.toDate(), new Date(), { locale: sv, addSuffix: true })
+            updated_ago: formatDistance(cal.updated_at.toDate(), clock.now(), { locale: sv, addSuffix: true })
         }
     })
 }
 
-export async function updateCalendarContent (cals: Calendars, cookies: Protocol.Network.CookieParam[], bucket: Bucket, db: Firestore) {
-    const today = new Date()
-    const lastquater = new Date(today.getTime() - 1000 * 3600 * 24 * 90)
-    const inayear = new Date(today.getTime() + 1000 * 3600 * 24 * 366)
+export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi, clock: Clock, bucket: Bucket, db: Firestore) {
+    const today = clock.now()
+    const lastquater = subDays(today, 90)
+    const inayear = addDays(today, 366)
+    const inaweek = addDays(today, 6)
 
     for (const cal of cals) {
-        logger.info('Fetching activities', {cal, lastquater, inayear})
-        const { data, response } = await fetchActivities(lastquater, inayear, cal.id, cookies)
+        logger.info('Fetching activities', { cal, lastquater, inayear })
+        const { data, response } = await actApi.fetchActivities(lastquater, inayear, cal.id)
 
         const calendar = buildCalendar(response.url, data, cal)
         logger.info('Built ICalendar successfully', { cal })
@@ -156,18 +162,18 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             .doc(cal.id ?? '')
             .get()
             .then(d => d.data()) as CalendarMetadata
-        logger.info('Read old metadata', {cal, previous})
+        logger.info('Read old metadata', { cal, previous })
 
         const calendar_last_uid = previous?.calendar_last_uid ?? -1
         const last_notifications = previous?.last_notifications ?? []
 
         logger.info('Findning new events', { cal })
-        const now = new Date()
+
         const eventsByUid = sortBy(calendar.events(), e => e.uid())
         const futureEvents = eventsByUid
-            .filter(e => e.start() >= now) // Must be in future
+            .filter(e => e.start() >= today) // Must be in future
         const nextWeekEvents = futureEvents
-            .filter(e => e.start() < addDays(now, 6)) // No more than 6 days ahead
+            .filter(e => e.start() < inaweek) // No more than 6 days ahead
 
         const newEvents = nextWeekEvents
             .filter(e => e.uid() > calendar_last_uid) // Larger than last uid
@@ -196,7 +202,7 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             metadata.calendar_last_date = newEvent.start() as string
             metadata.calendar_last_uid = newEvent.uid()
             const notification: CalendarNotification = {
-                at: new Date().toISOString(),
+                at: clock.now().toISOString(),
                 id: newEvent.id(),
                 start: (newEvent.start() as Date).toISOString(),
                 body: eventNotifiation?.body ?? '',
@@ -217,7 +223,7 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
 
         const destination = `cal_${cal.id}.ics`
         const file = bucket.file(destination)
-        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`,  { cal, metadata })
+        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, { cal, metadata })
         await file
             .save(calendar.toString(), { metadata: { metadata } })
     }
@@ -229,7 +235,7 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
     await bucket.file('index.json').save(payload)
 }
 
-async function fetchPreviousCalendars (db: Firestore, orgId: string): Promise<Calendars> {
+async function fetchPreviousCalendars(db: Firestore, orgId: string): Promise<Calendars> {
     const results = await db.collection('calendars')
         .where('calendar_org_id', '==', orgId)
         .get()
@@ -242,11 +248,11 @@ async function fetchPreviousCalendars (db: Firestore, orgId: string): Promise<Ca
         .map(({ calendar_id: id, calendar_name: name }) => ({ name, id, orgId }))
 }
 
-async function sleep (ms: number = 20000) {
+async function sleep(ms: number = 20000) {
     return await new Promise((resolve, reject) => setTimeout(resolve, ms))
 }
 
-async function notifyNewEvent (event: ICalEvent, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
+async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
     const topicName = `calendar-${calendar_id}`
 
     const message: Message = {
