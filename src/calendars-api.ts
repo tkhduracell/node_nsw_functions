@@ -1,10 +1,11 @@
+import { ClockFactory } from './lib/clock';
 import { logger, loggerMiddleware } from './logging'
 import { Storage } from '@google-cloud/storage'
 import z from 'zod'
 import { join } from 'path'
 import { updateLean, status } from './lib/calendars'
 import { GCloudOptions, IDOActivityOptions } from './env'
-import { bookActivity, fetchActivitiesOnDate } from './lib/booking'
+import { ActivityApi, CookieProvider } from './lib/booking'
 import { getFirestore } from 'firebase-admin/firestore'
 import { fetchCookies } from './lib/cookies'
 import { differenceInMinutes } from 'date-fns'
@@ -21,6 +22,14 @@ if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
     app.listen(port, () => logger.info(`Listening on port ${port}`))
+}
+
+async function cookies(): Promise<CookieProvider> {
+    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+    const db = getFirestore()
+
+    const cookies = await fetchCookies(db, orgId)
+    return { get: () => cookies }
 }
 
 app.get('/', async (req, res) => {
@@ -65,7 +74,7 @@ app.post('/update', async (req, res) => {
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
 
     try {
-        await updateLean(bucket, db, orgId)
+        await updateLean(bucket, db, ClockFactory.native(), orgId)
     } catch (err: any) {
         logger.error('Error in updateLean()', err)
 
@@ -83,7 +92,7 @@ app.get('/update', async (req, res) => {
 
     try {
         logger.info('Getting calendar status', { orgId })
-        const result = await status(db, orgId)
+        const result = await status(db, orgId, ClockFactory.native())
         return res.status(200)
             .json(result)
     } catch (err: any) {
@@ -110,13 +119,11 @@ app.get('/book/search', async (req, res) => {
     }
 
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
-
-    const db = getFirestore()
-    const cookies = await fetchCookies(db, orgId)
+    const actApi = new ActivityApi(orgId, 'https://www.idrottonline.se', await cookies(), fetch)
 
     const { date, calendarId } = query.data
 
-    const { data } = await fetchActivitiesOnDate(date, calendarId, cookies)
+    const { data } = await actApi.fetchActivitiesOnDate(date, calendarId)
     const activities = data.map(e => e.listedActivity)
 
     const out = activities.map(({ name, startTime, endTime }) => {
@@ -132,9 +139,11 @@ app.get('/book/search', async (req, res) => {
 })
 
 app.get('/book', async (req, res) => {
-    res.sendFile(join(__dirname, '..', 'static', 'booking.html'), { headers: {
-        'Content-Type': 'text/html; charset=utf-8'
-    } })
+    res.sendFile(join(__dirname, '..', 'static', 'booking.html'), {
+        headers: {
+            'Content-Type': 'text/html; charset=utf-8'
+        }
+    })
 })
 
 app.post('/book', async (req, res) => {
@@ -157,10 +166,10 @@ app.post('/book', async (req, res) => {
     if (data.success) {
         const { password, calendarId, ...event } = data.data
 
-        const cookies = await fetchCookies(db, orgId)
+        const actApi = new ActivityApi(orgId, 'https://www.idrottonline.se', await cookies(), fetch)
 
         logger.info('Booking activity', event)
-        const { activityId } = await bookActivity(orgId, calendarId, event, cookies)
+        const { activityId } = await actApi.bookActivity(calendarId, event)
         res.status(200).send({
             success: true,
             id: activityId

@@ -10,6 +10,7 @@ import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
 import { dumpScreenshots } from './lib/screenshots'
 import { prettyJson } from './middleware'
+import { ClockFactory } from './lib/clock'
 
 const app = express()
 app.use(loggerMiddleware)
@@ -22,7 +23,7 @@ if (require.main === module) {
     app.listen(port, () => logger.info(`Listening on port ${port}`))
 }
 
-export async function launchBrowser () {
+export async function launchBrowser() {
     const args = [
         '--disable-setuid-sandbox',
         '--disable-infobars',
@@ -64,7 +65,7 @@ app.post('/', async (req, res) => {
 
     try {
         logger.info('Updating calendar', { orgId })
-        await update(browser, bucket, db, orgId)
+        await update(browser, bucket, db, ClockFactory.native(), orgId)
     } catch (err: any) {
         logger.error('Error in update()', { orgId }, err)
 

@@ -1,24 +1,15 @@
-/* eslint-disable @typescript-eslint/consistent-type-assertions */
-import { fetch } from 'cross-fetch'
-import { bookActivity, fetchActivitiesOnDate } from './booking'
+import { ActivityApi } from './booking'
+import { HttpFetch } from './types'
 
-jest.mock('cross-fetch')
-beforeEach(() => {
-    jest.mocked(fetch).mockReset()
-})
-beforeAll(() => {
-    process.env.ACTIVITY_ORG_ID = '1234'
-    process.env.ACTIVITY_BASE_URL = 'http://mock.app'
-    process.env.ACTIVITY_USERNAME = 'user'
-    process.env.ACTIVITY_PASSWORD = 'pass'
-})
 
 test('should fetch activities', async () => {
-    jest.mocked(fetch).mockImplementationOnce(async () => await Promise.resolve({ ok: true, json: async () => await Promise.resolve({}) } as Response))
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve({}) } as Response)
 
-    await fetchActivitiesOnDate('2023-11-18T23:00:00.000Z', '1', [])
+    const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch as HttpFetch)
 
-    const [call] = jest.mocked(fetch).mock.calls
+    await api.fetchActivitiesOnDate('2023-11-18T23:00:00.000Z', '1')
+
+    const [call] = fetch.mock.calls
     const [url, opts] = call
     expect(url).toBe('http://mock.app/activities/getactivities?calendarId=1&startTime=2023-11-19+00%3A00%3A00&endTime=2023-11-20+00%3A00%3A00')
     expect(opts).toHaveProperty('method', 'GET')
@@ -27,18 +18,20 @@ test('should fetch activities', async () => {
 test('should book activities', async () => {
     const resp = { success: true, activities: [{ foo: 'bar' }] }
 
-    jest.mocked(fetch).mockImplementationOnce(async () => await Promise.resolve({ ok: true, json: async () => await Promise.resolve(resp) } as Response))
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)
 
-    const out = await bookActivity('1234', '4567', {
+    const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
+
+    const out = await api.bookActivity('4567', {
         duration: 60,
         time: '21:00',
         date: '2023-11-21T23:00:00.000Z',
         location: 'Ceylon',
         description: 'Filip - 0702683230',
         title: 'Friträning'
-    }, [])
+    })
 
-    const [call] = jest.mocked(fetch).mock.calls
+    const [call] = fetch.mock.calls
     const [url, opts] = call
     expect(url).toBe('http://mock.app/Activities/SaveActivity')
     expect(opts).toHaveProperty('method', 'POST')
@@ -70,13 +63,13 @@ test('should book activities', async () => {
 test('should book activities with right datetime', async () => {
     const resp = { success: true, activities: [{ foo: 'bar' }] }
 
-    jest.mocked(fetch).mockImplementationOnce(async () => await Promise.resolve({
-        ok: true, json: async () => await Promise.resolve(resp)
-    } as Response))
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)
 
-    await bookActivity('1234', '1', { title: 'Friträning', location: 'Ceylon', date: '2023-11-17T23:00:00.000Z', time: '13:37', duration: 60, description: 'Filip - 0702683230' }, [])
+    const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
 
-    const [call] = jest.mocked(fetch).mock.calls
+    await api.bookActivity('1', { title: 'Friträning', location: 'Ceylon', date: '2023-11-17T23:00:00.000Z', time: '13:37', duration: 60, description: 'Filip - 0702683230' })
+
+    const [call] = fetch.mock.calls
     const [url, opts] = call
     expect(url).toBe('http://mock.app/Activities/SaveActivity')
 
