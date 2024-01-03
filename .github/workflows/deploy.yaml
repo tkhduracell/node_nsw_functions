@@ -9,6 +9,7 @@ env:
   GCLOUD_REGION: europe-north1
   GCLOUD_SCHEDULER_REGION: europe-west6
   GCLOUD_BUCKET: nackswinget-af7ef.appspot.com
+  TZ: Europe/Stockholm
 
 jobs:
   build:
