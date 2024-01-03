@@ -158,13 +158,15 @@ export async function updateCalendarContent (cals: Calendars, cookies: Protocol.
             .then(d => d.data()) as CalendarMetadata
         logger.info('Read old metadata', {cal, previous})
 
-        const calendar_last_uid = previous?.calendar_last_uid
+        const calendar_last_uid = previous?.calendar_last_uid ?? -1
         const last_notifications = previous?.last_notifications ?? []
 
         logger.info('Findning new events', { cal })
         const now = new Date()
-        const nextWeekEvents = sortBy(calendar.events(), e => e.uid())
+        const eventsByUid = sortBy(calendar.events(), e => e.uid())
+        const futureEvents = eventsByUid
             .filter(e => e.start() >= now) // Must be in future
+        const nextWeekEvents = futureEvents
             .filter(e => e.start() < addDays(now, 6)) // No more than 6 days ahead
 
         const newEvents = nextWeekEvents

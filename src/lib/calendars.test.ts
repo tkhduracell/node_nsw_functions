@@ -1,7 +1,7 @@
 import { updateCalendarContent } from './calendars'
 import { type Firestore } from 'firebase-admin/firestore'
 import { type Bucket } from '@google-cloud/storage'
-import { type ListedActivities, type ListedActivity } from './types'
+import { CalendarNotification, type ListedActivities, type ListedActivity } from './types'
 
 import { logger } from '../logging'
 jest.mock('../logging')
@@ -25,25 +25,45 @@ beforeAll(() => {
 const DateClass = Date
 
 describe('updateCalendarContent', () => {
-    const mockFirestoreData = { calendar_last_uid: undefined as number | undefined }
-    let mockFirestore: jest.Mocked<Firestore>
-    let mockBucket: jest.Mocked<Bucket>
+    let firestore: jest.Mocked<Firestore>
+    let bucket: jest.Mocked<Bucket>
+
+    let mocks = {
+        firestore: {
+            set: jest.fn().mockResolvedValue({}),
+            data: { calendar_last_uid: undefined as number | undefined }
+        },
+        notifictions: {
+            send: jest.fn().mockResolvedValue({})
+        },
+        activites: {
+            data: [] as ListedActivities
+        }
+    }
 
     beforeEach(() => {
         jest.mocked(fetch).mockReset()
-        jest.mocked(fetchActivities).mockReset()
-        jest.mocked(getMessaging).mockReset()
+        jest.mocked(fetchActivities).mockReset().mockImplementation(() => Promise.resolve({
+            data: mocks.activites.data, response: jest.fn()
+        } as unknown as ReturnType<typeof fetchActivities>))
+        jest.mocked(getMessaging).mockReset().mockImplementation(() => ({
+            send: mocks.notifictions.send
+        } as unknown as Messaging))
+
         jest.spyOn(global, 'Date').mockRestore()
         jest.mocked(logger)
 
-        mockFirestore = {
+        mocks.notifictions.send.mockReset()
+        mocks.firestore.set.mockReset()
+
+        firestore = {
             collection: jest.fn().mockReturnThis(),
             doc: jest.fn().mockReturnThis(),
-            get: jest.fn().mockResolvedValue({ data: jest.fn().mockResolvedValue(mockFirestoreData) }),
-            set: jest.fn().mockResolvedValue({})
+            get: jest.fn().mockResolvedValue({ data: jest.fn(() => Promise.resolve(mocks.firestore.data)) }),
+            set: mocks.firestore.set
         } as unknown as jest.Mocked<Firestore>
 
-        mockBucket = {
+        bucket = {
             file: jest.fn().mockReturnThis(),
             save: jest.fn().mockResolvedValue({}),
             getFiles: jest.fn().mockResolvedValue([[]]),
@@ -53,14 +73,12 @@ describe('updateCalendarContent', () => {
 
     it('should update calendar content successfully', async () => {
         // Mock necessary dependencies
-        const mockCalendars = [
+        const calendars = [
             { id: 'calendar1', name: 'Calendar 1', orgId: '1' },
             { id: 'calendar2', name: 'Calendar 2', orgId: '1' }
         ]
 
-        jest.mocked(fetchActivities).mockImplementation(async () => await Promise.resolve({
-            data: [], response: jest.fn() as unknown as Response
-        }))
+        mocks.activites.data = []
 
         jest.spyOn(global, 'Date')
             .mockImplementationOnce(() => new DateClass('2023-09-20T15:14:59.344Z'))
@@ -68,7 +86,7 @@ describe('updateCalendarContent', () => {
             .mockImplementationOnce((arg) => new DateClass(arg))
 
         // Call the function
-        await updateCalendarContent(mockCalendars, [], mockBucket, mockFirestore)
+        await updateCalendarContent(calendars, [], bucket, firestore)
 
         // Assert the expected result
         expect(fetchActivities).toHaveBeenCalledWith(
@@ -77,39 +95,29 @@ describe('updateCalendarContent', () => {
             'calendar1', [])
     })
 
-    it('should notify new event', async () => {
-        // Mock necessary dependencies
-        const mockCalendars = [
-            { id: 'calendar1', name: 'Calendar 1', orgId: '1' }
-        ]
+    it('should notify new event if old event sent', async () => {
+        const calendars = [ { id: 'calendar1', name: 'Calendar 1', orgId: '1' }]
+        const listedActivity = createEvent(222, 3, 60)
 
-        const startTime = new DateClass().getTime() + 1000 * 60 * 60 * 24 * 3
-        const endTime = startTime + 1000 * 60 * 60
-        const listedActivity = jest.mocked({
-            shared: false,
-            activityId: 1,
-            startTime: new DateClass(startTime).toISOString(),
-            endTime: new DateClass(endTime).toISOString(),
-            name: 'Mock Event',
-            venueName: 'Mock Venue',
-            description: 'Mock Description'
-        } satisfies Partial<ListedActivity> as unknown as ListedActivity)
-
-        const data: ListedActivities = [
-            { listedActivity }
-        ]
-        jest.mocked(fetchActivities).mockImplementation(async () => await Promise.resolve({
-            data, response: jest.fn() as unknown as Response
-        }))
-        mockFirestoreData.calendar_last_uid = 0
-
-        const send = jest.fn().mockResolvedValue({})
-        jest.mocked(getMessaging).mockImplementation(() => ({ send } as unknown as Messaging))
+        mocks.firestore.data.calendar_last_uid = 111
+        mocks.activites.data = [ { listedActivity } ]
 
         // Call the function
-        await updateCalendarContent(mockCalendars, [], mockBucket, mockFirestore)
+        await updateCalendarContent(calendars, [], bucket, firestore)
 
-        expect(send).toHaveBeenCalledWith({
+        expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
+            "calendar_id": "calendar1",
+            "calendar_last_date": expect.anything(),
+            "calendar_last_uid": "222",
+            "calendar_name": "Calendar 1",
+            "calendar_org_id": "1",
+            "last_notifications": expect.arrayContaining([expect.objectContaining({
+                "id": "222"
+            })]),
+            "updated_at": expect.anything(),
+        }), { merge: true });
+
+        expect(mocks.notifictions.send).toHaveBeenCalledWith({
             notification: {
                 body: expect.stringContaining('60 min'),
                 title: 'Calendar 1 uppdaterad'
@@ -123,4 +131,32 @@ describe('updateCalendarContent', () => {
             }
         })
     })
+
+    it('should notify new event if not set', async () => {
+        const calendars = [ { id: 'calendar1', name: 'Calendar 1', orgId: '1' }]
+        const listedActivity = createEvent(222, 3, 60)
+
+        mocks.firestore.data.calendar_last_uid = undefined
+        mocks.activites.data = [ { listedActivity }]
+
+        // Call the function
+        await updateCalendarContent(calendars, [], bucket, firestore)
+
+        expect(mocks.notifictions.send).toHaveBeenCalled()
+    })
 })
+
+function createEvent(id: number, inDays: number, durationMinutes: number) {
+    const startTime = new DateClass().getTime() + 1000 * 60 * 60 * 24 * inDays
+    const endTime = startTime + 1000 * 60 * durationMinutes
+    return {
+        shared: false,
+        activityId: id,
+        startTime: new DateClass(startTime).toISOString(),
+        endTime: new DateClass(endTime).toISOString(),
+        name: 'Mock Event',
+        venueName: 'Mock Venue',
+        description: 'Mock Description'
+    } satisfies Partial<ListedActivity> as unknown as ListedActivity
+}
+
