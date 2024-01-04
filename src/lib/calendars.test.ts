@@ -107,11 +107,12 @@ describe('updateCalendarContent', () => {
             "last_notifications": [{
                 "at": "2023-09-20T15:14:59.344Z",
                 "body": "Lördag, kl 17:14-18:14, 60 min",
-                "contact": "",
-                "creator": "",
-                "id": "222",
-                "start": "2023-09-23T15:14:59.344Z",
                 "title": "Calendar 1 uppdaterad",
+                "event": {
+                    "description": "Description 222",
+                    "id": "222",
+                    "start": "2023-09-23T15:14:59.344Z",
+                },
             }],
             "updated_at": FieldValue.serverTimestamp(),
         }, { merge: true });
@@ -129,6 +130,40 @@ describe('updateCalendarContent', () => {
                 }
             }
         })
+    })
+
+    it('should notify latest event if multiple new', async () => {
+        const calendars = [{ id: 'calendar1', name: 'Calendar 1', orgId: '1' }]
+        const event1 = { listedActivity: createEvent(clock, 333, 3, 60) }
+        const event2 = { listedActivity: createEvent(clock, 222, 3, 60) }
+        const event3 = { listedActivity: createEvent(clock, 444, 3, 60) }
+
+        mocks.firestore.data.calendar_last_uid = 111
+
+        const mock = jest.mocked(new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch))
+        mock.fetchActivities = jest.fn().mockResolvedValue({ data: [event1, event2, event3], response: {} as unknown as Response })
+
+        // Call the function
+        await updateCalendarContent(calendars, mock, clock, bucket, firestore)
+
+        expect(mocks.firestore.set).toHaveBeenCalledWith({
+            "calendar_id": "calendar1",
+            "calendar_last_date": new Date("2023-09-23T15:14:59.344Z"),
+            "calendar_last_uid": "222",
+            "calendar_name": "Calendar 1",
+            "calendar_org_id": "1",
+            "last_notifications": [{
+                "at": "2023-09-20T15:14:59.344Z",
+                "body": "Lördag, kl 17:14-18:14, 60 min",
+                "title": "Calendar 1 uppdaterad",
+                "event": {
+                    "id": "222",
+                    "description": "Description 222",
+                    "start": "2023-09-23T15:14:59.344Z",
+                }
+            }],
+            "updated_at": FieldValue.serverTimestamp(),
+        }, { merge: true });
     })
 
     it('should notify new event if not set', async () => {
@@ -155,9 +190,9 @@ function createEvent(clock: Clock, id: number, inDays: number, durationMinutes: 
         activityId: id,
         startTime: new Date(startTime).toISOString(),
         endTime: new Date(endTime).toISOString(),
-        name: 'Mock Event',
-        venueName: 'Mock Venue',
-        description: 'Mock Description'
+        name: 'Event ' + id,
+        venueName: 'Venue ' + id,
+        description: 'Description ' + id
     } satisfies Partial<ListedActivity> as unknown as ListedActivity
 }
 

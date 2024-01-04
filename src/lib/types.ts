@@ -150,12 +150,13 @@ export type CalendarMetadataData = Omit<CalendarMetadata, 'updated_at'> & { upda
 
 export interface CalendarNotification {
     at: string
-    start: string
     body: string
-    id: string
     title: string
-    creator: string
-    contact: string
+    event: {
+        id: string
+        start: string
+        description: string
+    }
 }
 
 export interface CalendarMetadata {

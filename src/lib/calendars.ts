@@ -184,9 +184,8 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
             `Found ${newEvents.length} new events`,
             {
                 cal,
-                metadata,
-                newEvent: pick(newEvent?.toJSON(), 'id', 'start', 'end'),
-                newEvents: newEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary')),
+                previous,
+                newEvent: pick(newEvent?.toJSON(), 'id', 'start', 'end', 'summary'),
                 nextWeekEvents: nextWeekEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary'))
             }
         )
@@ -198,17 +197,18 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
             if (description.match(/.* - \+?[0-9 ]+/gi)) {
                 [creator, contact] = description.split(' - ')
             }
-            const eventNotifiation = await notifyNewEvent(newEvent, cal.id, cal.name)
+            const data = await notifyNewEvent(newEvent, cal.id, cal.name)
             metadata.calendar_last_date = newEvent.start() as string
             metadata.calendar_last_uid = newEvent.uid()
+
             const notification: CalendarNotification = {
                 at: clock.now().toISOString(),
-                id: newEvent.uid(),
-                start: (newEvent.start() as Date).toISOString(),
-                body: eventNotifiation?.body ?? '',
-                title: eventNotifiation?.title ?? '',
-                creator: creator?.trim() ?? '',
-                contact: contact?.trim() ?? ''
+                ...data,
+                event: {
+                    id: newEvent.uid(),
+                    start: (newEvent.start() as Date).toISOString(),
+                    description: newEvent.description()?.plain ?? '',
+                }
             }
 
             metadata.last_notifications = [notification, ...last_notifications].slice(0, 5)
@@ -252,10 +252,10 @@ async function sleep(ms: number = 20000) {
     return await new Promise((resolve, reject) => setTimeout(resolve, ms))
 }
 
-async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_name: string): Exclude<Promise<Message['notification']>, undefined> {
+async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_name: string) {
     const topicName = `calendar-${calendar_id}`
 
-    const message: Message = {
+    const message = {
         notification: {
             title: getNotificationTitle(calendar_name),
             body: getNotificationBody(event.start() as Date, event.end() as Date)
