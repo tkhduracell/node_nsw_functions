@@ -122,15 +122,15 @@ export async function status(db: Firestore, orgId: string, clock: Clock) {
         .where('calendar_org_id', '==', orgId)
         .get()
 
-    const data = calendars.docs.map(d => d.data() as CalendarMetadataData)
+    const data = calendars.docs.map(d => d.data() as Partial<CalendarMetadataData>)
 
     return data.map(cal => {
         return {
-            ...cal,
             calendar_last_uid: undefined,
             calendar_last_date: undefined,
-            updated_at: cal.updated_at.toDate(),
-            updated_ago: formatDistance(cal.updated_at.toDate(), clock.now(), { locale: sv, addSuffix: true })
+            ...cal,
+            updated_at: cal.updated_at?.toDate(),
+            updated_ago: cal.updated_at ? formatDistance(cal.updated_at.toDate(), clock.now(), { locale: sv, addSuffix: true }) : undefined
         }
     })
 }
@@ -185,9 +185,9 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
             {
                 cal,
                 metadata,
-                newEvent: pick(newEvent, 'id', 'start', 'end'),
-                newEvents: newEvents.map(e => pick(e, 'id', 'start', 'end', 'summary')),
-                nextWeekEvents: nextWeekEvents.map(e => pick(e, 'id', 'start', 'end', 'summary'))
+                newEvent: pick(newEvent?.toJSON(), 'id', 'start', 'end'),
+                newEvents: newEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary')),
+                nextWeekEvents: nextWeekEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary'))
             }
         )
 
@@ -203,7 +203,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
             metadata.calendar_last_uid = newEvent.uid()
             const notification: CalendarNotification = {
                 at: clock.now().toISOString(),
-                id: newEvent.id(),
+                id: newEvent.uid(),
                 start: (newEvent.start() as Date).toISOString(),
                 body: eventNotifiation?.body ?? '',
                 title: eventNotifiation?.title ?? '',
@@ -268,7 +268,7 @@ async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_na
         },
         topic: topicName
     }
-    logger.info('Sending notification for new event!', { message: message.notification, event: pick(event, 'id', 'start') })
+    logger.info('Sending notification for new event!', { notification: message.notification, event: pick(event.toJSON(), 'id', 'start') })
 
     await getMessaging().send(message)
 
