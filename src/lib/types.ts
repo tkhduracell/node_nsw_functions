@@ -1,4 +1,4 @@
-import { type Timestamp } from 'firebase-admin/firestore'
+import { FieldValue, type Timestamp } from 'firebase-admin/firestore'
 
 export type ListedActivities = Array<{ listedActivity: ListedActivity }>
 
@@ -146,7 +146,7 @@ export interface ActivityCreateResponse {
 
 export type Calendars = Array<{ id: string, name: string, orgId: string }>
 
-export type CalendarMetadataData = Omit<CalendarMetadata, 'updated_at'> & { updated_at: Timestamp }
+export type CalendarMetadataUpdate = Omit<CalendarMetadata, 'updated_at'> & { updated_at: FieldValue }
 
 export interface CalendarNotification {
     at: string
@@ -156,6 +156,7 @@ export interface CalendarNotification {
         id: string
         start: string
         description: string
+        creator?: string
     }
 }
 
@@ -166,7 +167,7 @@ export interface CalendarMetadata {
     calendar_name: string
     calendar_org_id: string
     last_notifications: CalendarNotification[]
-    updated_at: Date
+    updated_at: Timestamp
 }
 
 

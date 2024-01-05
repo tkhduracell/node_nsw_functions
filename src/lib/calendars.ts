@@ -1,7 +1,7 @@
 import { type Browser, type Page } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, type Message } from 'firebase-admin/messaging'
-import { FieldValue, type Firestore } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore'
 import { addDays, formatDistance, subDays } from 'date-fns'
 import { type Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
@@ -12,7 +12,7 @@ import { ActivityApi } from './booking'
 import { fetchCookies } from './cookies'
 import { getNotificationBody, getNotificationTitle } from './notification-builder'
 import { buildCalendar } from './ical-builder'
-import { type CalendarMetadataData, type CalendarMetadata, type Calendars, type CalendarNotification } from './types'
+import { type CalendarMetadata, type Calendars, type CalendarNotification, type CalendarMetadataUpdate } from './types'
 import { logger } from '../logging'
 import { Clock } from './clock'
 
@@ -122,7 +122,7 @@ export async function status(db: Firestore, orgId: string, clock: Clock) {
         .where('calendar_org_id', '==', orgId)
         .get()
 
-    const data = calendars.docs.map(d => d.data() as Partial<CalendarMetadataData>)
+    const data = calendars.docs.map(d => d.data() as Partial<CalendarMetadata>)
 
     return data.map(cal => {
         return {
@@ -148,27 +148,9 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
         const calendar = buildCalendar(response.url, data, cal)
         logger.info('Built ICalendar successfully', { cal })
 
-        const metadata: CalendarMetadata = {
-            calendar_name: cal.name,
-            calendar_id: cal.id,
-            calendar_org_id: cal.orgId,
-            calendar_last_uid: '',
-            calendar_last_date: '',
-            last_notifications: [] as CalendarMetadata['last_notifications'],
-            updated_at: FieldValue.serverTimestamp() as unknown as Date
-        }
-
-        const previous = await db.collection('calendars')
-            .doc(cal.id ?? '')
-            .get()
-            .then(d => d.data()) as CalendarMetadata
-        logger.info('Read old metadata', { cal, previous })
-
-        const calendar_last_uid = previous?.calendar_last_uid ?? -1
-        const last_notifications = previous?.last_notifications ?? []
+        const metadata = await fetchMetadata(cal, db)
 
         logger.info('Findning new events', { cal })
-
         const eventsByUid = sortBy(calendar.events(), e => e.uid())
         const futureEvents = eventsByUid
             .filter(e => e.start() >= today) // Must be in future
@@ -176,7 +158,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
             .filter(e => e.start() < inaweek) // No more than 6 days ahead
 
         const newEvents = nextWeekEvents
-            .filter(e => e.uid() > calendar_last_uid) // Larger than last uid
+            .filter(e => e.uid() > metadata.calendar_last_uid) // Larger than last uid
 
         const newEvent = newEvents.find(e => true) // Take first
 
@@ -184,7 +166,6 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
             `Found ${newEvents.length} new events`,
             {
                 cal,
-                previous,
                 newEvent: pick(newEvent?.toJSON(), 'id', 'start', 'end', 'summary'),
                 nextWeekEvents: nextWeekEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary'))
             }
@@ -211,7 +192,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
                 }
             }
 
-            metadata.last_notifications = [notification, ...last_notifications].slice(0, 5)
+            metadata.last_notifications = [notification, ...metadata.last_notifications].slice(0, 5)
         } else {
             logger.warn('No next event found', { cal, metadata })
         }
@@ -247,6 +228,30 @@ async function fetchPreviousCalendars(db: Firestore, orgId: string): Promise<Cal
     return results.docs.map(d => d.data() as CalendarMetadata)
         .map(({ calendar_id: id, calendar_name: name }) => ({ name, id, orgId }))
 }
+
+async function fetchMetadata(cal: Calendars[number], db: Firestore): Promise<CalendarMetadata> {
+    const metadata: CalendarMetadata = {
+        calendar_name: cal.name,
+        calendar_id: cal.id,
+        calendar_org_id: cal.orgId,
+        calendar_last_uid: '',
+        calendar_last_date: '',
+        last_notifications: [] as CalendarMetadata['last_notifications'],
+        updated_at: Timestamp.fromDate(new Date())
+    }
+
+    const previous = await db.collection('calendars')
+        .doc(cal.id ?? '')
+        .get()
+        .then(d => d.data()) as CalendarMetadata
+
+    Object.assign(metadata, previous)
+    metadata.calendar_last_uid = metadata.calendar_last_uid ?? ''
+    logger.info('Read old metadata', { cal, metadata })
+
+    return metadata
+}
+
 
 async function sleep(ms: number = 20000) {
     return await new Promise((resolve, reject) => setTimeout(resolve, ms))

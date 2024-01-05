@@ -134,14 +134,16 @@ describe('updateCalendarContent', () => {
 
     it('should notify latest event if multiple new', async () => {
         const calendars = [{ id: 'calendar1', name: 'Calendar 1', orgId: '1' }]
-        const event1 = { listedActivity: createEvent(clock, 333, 3, 60) }
-        const event2 = { listedActivity: createEvent(clock, 222, 3, 60) }
-        const event3 = { listedActivity: createEvent(clock, 444, 3, 60) }
+        const e1 = createEvent(clock, 333, 3, 60)
+        const e2 = createEvent(clock, 111, 3, 60)
+        const e3 = createEvent(clock, 444, 3, 60)
+        const e4 = createEvent(clock, 222, 3, 60)
+        const data = [e1, e2, e3, e4].map(e => ({ listedActivity: e }))
 
         mocks.firestore.data.calendar_last_uid = 111
 
         const mock = jest.mocked(new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch))
-        mock.fetchActivities = jest.fn().mockResolvedValue({ data: [event1, event2, event3], response: {} as unknown as Response })
+        mock.fetchActivities = jest.fn().mockResolvedValue({ data, response: {} as unknown as Response })
 
         // Call the function
         await updateCalendarContent(calendars, mock, clock, bucket, firestore)
@@ -168,12 +170,16 @@ describe('updateCalendarContent', () => {
 
     it('should notify new event if not set', async () => {
         const calendars = [{ id: 'calendar1', name: 'Calendar 1', orgId: '1' }]
-        const listedActivity = createEvent(clock, 222, 3, 60)
+        const e1 = createEvent(clock, 333, 3, 60)
+        const e2 = createEvent(clock, 111, 3, 60)
+        const e3 = createEvent(clock, 444, 3, 60)
+        const e4 = createEvent(clock, 222, 3, 60)
+        const data = [e1, e2, e3, e4].map(e => ({ listedActivity: e }))
 
         mocks.firestore.data.calendar_last_uid = undefined
 
         const mock = jest.mocked(new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch))
-        mock.fetchActivities = jest.fn().mockResolvedValue({ data: [{ listedActivity }], response: {} as unknown as Response })
+        mock.fetchActivities = jest.fn().mockResolvedValue({ data, response: {} as unknown as Response })
 
         // Call the function
         await updateCalendarContent(calendars, mock, clock, bucket, firestore)
