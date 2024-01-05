@@ -2,7 +2,7 @@ import { type Bucket } from '@google-cloud/storage'
 import { type Browser } from 'puppeteer'
 import { logger } from '../logging'
 
-export async function dumpScreenshots (browser: Browser, bucket: Bucket, prefix: string) {
+export async function dumpScreenshots(browser: Browser, bucket: Bucket, prefix: string) {
     let i = 0
     const date = new Date()
     date.setMilliseconds(0)
@@ -20,6 +20,6 @@ export async function dumpScreenshots (browser: Browser, bucket: Bucket, prefix:
             action: 'read',
             expires: Date.now() + 3600 * 1000
         })
-        logger.info('Screenshot uploaded:', url)
+        logger.info('Screenshot uploaded ' + url, { date, i, uri: file.cloudStorageURI.toString() })
     }
 }
