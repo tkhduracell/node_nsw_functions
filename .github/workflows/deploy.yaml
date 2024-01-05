@@ -193,7 +193,9 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"NSW calendars-api has been deployed! 🚢💨"}' ${SLACK_WEBHOOK}
+          YYYYMMDD=$(date '+%Y-%m-%d %H:%M:%S %z')
+          MESSAGE=" 🚢 ${YYYYMMDD} NSW calendars-api has been deployed!"
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" ${SLACK_WEBHOOK}
 
       - name: Update scheduler calendar-update-lean-5m
         run: |
@@ -262,7 +264,9 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          curl -X POST -H 'Content-type: application/json' --data '{"text":"NSW calendars-update-api has been deployed! 🚢💨"}' ${SLACK_WEBHOOK}
+          YYYYMMDD=$(date '+%Y-%m-%d %H:%M:%S %z')
+          MESSAGE=" 🚢 ${YYYYMMDD} NSW calendars-update-api has been deployed!"
+          curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" ${SLACK_WEBHOOK}
 
       - name: Trigger update
         run: |
