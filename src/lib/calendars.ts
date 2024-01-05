@@ -80,7 +80,7 @@ async function fetchCalendars(page: Page, orgId: string): Promise<Calendars> {
 }
 
 export async function update(browser: Browser, bucket: Bucket, db: Firestore, clock: Clock, orgId: string) {
-    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
+    const { ACTIVITY_BASE_URL: baseUrl } = IDOActivityOptions.parse(process.env)
     try {
         const cookies = await login(browser, db, orgId)
 
@@ -96,7 +96,7 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, cl
         logger.info('Finding calendars', { orgId })
         const cals = await fetchCalendars(page, orgId)
 
-        const actApi = new ActivityApi(orgId, ACTIVITY_BASE_URL, { get: () => cookies }, fetch)
+        const actApi = new ActivityApi(orgId, baseUrl, { get: () => cookies }, fetch)
         await updateCalendarContent(cals, actApi, clock, bucket, db)
     } catch (err) {
         throw new Error('Unable to do a full update', { cause: err })
@@ -104,12 +104,12 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, cl
 }
 
 export async function updateLean(bucket: Bucket, db: Firestore, clock: Clock, orgId: string) {
-    const { ACTIVITY_BASE_URL } = IDOActivityOptions.parse(process.env)
+    const { ACTIVITY_BASE_URL: baseUrl } = IDOActivityOptions.parse(process.env)
     try {
         logger.info('Fetching previous cookies', { orgId })
         const cookies = await fetchCookies(db, orgId)
 
-        const actApi = new ActivityApi(orgId, ACTIVITY_BASE_URL, { get: () => cookies }, fetch)
+        const actApi = new ActivityApi(orgId, baseUrl, { get: () => cookies }, fetch)
         const cals = await fetchPreviousCalendars(db, orgId)
         await updateCalendarContent(cals, actApi, clock, bucket, db)
     } catch (err) {
