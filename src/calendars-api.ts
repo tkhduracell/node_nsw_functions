@@ -11,12 +11,13 @@ import { fetchCookies } from './lib/cookies'
 import { differenceInMinutes } from 'date-fns'
 import { initializeApp } from 'firebase-admin/app'
 import express from 'express'
-import { prettyJson } from './middleware'
+import { errorHandling, prettyJson } from './middleware'
 
 const app = express()
 app.use(express.json())
 app.use(prettyJson)
 app.use(loggerMiddleware)
+app.use(errorHandling)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
@@ -169,11 +170,24 @@ app.post('/book', async (req, res) => {
         const actApi = new ActivityApi(orgId, 'https://www.idrottonline.se', await cookies(), fetch)
 
         logger.info('Booking activity', event)
-        const { activityId } = await actApi.bookActivity(calendarId, event)
-        res.status(200).send({
-            success: true,
-            id: activityId
-        })
+        try {
+            const { activityId } = await actApi.bookActivity(calendarId, event)
+            res.status(200).send({
+                success: true,
+                id: activityId
+            })
+        } catch (e: any) {
+            if ('response' in e) {
+                const { status, statusText, url } = e.response as Response
+                logger.error('Unable to complete booking, got HTTP ' + status, { response: { status, statusText, url } })
+            } else {
+                logger.error('Unable to complete booking, unknown error', e)
+            }
+            res.status(500).json({
+                sucesss: false,
+                error: 'Unable to complete booking'
+            })
+        }
     } else {
         logger.error('Invalid request', data.error.flatten().fieldErrors)
         res.status(400).json({

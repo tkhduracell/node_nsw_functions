@@ -9,13 +9,14 @@ import { launch } from 'puppeteer'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
 import { dumpScreenshots } from './lib/screenshots'
-import { prettyJson } from './middleware'
+import { errorHandling, prettyJson } from './middleware'
 import { ClockFactory } from './lib/clock'
 
 const app = express()
 app.use(loggerMiddleware)
 app.use(express.json())
 app.use(prettyJson)
+app.use(errorHandling)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
