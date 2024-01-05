@@ -30,7 +30,7 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
         })
 
         // If adhere to the format "organizer - phone number" then add the organizer
-        if (description.match(/.* - \+?[0-9 ]+/gi) && description.split('\n').length > 1) {
+        if (description.match(/.* - \+?[0-9 ]+/gi) && description.split('\n').length === 1) {
             const [organiser,] = description.split(' - ')
             event.organizer({ name: organiser })
         }
