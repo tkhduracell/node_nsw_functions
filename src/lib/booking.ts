@@ -94,7 +94,7 @@ export class ActivityApi {
             },
             reSendSummon: false
         }
-        logger.info('Boking activity', { activity: body.activity })
+        logger.info('Calling IDO SaveActivity', { activity: body.activity })
 
         const result = await this.fetch(`${this.baseUrl}/Activities/SaveActivity`, {
             headers: {
