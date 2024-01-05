@@ -119,8 +119,8 @@ app.get('/book/search', async (req, res) => {
         }))
     }
 
-    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
-    const actApi = new ActivityApi(orgId, 'https://www.idrottonline.se', await cookies(), fetch)
+    const { ACTIVITY_ORG_ID: orgId, ACTIVITY_BASE_URL: baseUrl } = IDOActivityOptions.parse(process.env)
+    const actApi = new ActivityApi(orgId, baseUrl, await cookies(), fetch)
 
     const { date, calendarId } = query.data
 
@@ -148,8 +148,6 @@ app.get('/book', async (req, res) => {
 })
 
 app.post('/book', async (req, res) => {
-    const db = getFirestore()
-
     const BookingSchema = z.object({
         title: z.string().min(3),
         description: z.string().min(3),
@@ -161,13 +159,13 @@ app.post('/book', async (req, res) => {
         calendarId: z.enum(['337667']).default('337667')
     })
 
-    const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
+    const { ACTIVITY_ORG_ID: orgId, ACTIVITY_BASE_URL: baseUrl } = IDOActivityOptions.parse(process.env)
 
     const data = await BookingSchema.safeParseAsync(req.body)
     if (data.success) {
         const { password, calendarId, ...event } = data.data
 
-        const actApi = new ActivityApi(orgId, 'https://www.idrottonline.se', await cookies(), fetch)
+        const actApi = new ActivityApi(orgId, baseUrl, await cookies(), fetch)
 
         logger.info('Booking activity', event)
         try {
