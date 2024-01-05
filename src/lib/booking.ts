@@ -63,7 +63,7 @@ export class ActivityApi {
         const start = addMinutes(addHours(startOfDate, parseInt(hh)), parseInt(mm))
         const end = addMinutes(start, duration)
 
-        logger.info('Calling bookActivityRaw', { startOfDate, start, end })
+        logger.info('Calling bookActivityRaw', { activity: { startOfDate, start, end } })
         return await this.bookActivityRaw(calendarId, {
             name: title,
             description,
@@ -94,7 +94,7 @@ export class ActivityApi {
             },
             reSendSummon: false
         }
-        logger.info('Boking activity', body.activity)
+        logger.info('Boking activity', { activity: body.activity })
 
         const result = await this.fetch(`${this.baseUrl}/Activities/SaveActivity`, {
             headers: {
