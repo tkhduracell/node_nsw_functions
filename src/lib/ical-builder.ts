@@ -2,7 +2,7 @@ import { ICalCalendar } from 'ical-generator'
 import { type ListedActivities } from './types'
 import { parseISO } from 'date-fns'
 
-export function buildCalendar (url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
+export function buildCalendar(url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
     const calendar = new ICalCalendar()
     calendar.name(subject.name)
     calendar.prodId({
@@ -20,7 +20,7 @@ export function buildCalendar (url: string, activities: ListedActivities, subjec
         // Ignore shared events
         if (shared) continue
 
-        calendar.createEvent({
+        const event = calendar.createEvent({
             start: parseISO(startTime),
             end: parseISO(endTime),
             summary: name,
@@ -28,6 +28,12 @@ export function buildCalendar (url: string, activities: ListedActivities, subjec
             location: venueName ?? '',
             id: activityId
         })
+
+        // If adhere to the format "organizer - phone number" then add the organizer
+        if (description.match(/.* - \+?[0-9 ]+/gi) && description.split('\n').length > 1) {
+            const [organiser,] = description.split(' - ')
+            event.organizer({ name: organiser })
+        }
     }
 
     return calendar
