@@ -10,7 +10,7 @@ import { IDOActivityOptions } from '../env'
 import { type ICalEvent } from 'ical-generator'
 import { ActivityApi } from './booking'
 import { fetchCookies } from './cookies'
-import { getNotificationBody, getNotificationTitle } from './notification-builder'
+import { Notifications } from './notifications'
 import { buildCalendar } from './ical-builder'
 import { type CalendarMetadata, type Calendars, type CalendarNotification, type CalendarMetadataUpdate } from './types'
 import { logger } from '../logging'
@@ -172,13 +172,8 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
         )
 
         if (newEvent) {
-            const description = newEvent.description()?.plain ?? ''
-            let creator = null as string | null
-            let contact = null as string | null
-            if (description.match(/.* - \+?[0-9 ]+/gi)) {
-                [creator, contact] = description.split(' - ')
-            }
-            const data = await notifyNewEvent(newEvent, cal.id, cal.name)
+            const creator = newEvent.organizer()?.name ?? ''
+            const data = await notifyNewEvent(clock, newEvent, creator, cal)
             metadata.calendar_last_date = newEvent.start() as string
             metadata.calendar_last_uid = newEvent.uid()
 
@@ -257,25 +252,8 @@ async function sleep(ms: number = 20000) {
     return await new Promise((resolve, reject) => setTimeout(resolve, ms))
 }
 
-async function notifyNewEvent(event: ICalEvent, calendar_id: string, calendar_name: string) {
-    const topicName = `calendar-${calendar_id}`
-
-    const message = {
-        notification: {
-            title: getNotificationTitle(calendar_name),
-            body: getNotificationBody(event.start() as Date, event.end() as Date)
-        },
-        webpush: {
-            notification: {
-                tag: 'nsw-' + topicName,
-                icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg'
-            }
-        },
-        topic: topicName
-    }
-    logger.info('Sending notification for new event!', { notification: message.notification, event: pick(event.toJSON(), 'id', 'start') })
-
-    await getMessaging().send(message)
-
-    return message.notification
+async function notifyNewEvent(clock: Clock, event: ICalEvent, creator: string | undefined, cal: Calendars[number]) {
+    const builder = new Notifications(getMessaging());
+    const message = await builder.send(clock, event, creator, cal)
+    return message
 }
