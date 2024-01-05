@@ -29,12 +29,14 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
             id: activityId
         })
 
-        // If adhere to the format "organizer - phone number" then add the organizer
-        if (description.match(/.* - \+?[0-9 ]+/gi) && description.split('\n').length === 1) {
-            const [organiser,] = description.split(' - ')
-            event.organizer({ name: organiser })
+        // If adhere to the format "organizer - phone number" on the first line then add the organizer
+        if (description) {
+            const [firstline] = description.split('\n')
+            if (firstline.match(/.* - \+?[0-9 ]+/i)) {
+                const [organiser,] = firstline.split(' - ')
+                event.organizer({ name: organiser })
+            }
         }
     }
-
     return calendar
 }
