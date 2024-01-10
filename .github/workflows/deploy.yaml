@@ -84,8 +84,7 @@ jobs:
             --source=. \
             --entry-point=notifications-api \
             --trigger-http \
-            --max-instances=2 \
-            --concurrency=10 \
+            --max-instances=10 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
@@ -136,8 +135,7 @@ jobs:
             --source=. \
             --entry-point=competitions-api \
             --trigger-http \
-            --max-instances=1 \
-            --concurrency=10 \
+            --max-instances=10 \
             --allow-unauthenticated
 
   deploy-calendar-api:
@@ -186,8 +184,7 @@ jobs:
             --source=. \
             --entry-point=calendars-api \
             --trigger-http \
-            --max-instances=2 \
-            --concurrency=10 \
+            --max-instances=10 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
