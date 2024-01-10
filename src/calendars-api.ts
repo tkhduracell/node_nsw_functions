@@ -124,19 +124,33 @@ app.get('/book/search', async (req, res) => {
 
     const { date, calendarId } = query.data
 
-    const { data } = await actApi.fetchActivitiesOnDate(date, calendarId)
-    const activities = data.map(e => e.listedActivity)
+    try {
 
-    const out = activities.map(({ name, startTime, endTime }) => {
-        return {
-            name,
-            startTime,
-            endTime,
-            duration: differenceInMinutes(new Date(endTime), new Date(startTime))
+        const { data } = await actApi.fetchActivitiesOnDate(date, calendarId)
+        const activities = data.map(e => e.listedActivity)
+
+        const out = activities.map(({ name, startTime, endTime }) => {
+            return {
+                name,
+                startTime,
+                endTime,
+                duration: differenceInMinutes(new Date(endTime), new Date(startTime))
+            }
+        })
+
+        res.json(out)
+    } catch (e: any) {
+        if ('response' in e) {
+            const { status, statusText, url } = e.response as Response
+            logger.error('Unable to fetch activities, got HTTP ' + status, { response: { status, statusText, url } })
+        } else {
+            logger.error('Unable to fetch activities, unknown ', e)
         }
-    })
-
-    res.json(out)
+        res.status(500).json({
+            sucesss: false,
+            error: 'Unable to fetch activities'
+        })
+    }
 })
 
 app.get('/book', async (req, res) => {
