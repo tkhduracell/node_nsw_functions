@@ -107,7 +107,7 @@ describe('updateCalendarContent', () => {
             "last_notifications": [{
                 "at": "2023-09-20T15:14:59.344Z",
                 "body": "Lördag, kl 17:14-18:14, 60 min",
-                "title": "Calendar 1 uppdaterad",
+                "title": "Ny bokning i Calendar 1",
                 "event": {
                     "description": "Description 222",
                     "id": "222",
@@ -145,7 +145,7 @@ describe('updateCalendarContent', () => {
             "last_notifications": [{
                 "at": "2023-09-20T15:14:59.344Z",
                 "body": "Lördag, kl 17:14-18:14, 60 min",
-                "title": "Calendar 1 uppdaterad",
+                "title": "Ny bokning i Calendar 1",
                 "event": {
                     "id": "222",
                     "description": "Description 222",
