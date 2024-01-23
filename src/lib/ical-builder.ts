@@ -20,7 +20,7 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
     for (const { listedActivity } of activities) {
         const { shared, calendarId, activityId, startTime, endTime, name, venueName, description } = listedActivity
 
-        if (shared && calendarId !== subject.id) {
+        if (shared && `${calendarId}` !== `${subject.id}`) {
             // Ignore shared events
             continue;
         }
