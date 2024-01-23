@@ -2,6 +2,8 @@ import { ICalCalendar } from 'ical-generator'
 import { type ListedActivities } from './types'
 import { parseISO } from 'date-fns'
 
+import { logger } from '../logging'
+
 export function buildCalendar(url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
     const calendar = new ICalCalendar()
     calendar.name(subject.name)
@@ -14,6 +16,7 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
     calendar.timezone('Europe/Stockholm')
     calendar.source(url)
 
+    logger.info('Generating calendar from ' + activities.length + ' events', { cal: subject })
     for (const { listedActivity } of activities) {
         const { shared, activityId, startTime, endTime, name, venueName, description } = listedActivity
 
