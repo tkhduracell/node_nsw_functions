@@ -20,9 +20,11 @@ app.use(loggerMiddleware)
 app.use(errorHandling)
 
 if (require.main === module) {
+    console.clear()
+    console.info('Starting calendars-api')
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => logger.info(`Listening on port ${port}`))
+    app.listen(port, () => console.info(`Listening on port ${port}`))
 }
 
 async function cookies(): Promise<CookieProvider> {
@@ -47,17 +49,31 @@ app.get('/', async (req, res) => {
         return res.header('Content-Type', 'application/json').send(file).end()
     }
 
-    const id = z.string().regex(/\d+/).parse(req.query.id)
+    const {id, dl} = z.object({
+        id: z.string().regex(/\d+/),
+        dl: z.string().transform(v => v === 'true').default("true")
+    }).parse(req.query)
+
+    const [exists] = await bucket.file(`cal_${id}.ics`).exists()
+    if (!exists) {
+        return res.status(404).send({ message: 'Calendar not found' }).end()
+    }
 
     const [{ metadata }] = await bucket.file(`cal_${id}.ics`).getMetadata()
     const name = metadata && 'CalendarName' in metadata ? metadata.CalendarName : id
 
-    res
-        .setHeader('Content-Type', 'text/calendar')
-        .setHeader('Content-Disposition', `attachment; filename="${name}.ics"`)
-        .status(200)
+    if (dl) {
+        res
+            .setHeader('Content-Type', 'text/calendar')
+            .setHeader('Content-Disposition', `attachment; filename="${name}.ics"`)
+            .status(200)
+    } else {
+        res
+            .setHeader('Content-Type', 'text/plain; charset=utf-8')
+            .status(200)
+    }
 
-    bucket
+    return bucket
         .file(`cal_${id}.ics`)
         .createReadStream()
         .pipe(res, { end: true })
