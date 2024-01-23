@@ -25,7 +25,7 @@
               <ion-item v-if="day.events.length === 0">
                 <ion-label>Inga träningar denna dag</ion-label>
               </ion-item>
-              <ion-item v-for="event in day.events" :key="day.date + event.name + event.startTime">
+              <ion-item v-for="event in day.events" :key="day.date + event.name + event.startTime" :class="[event]">
                 <ion-label>{{ event.startTime }} - {{ event.name }} ({{ event.duration }} minuter)</ion-label>
               </ion-item>
             </ion-list>
@@ -42,6 +42,8 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton } from 
 import { onMounted, reactive } from 'vue';
 import { addDays, format, parseISO } from 'date-fns'
 import { sv } from 'date-fns/locale'
+import { FCM } from "@capacitor-community/fcm"
+import { PushNotifications } from "@capacitor/push-notifications"
 
 const _agenda: {
   name: string, date: string, events: { name: string, startTime: string, endTime: string, duration: number }[]
@@ -72,7 +74,8 @@ onMounted(async () => {
       name: event.name,
       startTime: format(parseISO(event.startTime), 'HH:mm'),
       endTime: format(parseISO(event.endTime), 'HH:mm'),
-      duration: event.duration
+      duration: event.duration,
+      calendar: event.calendar
     }))
   }))
 
@@ -83,18 +86,29 @@ const createDatesArray = (days: number): string[] => {
     format(addDays(new Date(), index), 'yyyy-MM-dd')
   );
 };
-import { FCM } from "@capacitor-community/fcm";
-import { PushNotifications } from "@capacitor/push-notifications"
 
+
+async function doSubscribe(token: string) {
+  const baseUrl = 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/notifications-api'
+  const query = new URLSearchParams()
+  query.append('token', token)
+  query.append('topic', 'calendar-337667')
+
+  const resp = await fetch(baseUrl + '/subscribe?' + query.toString(), { method: 'POST' })
+  if (resp.ok) {
+    console.log('subscribed')
+  } else {
+    console.log('failed to subscribe', resp)
+  }
+}
 
 async function subscribe() {
-
-  // external required step
-  // register for push
   await PushNotifications.requestPermissions();
   await PushNotifications.register();
 
-  console.log('subscribe')
+  const { token } = await FCM.getToken()
+
+  doSubscribe(token)
 }
 
 </script>
