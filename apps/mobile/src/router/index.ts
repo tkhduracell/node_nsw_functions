@@ -5,7 +5,7 @@ import TabsPage from '../views/TabsPage.vue'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/tabs/open-practice'
+    redirect: '/tabs/calendar'
   },
   {
     path: '/tabs/',
@@ -13,11 +13,11 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       {
         path: '',
-        redirect: '/tabs/open-practice'
+        redirect: '/tabs/calendar'
       },
       {
-        path: 'open-practice',
-        component: () => import('@/views/OpenPracticePage.vue')
+        path: 'calendar',
+        component: () => import('@/views/CalendarPage.vue')
       },
     ]
   }
