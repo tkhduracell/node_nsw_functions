@@ -18,14 +18,11 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
 
     logger.info('Generating calendar from ' + activities.length + ' events', { cal: subject })
     for (const { listedActivity } of activities) {
-        const { shared, activityId, startTime, endTime, name, venueName, description } = listedActivity
+        const { shared, calendarId, activityId, startTime, endTime, name, venueName, description } = listedActivity
 
-        // Ignore shared events
-        if (shared) {
-            logger.debug('Including shared event ' + activityId + ' ' + name, { 
-                cal: subject, 
-                data: { shared, activityId, startTime, endTime, name, venueName, description }
-            })
+        if (shared && calendarId !== subject.id) {
+            // Ignore shared events
+            continue;
         }
 
         const event = calendar.createEvent({
