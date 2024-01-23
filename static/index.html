@@ -13,12 +13,15 @@
                     Sluta bevaka
                 </button>
             </div>
-            <div v-else-if="isSupported">
-                <div><b>Nyhet!</b></div>
+            <div v-else-if="isSupported || isSafari">
+                <h5>Nyhet!</h5>
                 <p class="mt-0 mb-1">
                     Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en friträning bokas.
                 </p>
-                <button @click="requestAndSubscribe" class="btn-red">
+                <div v-if="isSafari" class="note">
+                    <b>Obs!</b> Du använder Safari. Det fungerar inte att bevaka friträningar i Safari. Använd istället Chrome eller Firefox.
+                </div>
+                <button @click="requestAndSubscribe" class="btn-red" :disabled="isSafari">
                     Bevaka
                 </button>
             </div>
@@ -46,6 +49,11 @@
             let serviceWorkerRegistration = null
             createApp({
                 setup() {
+                    const userAgent = navigator.userAgent;
+                    const isSafariDesktop = userAgent.includes('Safari') && !userAgent.includes('Chrome') && !userAgent.includes('Chromium');
+                    const isSafariMobile = userAgent.includes('Mobile') && isSafariDesktop;
+                    const isSafari = isSafariDesktop || isSafariMobile;
+
                     const isSubscribed = ref(false)
                     const isSupported = ref(false)
                     const token = ref('')
@@ -172,8 +180,7 @@
                                 }
                             } catch (e) {
                                 console.error(e)
-                                supported.value = false
-
+                                isSupported.value = false
                             }
                         }
                     })
@@ -185,6 +192,7 @@
                         requestAndSubscribe,
                         isSubscribed,
                         isSupported,
+                        isSafari,
                         msgs,
                         clear
                     }
@@ -225,6 +233,22 @@
             .btn-red:active {
                 background-color: var(--nsw-red-darker) !important;
             }
+            .btn-red:disabled {
+                background-color: var(--nsw-red-lighter); /* Lighter red for a softer look */
+                color: #e0e0e0; /* Soft grey for text */
+                cursor: not-allowed;
+                opacity: 0.8; /* Slightly higher opacity for better visibility */
+                border: 1px solid #d2174c; /* Subtle border for definition */
+                box-shadow: none; /* Optionally remove any shadow if present */
+            }
+            .note {
+                font-size: 0.8rem;
+                color: #666;
+            }
+            .mt-0 { margin-top: 0rem; }
+            .mt-1 { margin-top: 0.25rem; }
+            .mb-0 { margin-bottom: 0rem; }
+            .mb-1 { margin-bottom: 0.25rem; }
         </style>
     </body>
 </html>
