@@ -3,6 +3,7 @@ import { type ListedActivities } from './types'
 import { parseISO } from 'date-fns'
 
 import { logger } from '../logging'
+import { utcToZonedTime } from 'date-fns-tz'
 
 export function buildCalendar(url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
     const calendar = new ICalCalendar()
@@ -26,8 +27,8 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
         }
 
         const event = calendar.createEvent({
-            start: parseISO(startTime),
-            end: parseISO(endTime),
+            start: formatInStockholmTimeZone(startTime),
+            end: formatInStockholmTimeZone(endTime),
             summary: name,
             description,
             location: venueName ?? '',
@@ -43,7 +44,12 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
             }
         }
     }
-    logger.info('Generated a calendar of ' + calendar.length() + ' events (post filtering)', { cal: subject })
-    
+    logger.info('Generated a calendar of ' + calendar.length() + ' events (after removing shared)', { cal: subject })
+
     return calendar
+}
+
+function formatInStockholmTimeZone(isoDateString: string) {
+    const date = parseISO(isoDateString);
+    return utcToZonedTime(date, 'Europe/Stockholm')
 }
