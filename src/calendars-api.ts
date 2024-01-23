@@ -145,12 +145,13 @@ app.get('/book/search', async (req, res) => {
         const { data } = await actApi.fetchActivitiesOnDate(date, calendarId)
         const activities = data.map(e => e.listedActivity)
 
-        const out = activities.map(({ name, startTime, endTime }) => {
+        const out = activities.map(({ name, startTime, endTime, calendarId }) => {
             return {
                 name,
                 startTime,
                 endTime,
-                duration: differenceInMinutes(new Date(endTime), new Date(startTime))
+                duration: differenceInMinutes(new Date(endTime), new Date(startTime)),
+                calendarId,
             }
         })
 
