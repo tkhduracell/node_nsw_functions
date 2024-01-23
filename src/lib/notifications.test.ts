@@ -20,7 +20,7 @@ describe('Notifications', () => {
         expect(send).toHaveBeenCalled()
         const { notification: x } = send.mock.calls[0][0] as Message
         expect(x?.body).toEqual('Torsdag, kl 14:12-16:13, 121 min')
-        expect(x?.title).toEqual('XX uppdaterad')
+        expect(x?.title).toEqual('Ny bokning i XX')
     })
 
     it('should notify STO time as STO time', async () => {
@@ -36,7 +36,7 @@ describe('Notifications', () => {
         expect(send).toHaveBeenCalled()
         const { notification: x } = send.mock.calls[0][0] as Message
         expect(x?.body).toEqual('Torsdag, kl 12:12-14:13, 121 min')
-        expect(x?.title).toEqual('XX uppdaterad')
+        expect(x?.title).toEqual('Ny bokning i XX')
     })
 
     it('should notify with author if friträning', async () => {
