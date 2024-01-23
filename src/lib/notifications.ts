@@ -11,7 +11,7 @@ import { Clock } from './clock'
 function getNotificationTitle(calendar_name: string, creator?: string) {
     return calendar_name === 'Friträning' ?
         (creator ? `${creator} har bokat en friträning!` : `Ny friträning bokad!`) :
-        `${calendar_name} uppdaterad`
+        `Ny bokning i ${calendar_name}`
 }
 
 function getNotificationBody(clock: Clock, start: Date, end: Date) {
@@ -53,7 +53,11 @@ export class Notifications {
             },
             topic: topicName
         }
-        logger.info('Sending notification for new event!', { cal, notification: message.notification, event: pick(event.toJSON(), 'id', 'start') })
+        logger.info('Sending notification for new event!', { 
+            cal, 
+            notification: message.notification, 
+            event: pick(event.toJSON(), 'id', 'start', 'summary', 'description') 
+        })
 
         const id = await this.messaging.send(message)
         logger.info('Sent notification ' + id, { cal })
