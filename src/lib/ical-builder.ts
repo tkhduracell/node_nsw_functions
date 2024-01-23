@@ -41,5 +41,7 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
             }
         }
     }
+    logger.info('Generated a calendar of ' + calendar.length() + ' events (post filtering)', { cal: subject })
+    
     return calendar
 }
