@@ -17,7 +17,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api',
+        target: 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
