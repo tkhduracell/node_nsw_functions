@@ -44,7 +44,13 @@
               </ion-item>
               <ion-item v-for="event in day.events" :key="day.date + event.name + event.startTime"
                 :data-calendar="event.calendarId">
-                <ion-label>{{ event.startTime }} - {{ event.name }} ({{ event.duration }} minuter)</ion-label>
+                <ion-label>
+                  <h3>
+                    {{ event.startTime }} - {{ event.name }} ({{ event.duration }} minuter)
+                  </h3>
+                  <p class="div">-</p>
+                  <p class="footer">{{ event.endTime }}</p>
+                </ion-label>
               </ion-item>
             </ion-list>
           </ion-card-content>
@@ -64,29 +70,44 @@ ion-item[data-calendar] {
   margin-bottom: 4px;
 }
 
+ion-item[data-calendar] p.div {
+  margin: 0;
+  line-height: 0.6em;
+  font-size: 0.6em;
+}
+
+ion-item[data-calendar] p {
+  color: var(--ion-text-color);
+}
+
 /* Huvud */
 ion-item[data-calendar="333077"] {
   --background: rgba(128, 0, 128, 1);
+  --color: var(--ion-text-color)
 }
 
 /* Kurs */
 ion-item[data-calendar="333892"] {
   --background: rgba(247, 186, 121, 1);
+  --color: var(--ion-text-color)
 }
 
 /* Friträning */
 ion-item[data-calendar="337667"] {
   --background: rgba(0, 128, 0, 1);
+  --color: var(--ion-text-color)
 }
 
 /* Tävling */
 ion-item[data-calendar="358978"] {
   --background: rgba(41, 128, 185, 1);
+  --color: var(--ion-text-color)
 }
 
 /* Eventkalender */
 ion-item[data-calendar="358979"] {
   --background: rgba(252, 113, 132, 1);
+  --color: var(--ion-text-color)
 }
 </style>
 <script setup lang="ts">
@@ -98,7 +119,7 @@ import { FCM } from "@capacitor-community/fcm"
 import { PushNotifications } from "@capacitor/push-notifications"
 
 const _agenda: {
-  name: string, date: string, events: { name: string, startTime: string, endTime: string, duration: number, calendarId: string }[]
+  name: string, date: string, events: { name: string, startTime: string, endTime: string, duration: number, calendarId: string, description: string }[]
 }[] = []
 
 const data = reactive({
