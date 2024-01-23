@@ -21,7 +21,12 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
         const { shared, activityId, startTime, endTime, name, venueName, description } = listedActivity
 
         // Ignore shared events
-        if (shared) continue
+        if (shared) {
+            logger.debug('Including shared event ' + activityId + ' ' + name, { 
+                cal: subject, 
+                data: { shared, activityId, startTime, endTime, name, venueName, description }
+            })
+        }
 
         const event = calendar.createEvent({
             start: parseISO(startTime),
