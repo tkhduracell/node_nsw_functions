@@ -192,7 +192,6 @@ app.post('/book', async (req, res) => {
         calendarId: z.enum(['337667']).default('337667')
     })
 
-    const { GCLOUD_PROJECT } = GCloudOptions.parse(process.env)
     const { ACTIVITY_ORG_ID: orgId, ACTIVITY_BASE_URL: baseUrl } = IDOActivityOptions.parse(process.env)
 
     const data = await BookingSchema.safeParseAsync(req.body)
@@ -209,13 +208,8 @@ app.post('/book', async (req, res) => {
                 id: activityId
             })
 
-            // Trigger a schedule of activity update
             logger.info('Triggering update of activity in cloud schduler', event)
-            const schduler = new CloudSchedulerClient({ projectId: GCLOUD_PROJECT })
-            const jobName = 'calendar-update-lean-5m'
-            schduler.runJob({ name: `projects/${GCLOUD_PROJECT}/locations/europe-west6/jobs/${jobName}` })
-                .then(() => logger.info('Schduling of ' + jobName + ' complete!'))
-                .catch((err: any) => logger.warn('Schduling of ' + jobName + ' failed!', err))
+            triggerAsyncActivityUpdate()
 
         } catch (e: any) {
             if ('response' in e) {
@@ -237,5 +231,14 @@ app.post('/book', async (req, res) => {
         })
     }
 })
+
+function triggerAsyncActivityUpdate() {
+    const { GCLOUD_PROJECT } = GCloudOptions.parse(process.env)
+    const schduler = new CloudSchedulerClient({ projectId: GCLOUD_PROJECT })
+    const jobName = 'calendar-update-lean-5m'
+    schduler.runJob({ name: `projects/${GCLOUD_PROJECT}/locations/europe-west6/jobs/${jobName}` })
+        .then(() => logger.info('Schduling of ' + jobName + ' complete!'))
+        .catch((err: any) => logger.warn('Schduling of ' + jobName + ' failed!', err))
+}
 
 export default app
