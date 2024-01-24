@@ -146,19 +146,24 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
         const { data, response } = await actApi.fetchActivities(lastquater, inayear, cal.id)
 
         const calendar = buildCalendar(response.url, data, cal)
-        logger.info('Built ICalendar successfully', { cal })
+        logger.info(`Built ICalendar successfully with ${calendar.length()} events`, { cal })
 
         const metadata = await fetchMetadata(cal, db)
 
-        logger.info('Findning new events', { cal })
+        logger.info('Sorting new events', { cal })
         const eventsByUid = sortBy(calendar.events(), e => e.uid())
+
         const futureEvents = eventsByUid
             .filter(e => e.start() >= today) // Must be in future
+        logger.info(`Found ${futureEvents.length} future events`, { cal })
+
         const nextWeekEvents = futureEvents
-            .filter(e => e.start() < inaweek) // No more than 6 days ahead
+            .filter(e => e.start() < inaweek)
+        logger.info(`Found ${futureEvents.length} events within 6 days`, { cal })
 
         const newEvents = nextWeekEvents
             .filter(e => e.uid() > metadata.calendar_last_uid) // Larger than last uid
+        logger.info(`Found ${futureEvents.length} new events`, { cal })
 
         const newEvent = newEvents.find(e => true) // Take first
 
