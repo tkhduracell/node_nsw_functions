@@ -31,7 +31,7 @@ export class ActivityApi {
         const startTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
         const endTime = `${formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
 
-        logger.info('Fetching activities', { startTime, endTime, id: calendarId })
+        logger.debug('Fetching activities', { startTime, endTime, id: calendarId })
         const response = await this.fetch(`${this.baseUrl}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
             method: 'GET',
             headers: {
