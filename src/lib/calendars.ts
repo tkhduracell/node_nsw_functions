@@ -201,7 +201,13 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
         const file = bucket.file(destination)
 
         logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, { cal, metadata })
-        await file.save(calendar.toString(), { metadata: { metadata } })
+        await file.save(calendar.toString(), { metadata: {
+            metadata,
+            cacheControl: 'public, max-age=30',
+            contentDisposition: `attachment; filename="${cal.name} - ${cal.id}.ics"`,
+            contentLanguage: 'sv-SE',
+            contentType: 'text/calendar; charset=utf-8',
+        } })
 
         logger.info(`Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`, { cal, metadata })
         await file.makePublic()
