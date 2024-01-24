@@ -6,6 +6,7 @@ on:
       - main
 
 env:
+  GCLOUD_PROJECT: nackswinget-af7ef
   GCLOUD_REGION: europe-north1
   GCLOUD_SCHEDULER_REGION: europe-west6
   GCLOUD_BUCKET: nackswinget-af7ef.appspot.com
@@ -285,3 +286,37 @@ jobs:
             --max-retry-attempts 3 \
             --min-backoff 1m \
             --description "calendar-auth-update: Update NSW with full auth and refreshing all calendars"
+
+  clean-artifacts:
+    runs-on: ubuntu-latest
+    needs:
+      - "deploy-notifications-api"
+      - "deploy-competitions-api"
+      - "deploy-calendar-api"
+      - "deploy-calendar-update-api"
+
+    concurrency: 'cleanup'
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: 'auth'
+        name: Setup  gcloud Cloud SDK auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
+          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
+        run: gcloud config set project "${GCLOUD_PROJECT}"
+
+      - name: Clean cloud functions artifacts
+        run: |
+          ./clear-artifacts.sh
