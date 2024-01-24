@@ -210,6 +210,7 @@ app.post('/book', async (req, res) => {
             })
 
             // Trigger a schedule of activity update
+            logger.info('Triggering update of activity in cloud schduler', event)
             const schduler = new CloudSchedulerClient({ projectId: GCLOUD_PROJECT })
             const jobName = 'calendar-update-lean-5m'
             schduler.runJob({ name: `projects/${GCLOUD_PROJECT}/locations/europe-west6/jobs/${jobName}` })
