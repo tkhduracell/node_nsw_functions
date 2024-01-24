@@ -57,7 +57,9 @@ describe('updateCalendarContent', () => {
             file: jest.fn().mockReturnThis(),
             save: jest.fn().mockResolvedValue({}),
             getFiles: jest.fn().mockResolvedValue([[]]),
-            cloudStorageURI: new URL('gcs://bucket')
+            cloudStorageURI: new URL('gcs://bucket'),
+            publicUrl: jest.fn().mockReturnValue('http://mock.bucket/object.ics'),
+            makePublic: jest.fn().mockResolvedValue({}),
         } as unknown as jest.Mocked<Bucket>
     })
 
@@ -114,6 +116,8 @@ describe('updateCalendarContent', () => {
                     "start": "2023-09-23T15:14:59.344Z",
                 },
             }],
+            "size": 1,
+            "public_url": "http://mock.bucket/object.ics",
             "updated_at": FieldValue.serverTimestamp(),
         }, { merge: true });
 
@@ -152,6 +156,8 @@ describe('updateCalendarContent', () => {
                     "start": "2023-09-23T15:14:59.344Z",
                 }
             }],
+            "size": data.length,
+            "public_url": "http://mock.bucket/object.ics",
             "updated_at": FieldValue.serverTimestamp(),
         }, { merge: true });
     })

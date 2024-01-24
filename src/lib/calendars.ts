@@ -197,16 +197,24 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
             logger.warn('No next event found', { cal, metadata })
         }
 
+        const destination = `cal_${cal.id}.ics`
+        const file = bucket.file(destination)
+
+        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, { cal, metadata })
+        await file.save(calendar.toString(), { metadata: { metadata } })
+
+        logger.info(`Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`, { cal, metadata })
+        await file.makePublic()
+
         logger.info('Saving metadata', { cal, metadata })
         await db.collection('calendars')
             .doc(cal.id ?? '')
-            .set({ ...metadata, updated_at: FieldValue.serverTimestamp() }, { merge: true })
-
-        const destination = `cal_${cal.id}.ics`
-        const file = bucket.file(destination)
-        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, { cal, metadata })
-        await file
-            .save(calendar.toString(), { metadata: { metadata } })
+            .set({
+                ...metadata,
+                size: calendar.length(),
+                updated_at: FieldValue.serverTimestamp(),
+                public_url: file.publicUrl()
+            }, { merge: true })
     }
 
     const [files] = await bucket.getFiles({ prefix: 'cal_' })
