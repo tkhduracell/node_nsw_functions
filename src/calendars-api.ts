@@ -1,6 +1,7 @@
 import { ClockFactory } from './lib/clock';
 import { logger, loggerMiddleware } from './logging'
 import { Storage } from '@google-cloud/storage'
+import { CloudSchedulerClient } from '@google-cloud/scheduler'
 import z from 'zod'
 import { join } from 'path'
 import { updateLean, status } from './lib/calendars'
@@ -191,6 +192,7 @@ app.post('/book', async (req, res) => {
         calendarId: z.enum(['337667']).default('337667')
     })
 
+    const { GCLOUD_PROJECT } = GCloudOptions.parse(process.env)
     const { ACTIVITY_ORG_ID: orgId, ACTIVITY_BASE_URL: baseUrl } = IDOActivityOptions.parse(process.env)
 
     const data = await BookingSchema.safeParseAsync(req.body)
@@ -206,6 +208,14 @@ app.post('/book', async (req, res) => {
                 success: true,
                 id: activityId
             })
+
+            // Trigger a schedule of activity update
+            const schduler = new CloudSchedulerClient({ projectId: GCLOUD_PROJECT })
+            const jobName = 'calendar-update-lean-5m'
+            schduler.runJob({ name: `projects/${GCLOUD_PROJECT}/locations/europe-west6/jobs/${jobName}` })
+                .then(() => logger.info('Schduling of ' + jobName + ' complete!'))
+                .catch((err: any) => logger.warn('Schduling of ' + jobName + ' failed!', err))
+
         } catch (e: any) {
             if ('response' in e) {
                 const { status, statusText, url } = e.response as Response
