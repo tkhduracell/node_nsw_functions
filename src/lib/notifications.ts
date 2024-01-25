@@ -1,6 +1,5 @@
-import { differenceInDays, differenceInMinutes } from 'date-fns'
-import { formatInTimeZone } from 'date-fns-tz'
-import sv from 'date-fns/locale/sv'
+import { differenceInDays, differenceInMinutes, format } from 'date-fns'
+import Swedish from 'date-fns/locale/sv'
 import { Messaging } from 'firebase-admin/messaging'
 import { ICalEvent } from 'ical-generator'
 import { Calendars } from './types'
@@ -15,11 +14,12 @@ function getNotificationTitle(calendar_name: string, creator?: string) {
 }
 
 function getNotificationBody(clock: Clock, start: Date, end: Date) {
-    const date = formatInTimeZone(start, 'Europe/Stockholm', 'do MMMM', { locale: sv })
-    const hhmm = formatInTimeZone(start, 'Europe/Stockholm', 'HH:mm', { locale: sv })
-    const hhmm_end = formatInTimeZone(end, 'Europe/Stockholm', 'HH:mm', { locale: sv })
+    // Dates are timeone formatted upstream
+    const date = format(start, 'do MMMM', { locale: Swedish })
+    const hhmm = format(start, 'HH:mm', { locale: Swedish })
+    const hhmm_end = format(end, 'HH:mm', { locale: Swedish })
 
-    const weekday = formatInTimeZone(start, 'Europe/Stockholm', 'EEEE', { locale: sv }).replace(/^./, s => s.toUpperCase())
+    const weekday = format(start, 'EEEE', { locale: Swedish }).replace(/^./, s => s.toUpperCase())
     const duration = differenceInMinutes(end, start)
     const inDays = differenceInDays(start, clock.now())
 
@@ -53,10 +53,10 @@ export class Notifications {
             },
             topic: topicName
         }
-        logger.info('Sending notification for new event!', { 
-            cal, 
-            notification: message.notification, 
-            event: pick(event.toJSON(), 'id', 'start', 'summary', 'description') 
+        logger.info('Sending notification for new event!', {
+            cal,
+            notification: message.notification,
+            event: pick(event.toJSON(), 'id', 'start', 'summary', 'description')
         })
 
         const id = await this.messaging.send(message)
