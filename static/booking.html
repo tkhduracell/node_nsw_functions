@@ -181,8 +181,8 @@
                     })
                     const { status, statusText, ok} = result
                     if (ok) {
-                        alert('Träningen bokades, du skickas till nackswinget.se\n\nOBS: Det kan ta upp till 15 min innan bokningen syns i kalendern')
-                        document.location = "https://nackswinget.se"
+                        alert('Träningen bokades, du skickas nu till kalendern\n\nOBS: Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern')
+                        document.location = "https://nackswinget.se/fritraning/fritraningstider/"
                     } else {
                         const res = await result.json()
                         alert('Gick ej att skapa bokning: \n' + JSON.stringify(res, null, 2) + "\nStatus: " + JSON.stringify({ok, status, statusText}))
