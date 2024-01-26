@@ -83,31 +83,31 @@ ion-item[data-calendar] p {
 
 /* Huvud */
 ion-item[data-calendar="333077"] {
-  --background: rgba(128, 0, 128, 1);
+  --background: rgba(128, 0, 128, 0.9);
   --color: var(--ion-text-color)
 }
 
 /* Kurs */
 ion-item[data-calendar="333892"] {
-  --background: rgba(247, 186, 121, 1);
+  --background: rgba(247, 186, 121, 0.9);
   --color: var(--ion-text-color)
 }
 
 /* Friträning */
 ion-item[data-calendar="337667"] {
-  --background: rgba(0, 128, 0, 1);
+  --background: rgba(0, 128, 0, 0.9);
   --color: var(--ion-text-color)
 }
 
 /* Tävling */
 ion-item[data-calendar="358978"] {
-  --background: rgba(41, 128, 185, 1);
+  --background: rgba(41, 128, 185, 0.9);
   --color: var(--ion-text-color)
 }
 
 /* Eventkalender */
 ion-item[data-calendar="358979"] {
-  --background: rgba(252, 113, 132, 1);
+  --background: rgba(252, 113, 132, 0.9);
   --color: var(--ion-text-color)
 }
 </style>
