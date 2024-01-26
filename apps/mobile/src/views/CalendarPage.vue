@@ -2,7 +2,8 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-title>Nackswinget - Kalender</ion-title>
+        <ion-img slot="start" src="./nsw-logo.png" style="margin-start: 1em; height: 32px;"></ion-img>
+        <ion-title>Kalender</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
