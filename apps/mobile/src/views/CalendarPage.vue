@@ -14,6 +14,9 @@
       </ion-header>
 
       <ion-content class="ion-padding">
+        <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
+          <ion-refresher-content></ion-refresher-content>
+        </ion-refresher>
         <ion-card v-if="data.isSubscribed">
           <ion-card-header>
             <ion-card-title>Bevaka</ion-card-title>
@@ -32,6 +35,15 @@
             <ion-button @click="subscribe">Bevaka friträningar</ion-button>
           </ion-card-content>
         </ion-card>
+        <ion-card v-if="data.isLoading">
+          <ion-grid>
+            <ion-row class="ion-justify-content-center">
+              <ion-col size="auto">
+                <ion-spinner name="dots" color="danger"></ion-spinner>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card>
         <ion-card v-for="day in data.agenda" :key="day.date">
           <ion-card-header>
             <ion-card-title>{{ day.name }}</ion-card-title>
@@ -41,22 +53,35 @@
           <ion-card-content>
             <ion-list lines="full">
               <ion-item v-if="day.events.length === 0">
-                <ion-label>Inga träningar denna dag</ion-label>
+                <ion-label>
+                  <h2>Inga träningar denna dag</h2>
+                </ion-label>
               </ion-item>
               <ion-item v-for="event in day.events" :key="day.date + event.name + event.startTime"
                 :data-calendar="event.calendarId">
-                <ion-label>
-                  <h3>
-                    {{ event.startTime }} - {{ event.name }} ({{ event.duration }} minuter)
-                  </h3>
-                  <p class="div">-</p>
-                  <p class="footer">{{ event.endTime }}</p>
-                </ion-label>
+                <ion-grid>
+                  <ion-row :key="event.id">
+                    <ion-col size="auto">
+                      <ion-label style="display: flex; flex-direction: column;">
+                        <div>{{ event.startTime }}</div>
+                        <ion-icon style="margin-left: auto; margin-right: auto;" :icon="caretDownOutline"></ion-icon>
+                        <div>{{ event.endTime }}</div>
+                      </ion-label>
+                    </ion-col>
+                    <ion-col class="ion-align-self-center">
+                      <ion-label>
+                        <h2>
+                          {{ event.name }} ({{ event.duration }} minuter)
+                        </h2>
+                        <h3 v-if="event.description" v-html="event.description"></h3>
+                      </ion-label>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
               </ion-item>
             </ion-list>
           </ion-card-content>
         </ion-card>
-
       </ion-content>
     </ion-content>
   </ion-page>
@@ -110,23 +135,40 @@ ion-item[data-calendar="358979"] {
   --background: rgba(252, 113, 132, 0.9);
   --color: var(--ion-text-color)
 }
+
+ion-spinner {
+  width: 100px;
+  height: 100px;
+}
 </style>
 <script setup lang="ts">
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton } from '@ionic/vue';
+import {
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton,
+  IonRow, IonList, IonItem, IonLabel, IonCard, IonCardContent, IonCardHeader,
+  IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonIcon, IonImg, IonSpinner,
+  IonRefresher, IonRefresherContent
+} from '@ionic/vue';
+import { caretDownOutline } from 'ionicons/icons'
 import { onMounted, reactive } from 'vue';
 import { addDays, format, parseISO } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import { FCM } from "@capacitor-community/fcm"
 import { PushNotifications } from "@capacitor/push-notifications"
 
+type AgendaEvent = {
+  name: string, startTime: string, endTime: string,
+  duration: number, calendarId: string, description: string, id: string
+}
 const _agenda: {
-  name: string, date: string, events: { name: string, startTime: string, endTime: string, duration: number, calendarId: string, description: string }[]
+  name: string, date: string, events: AgendaEvent[]
 }[] = []
 
 const data = reactive({
   agenda: _agenda,
   isSubscribed: null as boolean | null,
-  isSupported: true
+  isSupported: false,
+  isLoading: true,
+  error: null as any
 })
 const titleCase = (str: string): string =>
   str
@@ -135,20 +177,23 @@ const titleCase = (str: string): string =>
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
-onMounted(async () => {
+const handleRefresh = (event: { target: { complete: () => void } }) => {
+  load().finally(() => event.target.complete())
+};
+
+async function load() {
+  data.isLoading = true
   const dates = createDatesArray(7)
     .map(date => fetch('/api/calendars-api/book/search?date=' + date)
       .then(res => res.json())
       .then(json => ({ json, date })))
-
-  isSubscribed()
-    .then(subscribed => data.isSubscribed = subscribed)
-    .catch(() => {
-      data.isSupported = false
-      console.error('Notification not supported on web')
-    })
-
   const results = await Promise.all(dates)
+    .catch((err: any) => {
+      console.error('Failed to fetch calendar', err)
+      data.error = err
+      return []
+    })
+    .finally(() => data.isLoading = false)
 
   data.agenda = results.map(res => ({
     name: titleCase(format(parseISO(res.date), 'EEEE', { locale: sv })),
@@ -158,10 +203,23 @@ onMounted(async () => {
       startTime: format(parseISO(event.startTime), 'HH:mm'),
       endTime: format(parseISO(event.endTime), 'HH:mm'),
       duration: event.duration,
-      calendarId: event.calendarId
+      calendarId: event.calendarId,
+      description: event.description,
+      id: event.id
     }))
   }))
 
+}
+
+onMounted(async () => {
+  load()
+
+  isSubscribed()
+    .then(subscribed => data.isSubscribed = subscribed)
+    .catch(() => {
+      data.isSupported = false
+      console.error('Notification not supported on web')
+    })
 })
 
 const createDatesArray = (days: number): string[] => {
