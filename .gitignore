@@ -10,3 +10,5 @@ dist/
 *.crt
 *.key
 *.csr
+
+apps/mobile/
