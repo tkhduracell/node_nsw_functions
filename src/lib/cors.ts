@@ -5,6 +5,7 @@ const options: CorsOptions = {
         'capacitor://localhost',
         'ionic://localhost',
         'http://localhost',
+        'https://localhost',
         'https://nackswinget.se'
     ]
 }
