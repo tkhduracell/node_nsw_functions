@@ -13,6 +13,7 @@ import { differenceInMinutes } from 'date-fns'
 import { initializeApp } from 'firebase-admin/app'
 import express from 'express'
 import { errorHandling, prettyJson } from './middleware'
+import { cors } from './lib/cors'
 
 const app = express()
 app.use(express.json())
@@ -121,7 +122,8 @@ app.get('/update', async (req, res) => {
     }
 })
 
-app.get('/book/search', async (req, res) => {
+app.options('/book/search', cors);
+app.get('/book/search', cors, async (req, res) => {
     const QuerySchema = z.object({
         date: z.string().regex(/\d{4}-\d{2}-\d{2}/),
         calendarId: z.enum(['337667']).default('337667')

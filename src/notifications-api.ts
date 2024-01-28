@@ -6,12 +6,12 @@ import z from 'zod'
 import { initializeApp } from 'firebase-admin/app'
 import { type Message, getMessaging } from 'firebase-admin/messaging'
 import { getFirestore } from 'firebase-admin/firestore'
-import cors from 'cors'
+import { cors } from './lib/cors'
 import { prettyJson } from './middleware'
 
 const app = express()
 app.use(loggerMiddleware)
-app.use(cors({ origin: 'https://nackswinget.se' }))
+app.use(cors)
 app.use(express.json())
 app.use(prettyJson)
 
