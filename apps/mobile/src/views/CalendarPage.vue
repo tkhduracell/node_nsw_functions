@@ -3,7 +3,6 @@
     <ion-header>
       <ion-toolbar>
         <ion-img slot="start" src="./nsw-logo.png" style="margin-start: 1em; height: 32px;"></ion-img>
-        <ion-label>{{ getPlatforms() }}</ion-label>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
@@ -161,7 +160,7 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton,
   IonRow, IonList, IonItem, IonLabel, IonCard, IonCardContent, IonCardHeader,
   IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonIcon, IonImg, IonSpinner,
-  IonRefresher, IonRefresherContent, getPlatforms
+  IonRefresher, IonRefresherContent
 } from '@ionic/vue';
 import { caretDownOutline } from 'ionicons/icons'
 import { onMounted, reactive } from 'vue';
