@@ -3,13 +3,13 @@
     <ion-header>
       <ion-toolbar>
         <ion-img slot="start" src="./nsw-logo.png" style="margin-start: 1em; height: 32px;"></ion-img>
-        <ion-title>Kalender</ion-title>
+        <ion-label>{{ getPlatforms() }}</ion-label>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar>
-          <ion-title size="large">Tab 1</ion-title>
+          <ion-title size="large"></ion-title>
         </ion-toolbar>
       </ion-header>
 
@@ -17,6 +17,7 @@
         <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
           <ion-refresher-content></ion-refresher-content>
         </ion-refresher>
+
         <ion-card v-if="data.isSubscribed">
           <ion-card-header>
             <ion-card-title>Bevaka</ion-card-title>
@@ -26,6 +27,7 @@
             <ion-button @click="unsubscribe">Avsluta bevakning</ion-button>
           </ion-card-content>
         </ion-card>
+
         <ion-card v-else-if="data.isSupported">
           <ion-card-header>
             <ion-card-title>Bevaka</ion-card-title>
@@ -35,6 +37,19 @@
             <ion-button @click="subscribe">Bevaka friträningar</ion-button>
           </ion-card-content>
         </ion-card>
+
+        <ion-card v-if="data.error">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="auto">
+                <ion-label>
+                  {{ data.error }}
+                </ion-label>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card>
+
         <ion-card v-if="data.isLoading">
           <ion-grid>
             <ion-row class="ion-justify-content-center">
@@ -146,18 +161,19 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton,
   IonRow, IonList, IonItem, IonLabel, IonCard, IonCardContent, IonCardHeader,
   IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonIcon, IonImg, IonSpinner,
-  IonRefresher, IonRefresherContent
+  IonRefresher, IonRefresherContent, getPlatforms
 } from '@ionic/vue';
 import { caretDownOutline } from 'ionicons/icons'
 import { onMounted, reactive } from 'vue';
-import { addDays, format, parseISO } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import { FCM } from "@capacitor-community/fcm"
 import { PushNotifications } from "@capacitor/push-notifications"
+import { Activity, useClient } from '@/compsables/client';
 
 type AgendaEvent = {
-  name: string, startTime: string, endTime: string,
-  duration: number, calendarId: string, description: string, id: string
+  id: number, name: string, startTime: string, endTime: string,
+  duration: number, calendarId: number, description: string | null
 }
 const _agenda: {
   name: string, date: string, events: AgendaEvent[]
@@ -181,34 +197,34 @@ const handleRefresh = (event: { target: { complete: () => void } }) => {
   load().finally(() => event.target.complete())
 };
 
-async function load() {
-  data.isLoading = true
-  const dates = createDatesArray(7)
-    .map(date => fetch('/api/calendars-api/book/search?date=' + date)
-      .then(res => res.json())
-      .then(json => ({ json, date })))
-  const results = await Promise.all(dates)
-    .catch((err: any) => {
-      console.error('Failed to fetch calendar', err)
-      data.error = err
-      return []
-    })
-    .finally(() => data.isLoading = false)
-
-  data.agenda = results.map(res => ({
-    name: titleCase(format(parseISO(res.date), 'EEEE', { locale: sv })),
-    date: format(parseISO(res.date), 'dd MMMM, yyyy', { locale: sv }),
-    events: res.json.map((event: any) => ({
+function adapter({ date, json }: { date: string, json: Activity[] }) {
+  return ({
+    name: titleCase(format(parseISO(date), 'EEEE', { locale: sv })),
+    date: format(parseISO(date), 'dd MMMM, yyyy', { locale: sv }),
+    events: json.map(event => ({
+      id: event.id,
       name: event.name,
       startTime: format(parseISO(event.startTime), 'HH:mm'),
       endTime: format(parseISO(event.endTime), 'HH:mm'),
       duration: event.duration,
       calendarId: event.calendarId,
       description: event.description,
-      id: event.id
     }))
-  }))
+  })
+}
 
+const { client } = useClient()
+async function load() {
+  data.isLoading = true
+  const dates = client.searchByDateRange(new Date(), 14)
+
+  const results = await dates.catch((err: any) => {
+    console.error('Failed to fetch calendar', err)
+    data.error = err
+    return []
+  }).finally(() => data.isLoading = false)
+
+  data.agenda = results.map(adapter)
 }
 
 onMounted(async () => {
@@ -216,81 +232,35 @@ onMounted(async () => {
 
   isSubscribed()
     .then(subscribed => data.isSubscribed = subscribed)
-    .catch(() => {
+    .catch((err) => {
       data.isSupported = false
-      console.error('Notification not supported on web')
+      console.error('Notification not supported on web', err)
     })
 })
 
-const createDatesArray = (days: number): string[] => {
-  const base = addDays(new Date(), 0)
-  return Array.from({ length: days }, (_, index) =>
-    format(addDays(base, index), 'yyyy-MM-dd')
-  );
-};
-
-
-const baseUrl = 'api/notifications-api'
-
-async function doSubscribe(token: string) {
-  const query = new URLSearchParams()
-  query.append('token', token)
-  query.append('topic', 'calendar-337667')
-
-  const resp = await fetch(baseUrl + '/subscribe?' + query.toString(), { method: 'POST' })
-  if (resp.ok) {
-    console.log('subscribed!')
-  } else {
-    console.log('failed to subscribe', resp)
-  }
-}
-
-async function doUnsubscribe(token: string) {
-  const query = new URLSearchParams()
-  query.append('token', token)
-  query.append('topic', 'calendar-337667')
-
-  const resp = await fetch(baseUrl + '/unsubscribe?' + query.toString(), { method: 'POST' })
-  if (resp.ok) {
-    console.log('unsubscribed!')
-  } else {
-    console.log('failed to subscribe', resp)
-  }
-}
-
 async function isSubscribed() {
   const { token } = await FCM.getToken()
-  const query = new URLSearchParams()
-  query.append('token', token)
-
-  const resp = await fetch(baseUrl + '/status?' + query.toString())
-  if (resp.ok) {
-    const json = await resp.json()
-    return json.subscribed
-  } else {
-    console.log('failed to check subscription', resp)
-    return false
-  }
+  return await client.isSubscribed(token)
 }
 
 async function unsubscribe() {
   const { token } = await FCM.getToken()
-
-  doUnsubscribe(token)
+  client.unsubscribe(token)
 }
-
 
 async function subscribe() {
   try {
     await PushNotifications.requestPermissions();
     await PushNotifications.register();
-    const { token } = await FCM.getToken()
-    doSubscribe(token)
   } catch (err: any) {
     data.isSupported = false
     console.error('Notification not supported', err)
+    return
   }
 
+  FCM.getToken()
+    .then(({ token }) => client.subscribe(token))
+    .catch((err) => data.error = err)
 }
 
 </script>
