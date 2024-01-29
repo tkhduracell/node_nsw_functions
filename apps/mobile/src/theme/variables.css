@@ -79,7 +79,7 @@ http://ionicframework.com/docs/theming/ */
   --ion-tab-bar-background: var(--ion-color);
 }
 
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   /*
    * Dark Colors
    * -------------------------------------------
