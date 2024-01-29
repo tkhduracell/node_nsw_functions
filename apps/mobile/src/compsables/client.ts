@@ -59,7 +59,7 @@ class NswApiClient {
       const query = new URLSearchParams()
       query.append('token', token)
 
-      const resp = await fetch(`${this.baseUrl}/notifications-api/status?${query.toString()}`)
+      const resp = await fetch(`${this.baseUrl}/notifications-api/status?${query.toString()}`, { method: 'POST' })
       if (resp.ok) {
         const { subscribed } = await resp.json() as { subscribed: boolean }
         return subscribed
