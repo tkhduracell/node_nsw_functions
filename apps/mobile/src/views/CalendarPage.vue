@@ -17,48 +17,53 @@
           <ion-refresher-content></ion-refresher-content>
         </ion-refresher>
 
-        <ion-card v-if="data.isSubscribed">
+        <ion-card v-if="subscription.isSubscribed">
           <ion-card-header>
             <ion-card-title>Bevaka</ion-card-title>
             <ion-card-subtitle>Du bevakar friträningar på denna enhet</ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <ion-button @click="unsubscribe">Avsluta bevakning</ion-button>
+            <ion-button @click="unsubscribe">
+              <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
+              <span v-if="!subscription.isLoading">Avsluta bevakning</span>
+            </ion-button>
           </ion-card-content>
         </ion-card>
 
-        <ion-card v-else-if="data.isSupported">
+        <ion-card v-else-if="subscription.isSupported">
           <ion-card-header>
             <ion-card-title>Bevaka</ion-card-title>
             <ion-card-subtitle>Du kan bevaka friträning och få notiser när någon bokar ny träning</ion-card-subtitle>
           </ion-card-header>
           <ion-card-content>
-            <ion-button @click="subscribe">Bevaka friträningar</ion-button>
+            <ion-button @click="subscribe">
+              <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
+              <span v-if="!subscription.isLoading">Bevaka friträningar</span>
+            </ion-button>
           </ion-card-content>
         </ion-card>
 
-        <ion-card v-if="data.error">
+        <ion-card v-if="subscription.error || agenda.error">
           <ion-grid>
-            <ion-row>
+            <ion-row v-for="(err, index) in [subscription.error, agenda.error]" :key="index">
               <ion-col size="auto">
-                <ion-label>
-                  {{ data.error }}
-                </ion-label>
+                <ion-label>{{ err }}</ion-label>
               </ion-col>
             </ion-row>
           </ion-grid>
         </ion-card>
 
-        <ion-card v-if="data.isLoading">
+        <ion-card v-if="agenda.isLoading">
           <ion-grid>
             <ion-row class="ion-justify-content-center">
               <ion-col size="auto">
-                <ion-spinner name="dots" color="danger"></ion-spinner>
+                <ion-spinner name="dots" color="danger" class="big"></ion-spinner>
               </ion-col>
             </ion-row>
           </ion-grid>
         </ion-card>
-        <ion-card v-for="day in data.agenda" :key="day.date">
+
+        <ion-card v-for="day in agenda.items" :key="day.date">
           <ion-card-header>
             <ion-card-title>{{ day.name }}</ion-card-title>
             <ion-card-subtitle>{{ day.date }}</ion-card-subtitle>
@@ -150,7 +155,7 @@ ion-item[data-calendar="358979"] {
   --color: var(--ion-text-color)
 }
 
-ion-spinner {
+ion-spinner.big {
   width: 100px;
   height: 100px;
 }
@@ -162,104 +167,17 @@ import {
   IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonIcon, IonImg, IonSpinner,
   IonRefresher, IonRefresherContent
 } from '@ionic/vue';
+
 import { caretDownOutline } from 'ionicons/icons'
-import { onMounted, reactive } from 'vue';
-import { format, parseISO } from 'date-fns'
-import { sv } from 'date-fns/locale'
-import { FCM } from "@capacitor-community/fcm"
-import { PushNotifications } from "@capacitor/push-notifications"
-import { Activity, useClient } from '@/compsables/client';
+import { useAgenda } from '@/compsables/agenda';
+import { useSubscription } from '@/compsables/subscription';
 
-type AgendaEvent = {
-  id: number, name: string, startTime: string, endTime: string,
-  duration: number, calendarId: number, description: string | null
-}
-const _agenda: {
-  name: string, date: string, events: AgendaEvent[]
-}[] = []
-
-const data = reactive({
-  agenda: _agenda,
-  isSubscribed: null as boolean | null,
-  isSupported: false,
-  isLoading: true,
-  error: null as any
-})
-const titleCase = (str: string): string =>
-  str
-    .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+const { data: agenda, load: loadAgenda } = useAgenda()
+const { data: subscription, unsubscribe, subscribe } = useSubscription()
 
 const handleRefresh = (event: { target: { complete: () => void } }) => {
-  load().finally(() => event.target.complete())
+  loadAgenda()
+    .finally(() => event.target.complete())
 };
-
-function adapter({ date, json }: { date: string, json: Activity[] }) {
-  return ({
-    name: titleCase(format(parseISO(date), 'EEEE', { locale: sv })),
-    date: format(parseISO(date), 'dd MMMM, yyyy', { locale: sv }),
-    events: json.map(event => ({
-      id: event.id,
-      name: event.name,
-      startTime: format(parseISO(event.startTime), 'HH:mm'),
-      endTime: format(parseISO(event.endTime), 'HH:mm'),
-      duration: event.duration,
-      calendarId: event.calendarId,
-      description: event.description,
-    }))
-  })
-}
-
-const { client } = useClient()
-async function load() {
-  data.isLoading = true
-  const dates = client.searchByDateRange(new Date(), 14)
-
-  const results = await dates.catch((err: any) => {
-    console.error('Failed to fetch calendar', err)
-    data.error = err
-    return []
-  }).finally(() => data.isLoading = false)
-
-  data.agenda = results.map(adapter)
-}
-
-onMounted(async () => {
-  load()
-
-  isSubscribed()
-    .then(subscribed => data.isSubscribed = subscribed)
-    .catch((err) => {
-      data.isSupported = false
-      console.error('Notification not supported on web', err)
-    })
-})
-
-async function isSubscribed() {
-  const { token } = await FCM.getToken()
-  return await client.isSubscribed(token)
-}
-
-async function unsubscribe() {
-  const { token } = await FCM.getToken()
-  client.unsubscribe(token)
-}
-
-async function subscribe() {
-  try {
-    await PushNotifications.requestPermissions();
-    await PushNotifications.register();
-  } catch (err: any) {
-    data.isSupported = false
-    console.error('Notification not supported', err)
-    return
-  }
-
-  FCM.getToken()
-    .then(({ token }) => client.subscribe(token))
-    .catch((err) => data.error = err)
-}
 
 </script>
