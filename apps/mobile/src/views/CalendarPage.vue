@@ -113,6 +113,11 @@ ion-button {
 ion-item[data-calendar] {
   --border-radius: 6px;
   margin-bottom: 4px;
+  color: var(--ion-color-light);
+}
+
+body.dark ion-item[data-calendar] {
+  color: var(--ion-text-color);
 }
 
 ion-item[data-calendar] p.div {
@@ -121,38 +126,37 @@ ion-item[data-calendar] p.div {
   font-size: 0.6em;
 }
 
-ion-item[data-calendar] p {
-  color: var(--ion-text-color);
-}
-
 /* Huvud */
 ion-item[data-calendar="333077"] {
   --background: rgba(128, 0, 128, 0.9);
-  --color: var(--ion-text-color)
 }
 
 /* Kurs */
 ion-item[data-calendar="333892"] {
+  --background: rgba(244, 153, 56, 0.9);
+}
+
+body.dark ion-item[data-calendar="333892"] {
   --background: rgba(247, 186, 121, 0.9);
-  --color: var(--ion-text-color)
 }
 
 /* Friträning */
 ion-item[data-calendar="337667"] {
   --background: rgba(0, 128, 0, 0.9);
-  --color: var(--ion-text-color)
 }
 
 /* Tävling */
 ion-item[data-calendar="358978"] {
   --background: rgba(41, 128, 185, 0.9);
-  --color: var(--ion-text-color)
 }
 
 /* Eventkalender */
 ion-item[data-calendar="358979"] {
+  --background: rgba(255, 70, 94, 0.9);
+}
+
+body.dark ion-item[data-calendar="358979"] {
   --background: rgba(252, 113, 132, 0.9);
-  --color: var(--ion-text-color)
 }
 
 ion-spinner.big {
