@@ -3,6 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-img slot="start" src="./nsw-logo.png" style="margin-start: 1em; height: 32px;"></ion-img>
+        <ion-title>NSW Kalender</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
@@ -43,11 +44,25 @@
           </ion-card-content>
         </ion-card>
 
-        <ion-card v-if="subscription.error || agenda.error">
+        <ion-card v-if="subscription.error">
           <ion-grid>
-            <ion-row v-for="(err, index) in [subscription.error, agenda.error]" :key="index">
+            <ion-row>
               <ion-col size="auto">
-                <ion-label>{{ err }}</ion-label>
+                <p>Kunde ej ladda prenumeration</p>
+                <ion-label>{{ subscription.error }}</ion-label>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card>
+
+        <ion-card v-if="agenda.error">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="auto">
+                <ion-label>
+                  <p>Kunde ej ladda kalender</p>
+                  {{ agenda.error }}
+                </ion-label>
               </ion-col>
             </ion-row>
           </ion-grid>
@@ -106,18 +121,24 @@
   </ion-page>
 </template>
 <style scoped>
-ion-button {
-  --background: rgba(249, 6, 75, 1);
+@media (prefers-color-scheme: dark) {
+  ion-item[data-calendar] {
+    color: var(--ion-text-color);
+  }
+
+  ion-item[data-calendar="333892"] {
+    --background: rgba(247, 186, 121, 0.9);
+  }
+
+  ion-item[data-calendar="358979"] {
+    --background: rgba(252, 113, 132, 0.9);
+  }
 }
 
 ion-item[data-calendar] {
   --border-radius: 6px;
   margin-bottom: 4px;
-  color: var(--ion-color-light);
-}
-
-body.dark ion-item[data-calendar] {
-  color: var(--ion-text-color);
+  color: var(--ion-color-dark);
 }
 
 ion-item[data-calendar] p.div {
@@ -136,10 +157,6 @@ ion-item[data-calendar="333892"] {
   --background: rgba(244, 153, 56, 0.9);
 }
 
-body.dark ion-item[data-calendar="333892"] {
-  --background: rgba(247, 186, 121, 0.9);
-}
-
 /* Friträning */
 ion-item[data-calendar="337667"] {
   --background: rgba(0, 128, 0, 0.9);
@@ -153,10 +170,6 @@ ion-item[data-calendar="358978"] {
 /* Eventkalender */
 ion-item[data-calendar="358979"] {
   --background: rgba(255, 70, 94, 0.9);
-}
-
-body.dark ion-item[data-calendar="358979"] {
-  --background: rgba(252, 113, 132, 0.9);
 }
 
 ion-spinner.big {
