@@ -6,7 +6,8 @@ const clientKey = Symbol() as InjectionKey<NswApiClient>
 
 export function provideClient() {
     const platforms = getPlatforms()
-    const baseUrl = platforms.includes('ios') || platforms.includes('android')
+    // eslint-disable-next-line no-extra-boolean-cast
+    const baseUrl = !!(platforms.includes('ios') || platforms.includes('android'))
     ? 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net'
     : '/api'
 
