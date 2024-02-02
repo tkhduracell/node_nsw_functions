@@ -1,19 +1,19 @@
 PODS:
   - Capacitor (5.6.0):
     - CapacitorCordova
-  - CapacitorApp (5.0.6):
+  - CapacitorApp (5.0.7):
     - Capacitor
   - CapacitorCommunityFcm (5.0.2):
     - Capacitor
     - Firebase/Messaging
   - CapacitorCordova (5.6.0)
-  - CapacitorHaptics (5.0.6):
+  - CapacitorHaptics (5.0.7):
     - Capacitor
-  - CapacitorKeyboard (5.0.7):
+  - CapacitorKeyboard (5.0.8):
     - Capacitor
-  - CapacitorPushNotifications (5.1.0):
+  - CapacitorPushNotifications (5.1.1):
     - Capacitor
-  - CapacitorStatusBar (5.0.6):
+  - CapacitorStatusBar (5.0.7):
     - Capacitor
   - Firebase/CoreOnly (10.20.0):
     - FirebaseCore (= 10.20.0)
@@ -111,13 +111,13 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Capacitor: ebfc16cdb8116d04c101686b080342872da42d43
-  CapacitorApp: 024e1b1bea5f883d79f6330d309bc441c88ad04a
+  CapacitorApp: 17fecd0e6cb23feafac7eb0939417389038b0979
   CapacitorCommunityFcm: f7b5158169ea27d8a8444e0adeb17584d7997e91
   CapacitorCordova: 931b48fcdbc9bc985fc2f16cec9f77c794a27729
-  CapacitorHaptics: 1fffc1217c7e64a472d7845be50fb0c2f7d4204c
-  CapacitorKeyboard: ce5e01064cf57a2c05b32565310713b7fe6cc6f9
-  CapacitorPushNotifications: b31e326c6e4eb216a622041d6ca21a973f34943f
-  CapacitorStatusBar: 565c0a1ebd79bb40d797606a8992b4a105885309
+  CapacitorHaptics: 7c7c206f0c96a628fed073830c96d28c4b2e772e
+  CapacitorKeyboard: aec619a578235c6ce279075009a2689c2cf5c42c
+  CapacitorPushNotifications: 2327900bc002f5ff49ee6d2231796d0635b4a1b0
+  CapacitorStatusBar: f390fbb49b82ffb754ea4b3cf71dc8b048baf3e7
   Firebase: 10c8cb12fb7ad2ae0c09ffc86cd9c1ab392a0031
   FirebaseCore: 28045c1560a2600d284b9c45a904fe322dc890b6
   FirebaseCoreInternal: efeeb171ac02d623bdaefe121539939821e10811
