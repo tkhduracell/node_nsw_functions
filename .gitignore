@@ -12,3 +12,6 @@ dist/
 *.csr
 
 apps/mobile/android/.idea/deploymentTargetDropDown.xml
+
+
+_*.md
