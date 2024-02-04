@@ -4,7 +4,7 @@
 PROJECT_ID="nackswinget-af7ef"
 REPOSITORY="gcf-artifacts"
 LOCATION="europe-north1-docker.pkg.dev"
-IMAGES=("notifications--api" "competitions--api" "calendars--update--api" "calendars--api")
+IMAGES=("notifications--api" "competitions--api" "calendars--update--api" "calendars--api" "news--api")
 
 for IMAGE in "${IMAGES[@]}"; do
     echo "Processing $IMAGE..."

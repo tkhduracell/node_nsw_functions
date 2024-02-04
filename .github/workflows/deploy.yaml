@@ -369,6 +369,7 @@ jobs:
       - "deploy-competitions-api"
       - "deploy-calendar-api"
       - "deploy-calendar-update-api"
+      - "deploy-news-api"
 
     concurrency: 'cleanup'
 
