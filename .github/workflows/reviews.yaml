@@ -12,7 +12,7 @@ env:
   TZ: Europe/Stockholm
 
 jobs:
-  build:
+  build-functions:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,10 +23,10 @@ jobs:
       id-token: 'write'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -37,7 +37,7 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-  test:
+  test-functions:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -48,10 +48,10 @@ jobs:
       id-token: 'write'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
@@ -60,4 +60,5 @@ jobs:
         run: npm ci
 
       - name: Test
-        run: npm run test --if-present
+
+  build-apps:
