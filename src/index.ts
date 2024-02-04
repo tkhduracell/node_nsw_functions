@@ -20,3 +20,6 @@ http('notifications-api', notifications)
 
 import competitions from './competitions-api'
 http('competitions-api', competitions)
+
+import news from './news-api'
+http('news-api', news)
