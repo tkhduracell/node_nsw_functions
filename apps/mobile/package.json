@@ -1,5 +1,6 @@
 {
   "name": "nackswinget",
+  "description": "An Ionic app for Nackswinget",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -46,6 +47,5 @@
     "vite": "^5.0.12",
     "vitest": "^1.2.2",
     "vue-tsc": "^1.8.27"
-  },
-  "description": "An Ionic project"
+  }
 }
