@@ -31,7 +31,7 @@
         </ion-grid>
       </ion-card>
 
-      <ion-card v-for="item in (news?.items ?? [])" :key="item.id">
+      <ion-card v-for="item in (news?.items ?? [])" :key="item.id" :href="item.link" target="_blank">
         <img :src="item.media.thumbnail.url" v-if="item.media?.thumbnail?.url" class="w-100" />
         <ion-card-header>
           <ion-card-title v-html="item.title"></ion-card-title>
