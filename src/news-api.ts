@@ -4,6 +4,7 @@ import { initializeApp } from 'firebase-admin/app'
 import { prettyJson } from './middleware'
 import { cors } from './lib/cors'
 import { parse } from 'rss-to-json'
+import z from 'zod'
 
 const app = express()
 app.use(express.json())
@@ -18,9 +19,25 @@ if (require.main === module) {
 }
 
 app.get('/', async (req, res) => {
+
+    const params = await z.object({ exclude: z.enum(['competitions']).optional() }).safeParseAsync(req.query)
+
+    if (!params.success) {
+        logger.error('Invalid query parameters', params.error)
+        res.status(400)
+        res.json({ error: 'Invalid query parameters' })
+        return
+    }
+
+    const query = new URLSearchParams()
+
+    if (params.data.exclude === 'competitions') {
+        query.append('cat', '-5') // Magic id for 'Tävlingar' kategory
+    }
+
     try {
-        const feed = await parse('https://nackswinget.se/feed');
-        res.header('Cache-Control', 'public, max-age=300')
+        const feed = await parse('https://nackswinget.se/feed?' + query.toString());
+        res.header('Cache-Control', 'no-store')
         res.json(feed)
     } catch (err: any) {
         logger.error(err);
