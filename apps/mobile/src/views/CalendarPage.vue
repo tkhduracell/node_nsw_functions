@@ -10,12 +10,22 @@
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
-      <ion-card v-if="subscription.isSubscribed">
+      <ion-card v-if="subscription.isDenied">
         <ion-card-header>
           <ion-card-title>Bevaka</ion-card-title>
-          <ion-card-subtitle>Du bevakar friträningar på denna enhet</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
+          <p>Du har valt att inte tillåta notifiktioner.</p>
+          <p>Du kan ändra detta under Inställningar &gt; Nackswinget &gt; Notiser.</p>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card v-else-if="subscription.isSubscribed">
+        <ion-card-header>
+          <ion-card-title>Bevaka</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Du bevakar friträningar på denna enhet.</p>
           <ion-button @click="unsubscribe">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
             <span v-if="!subscription.isLoading">Avsluta bevakning</span>
@@ -26,9 +36,9 @@
       <ion-card v-else-if="subscription.isSupported">
         <ion-card-header>
           <ion-card-title>Bevaka</ion-card-title>
-          <ion-card-subtitle>Du kan bevaka friträning och få notiser när någon bokar ny träning</ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
+          <p>Du kan bevaka friträning och få notiser när någon bokar ny träning.</p>
           <ion-button @click="subscribe">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
             <span v-if="!subscription.isLoading">Bevaka friträningar</span>
@@ -37,27 +47,23 @@
       </ion-card>
 
       <ion-card v-if="subscription.error">
-        <ion-grid>
-          <ion-row>
-            <ion-col size="auto">
-              <p>Kunde ej ladda prenumeration</p>
-              <ion-label>{{ subscription.error }}</ion-label>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
+        <ion-card-header>
+          <ion-card-title>Ett fel inträffade</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Kunde ej ladda prenumeration.</p>
+          <ion-label>{{ subscription.error }}</ion-label>
+        </ion-card-content>
       </ion-card>
 
       <ion-card v-if="agenda.error">
-        <ion-grid>
-          <ion-row>
-            <ion-col size="auto">
-              <ion-label>
-                <p>Kunde ej ladda kalender</p>
-                {{ agenda.error }}
-              </ion-label>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
+        <ion-card-header>
+          <ion-card-title>Ett fel inträffade</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Kunde ej ladda kalender</p>
+          <ion-label>{{ agenda.error }}</ion-label>
+        </ion-card-content>
       </ion-card>
 
       <ion-card v-if="agenda.isLoading">

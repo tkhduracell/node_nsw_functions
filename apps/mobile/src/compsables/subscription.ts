@@ -8,34 +8,39 @@ export function useSubscription() {
 
   const data = reactive({
     isSubscribed: null as boolean | null,
-    isSupported: false,
+    isSupported: true,
     isLoading: true,
+    isDenied: true,
     error: null as any,
   });
 
   async function isSubscribed() {
     data.isLoading = true;
-    FCM.getToken()
-      .then(({ token }) => {
-        data.isSupported = true;
-        return token;
-      })
-      .catch((err) => {
-        console.warn("Failed to fetch token", err);
-        data.isSupported = false;
-        throw err;
-      })
-      .then((token) => {
-        return client
-          .isSubscribed(token)
-          .then((subscribed) => (data.isSubscribed = subscribed))
-          .catch((err) => {
-            data.error = err;
-            data.isSubscribed = false;
-            console.error("Failed to fetch notification status", err);
-          });
-      })
-      .finally(() => (data.isLoading = false));
+
+    try {
+      const { receive: permission } = await PushNotifications.checkPermissions()
+
+      if (permission === 'denied') {
+        console.error("Notification permission not granted", { permission });
+        data.isDenied = true;
+        return;
+      }
+
+      // If denided, we can't check subscription status
+      if (permission !== 'granted') return;
+      data.isDenied = false;
+
+      const { token } = await FCM.getToken();
+      const subscribed = await client.isSubscribed(token);
+      console.error("Subscription status", { subscribed });
+      data.isSubscribed = subscribed
+    } catch (err: any) {
+      data.error = err;
+      data.isSubscribed = false;
+      console.error("Failed to fetch notification status", err);
+    } finally {
+      data.isLoading = false
+    }
   }
 
   async function unsubscribe() {
@@ -55,21 +60,41 @@ export function useSubscription() {
   async function subscribe() {
     data.isLoading = true;
     try {
-      const permisson = await PushNotifications.requestPermissions();
-      if (permisson.receive !== "granted") {
-        console.error("Notification permission not granted", { permisson });
-        data.error = "Notification permission not granted";
+      const {receive: initialPermission} = await PushNotifications.checkPermissions();
+      data.isSupported = true;
+
+      if (initialPermission === 'denied') {
+        console.error("Notification permission not granted from start", { initialPermission });
+        data.isDenied = true;
         return;
       }
-      await PushNotifications.register();
+
+      if (initialPermission !== 'granted') {
+        const { receive: permission } = await PushNotifications.requestPermissions();
+        if (permission === "denied") {
+          console.error("Notification permission not granted after request", { permission });
+          data.isDenied = true;
+          return;
+        }
+        data.isDenied = false;
+        await PushNotifications.register();
+      }
+
     } catch (err: any) {
       data.isSupported = false;
       data.error = err;
-      console.error("Notification not supported", err);
+      console.error("Notifications not supported", err);
       return;
+    } finally {
+      data.isLoading = false;
     }
 
     return FCM.getToken()
+      .catch((err) => {
+        data.isSupported = false;
+        console.error("Unable to fetch FCM token", err);
+        throw err;
+      })
       .then(({ token }) => client.subscribe(token))
       .then(() => (data.isSubscribed = true))
       .catch((err) => (data.error = err))
