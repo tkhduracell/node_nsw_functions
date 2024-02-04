@@ -14,6 +14,7 @@
     "dev:calendars-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/calendars-api.ts'",
     "dev:calendars-update-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/calendars-update-api.ts'",
     "dev:notifications-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/notifications-api.ts'",
+    "dev:news-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/news-api.ts'",
     "dev:index": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
     "demo": "node --inspect --loader ts-node/esm -r dotenv/config src/demo.ts",
     "clean": "rm -rf dist"
@@ -34,6 +35,7 @@
     "ical-generator": "^6.0.1",
     "lodash": "^4.17.21",
     "puppeteer": "^21.7.0",
+    "rss-to-json": "^2.1.1",
     "source-map-support": "^0.5.21",
     "winston": "^3.11.0",
     "zod": "^3.22.4"
