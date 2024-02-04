@@ -11,4 +11,4 @@ dist/
 *.key
 *.csr
 
-apps/mobile/
+apps/mobile/android/.idea/deploymentTargetDropDown.xml
