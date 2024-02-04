@@ -9,6 +9,11 @@
           <ion-label>Kalender</ion-label>
         </ion-tab-button>
 
+        <ion-tab-button tab="tab2" href="/tabs/news">
+          <ion-icon aria-hidden="true" :icon="newspaper" />
+          <ion-label>Nyheter</ion-label>
+        </ion-tab-button>
+
       </ion-tab-bar>
     </ion-tabs>
   </ion-page>
@@ -16,5 +21,5 @@
 
 <script setup lang="ts">
 import { IonTabBar, IonTabButton, IonTabs, IonLabel, IonIcon, IonPage, IonRouterOutlet } from '@ionic/vue';
-import { calendar } from 'ionicons/icons';
+import { calendar, newspaper } from 'ionicons/icons';
 </script>

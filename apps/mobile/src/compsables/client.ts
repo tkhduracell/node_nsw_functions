@@ -3,15 +3,26 @@ import { addDays, format } from "date-fns"
 import { InjectionKey, inject, provide } from "vue"
 
 const clientKey = Symbol() as InjectionKey<NswApiClient>
+const baseUrlKey = Symbol() as InjectionKey<string>
 
 export function provideClient() {
     const platforms = getPlatforms()
     // eslint-disable-next-line no-extra-boolean-cast
-    const baseUrl = !!(platforms.includes('ios') || platforms.includes('android'))
+    const baseUrlAlt = !!(platforms.includes('ios') || platforms.includes('android'))
     ? 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net'
     : '/api'
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || baseUrlAlt
 
+    provide(baseUrlKey, baseUrl)
     provide(clientKey, new NswApiClient(baseUrl))
+}
+
+export function useBaseUrl() {
+  const baseUrl = inject(baseUrlKey)
+  if (!baseUrl) {
+      throw new Error('No baseUrl provided')
+  }
+  return { baseUrl }
 }
 
 export function useClient() {
@@ -19,7 +30,7 @@ export function useClient() {
     if (!client) {
         throw new Error('No client provided')
     }
-    return { client, baseUrl: client.baseUrl }
+    return { client }
 }
 
 export interface Activity {
