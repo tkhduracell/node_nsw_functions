@@ -20,7 +20,7 @@
         </ion-card-content>
       </ion-card>
 
-      <ion-card v-else-if="subscription.isSubscribed">
+      <ion-card v-if="subscription.isSubscribed">
         <ion-card-header>
           <ion-card-title>Bevaka</ion-card-title>
         </ion-card-header>
@@ -33,7 +33,7 @@
         </ion-card-content>
       </ion-card>
 
-      <ion-card v-else-if="subscription.isSupported">
+      <ion-card v-if="subscription.isSupported && !subscription.isSubscribed">
         <ion-card-header>
           <ion-card-title>Bevaka</ion-card-title>
         </ion-card-header>

@@ -10,7 +10,7 @@ export function useSubscription() {
     isSubscribed: null as boolean | null,
     isSupported: true,
     isLoading: true,
-    isDenied: true,
+    isDenied: false,
     error: null as any,
   });
 
@@ -21,18 +21,22 @@ export function useSubscription() {
       const { receive: permission } = await PushNotifications.checkPermissions()
 
       if (permission === 'denied') {
-        console.error("Notification permission not granted", { permission });
+        console.warn("Notification permission not granted", { permission });
         data.isDenied = true;
         return;
       }
 
       // If denided, we can't check subscription status
-      if (permission !== 'granted') return;
+      if (permission !== 'granted') {
+        console.info("Notification permission not granted, stopping...", { permission });
+        return;
+      }
+
       data.isDenied = false;
 
       const { token } = await FCM.getToken();
       const subscribed = await client.isSubscribed(token);
-      console.error("Subscription status", { subscribed });
+      console.info("Subscription status", { subscribed });
       data.isSubscribed = subscribed
     } catch (err: any) {
       data.error = err;
@@ -83,7 +87,7 @@ export function useSubscription() {
     } catch (err: any) {
       data.isSupported = false;
       data.error = err;
-      console.error("Notifications not supported", err);
+      console.warn("Notifications not supported", err);
       return;
     } finally {
       data.isLoading = false;
@@ -101,7 +105,36 @@ export function useSubscription() {
       .finally(() => (data.isLoading = false));
   }
 
+  onMounted(logPushNotificationsEvents);
   onMounted(isSubscribed);
 
   return { data, subscribe, unsubscribe };
+}
+
+function logPushNotificationsEvents() {
+  PushNotifications.addListener('registration',
+    (token) => {
+      console.info('Push registration success, token:', token);
+    }
+  );
+
+  PushNotifications.addListener('registrationError',
+    (error: any) => {
+      console.error('Error on registration:', error);
+    }
+  );
+
+  // Show us the notification payload if the app is open on our device
+  PushNotifications.addListener('pushNotificationReceived',
+    (notification) => {
+      console.info('Push received:', notification);
+    }
+  );
+
+  // Method called when tapping on a notification
+  PushNotifications.addListener('pushNotificationActionPerformed',
+    (notification) => {
+      console.info('Push action performed:', notification);
+    }
+  );
 }
