@@ -251,10 +251,15 @@ ion-button {
 
     --ion-card-background: #1e1e1e;
   }
+
+  body ion-toolbar {
+    /* unable to get var(--ion-color-dark) to work, hardcoded */
+    --ion-toolbar-background: #222428;
+  }
 }
 
 html {
-  /* For more information on dynamic font scaling, visit the documentation: 
+  /* For more information on dynamic font scaling, visit the documentation:
   https://ionicframework.com/docs/layout/dynamic-font-scaling */
   --ion-dynamic-font: var(--ion-default-dynamic-font);
 }
