@@ -13,8 +13,10 @@ export function provideClient() {
     : '/api'
     const baseUrl = import.meta.env.VITE_API_BASE_URL || baseUrlAlt
 
+    const client = new NswApiClient(baseUrl)
     provide(baseUrlKey, baseUrl)
-    provide(clientKey, new NswApiClient(baseUrl))
+    provide(clientKey, client)
+    return client
 }
 
 export function useBaseUrl() {
@@ -43,7 +45,7 @@ export interface Activity {
   duration: number;
 }
 
-class NswApiClient {
+export class NswApiClient {
     readonly baseUrl: string
 
     constructor(baseUrl: string) {

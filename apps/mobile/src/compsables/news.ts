@@ -1,5 +1,6 @@
-import { useFetch } from '@vueuse/core'
-import { useBaseUrl } from './client'
+import { UseFetchReturn, useFetch } from '@vueuse/core'
+import { NswApiClient } from './client'
+import { inject, provide } from 'vue'
 
 export interface News {
     title: string;
@@ -28,15 +29,19 @@ export interface News {
       };
     }[];
 }
+
 export type NewsItem = News['items'][number]
 
+export function provideNews(client: NswApiClient) {
+  const params = new URLSearchParams()
+  params.append('exclude', 'competitions')
+
+  provide('news', useFetch(client.baseUrl + '/news-api?' + params.toString()).get().json<News>())
+}
+
+
 export function useNews() {
-    const { baseUrl } = useBaseUrl()
-
-    const params = new URLSearchParams()
-    params.append('exclude', 'competitions')
-
-    const { isFetching, error, data, execute } = useFetch(baseUrl + '/news-api?' + params.toString()).get().json<News>()
+    const { isFetching, error, data, execute } = inject('news') as UseFetchReturn<News>
 
     return { isFetching, error, data, execute }
 }

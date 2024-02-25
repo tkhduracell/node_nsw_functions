@@ -1,7 +1,9 @@
-import { onMounted, reactive } from "vue";
+import { NswApiClient } from './client';
+import { inject, onMounted, provide } from "vue";
 import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
-import { Activity, useClient } from "@/compsables/client";
+import { Activity } from "@/compsables/client";
+import { UseAsyncStateReturn, useAsyncState } from "@vueuse/core";
 
 const titleCase = (str: string): string =>
   str
@@ -19,13 +21,16 @@ type AgendaEvent = {
   calendarId: number;
   description: string | null;
 };
-const _agenda: {
+
+type Agenda = {
   name: string;
   date: string;
   events: AgendaEvent[];
-}[] = [];
+}[];
 
-function adapter({ date, json }: { date: string; json: Activity[] }) {
+const initalState: Agenda = [];
+
+function adapter({ date, json }: { date: string; json: Activity[] }): Agenda[number] {
   return {
     name: titleCase(format(parseISO(date), "EEEE", { locale: sv })),
     date: format(parseISO(date), "dd MMMM, yyyy", { locale: sv }),
@@ -41,34 +46,30 @@ function adapter({ date, json }: { date: string; json: Activity[] }) {
   };
 }
 
+
+export function provideAgenda(client: NswApiClient) {
+
+  const { state, isReady, isLoading, error, execute } = useAsyncState(
+    () => client.searchByDateRange(new Date(), 14)
+      .then((dates) => dates.map(adapter)),
+    initalState
+  )
+
+  onMounted(execute);
+
+  provide("agenda", { state, isReady, isLoading, error, execute });
+}
+
 export function useAgenda() {
-  const { client } = useClient();
-  const data = reactive({
-    items: _agenda,
-    isLoading: true,
-    error: null as any,
-  });
-
-  async function load() {
-    data.error = null;
-    data.isLoading = true;
-    const dates = client.searchByDateRange(new Date(), 14);
-
-    const results = await dates
-      .catch((err: any) => {
-        console.error("Failed to fetch calendar", err);
-        data.error = err;
-        return [];
-      })
-      .finally(() => (data.isLoading = false));
-
-    data.items = results.map(adapter);
-  }
-
-  onMounted(load);
+  const { state, isReady, isLoading, error, execute } = inject(
+    "agenda"
+  ) as UseAsyncStateReturn<Agenda, any[], true>;
 
   return {
-    data,
-    load,
+    data: state,
+    isReady,
+    isLoading,
+    execute,
+    error,
   };
 }

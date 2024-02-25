@@ -76,7 +76,6 @@ const handleRefresh = (event: { target: { complete: () => void } }) => {
     .finally(() => event.target.complete())
 };
 
-
 const titleCase = (str: string): string =>
   str
     .toLowerCase()

@@ -56,17 +56,17 @@
         </ion-card-content>
       </ion-card>
 
-      <ion-card v-if="agenda.error">
+      <ion-card v-if="error">
         <ion-card-header>
           <ion-card-title>Ett fel inträffade</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Kunde ej ladda kalender</p>
-          <ion-label>{{ agenda.error }}</ion-label>
+          <ion-label>{{ error }}</ion-label>
         </ion-card-content>
       </ion-card>
 
-      <ion-card v-if="agenda.isLoading">
+      <ion-card v-if="isLoading">
         <ion-grid>
           <ion-row class="ion-justify-content-center">
             <ion-col size="auto">
@@ -76,7 +76,7 @@
         </ion-grid>
       </ion-card>
 
-      <ion-card v-for="day in agenda.items" :key="day.date">
+      <ion-card v-for="day in agenda" :key="day.date">
         <ion-card-header>
           <ion-card-title>{{ day.name }}</ion-card-title>
           <ion-card-subtitle>{{ day.date }}</ion-card-subtitle>
@@ -186,12 +186,11 @@ import { caretDownOutline } from 'ionicons/icons'
 import { useAgenda } from '@/compsables/agenda';
 import { useSubscription } from '@/compsables/subscription';
 
-const { data: agenda, load: loadAgenda } = useAgenda()
+const { data: agenda, error, execute, isLoading } = useAgenda()
 const { data: subscription, unsubscribe, subscribe } = useSubscription()
 
 const handleRefresh = (event: { target: { complete: () => void } }) => {
-  loadAgenda()
+  execute()
     .finally(() => event.target.complete())
 };
-
 </script>
