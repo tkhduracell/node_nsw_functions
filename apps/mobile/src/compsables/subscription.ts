@@ -3,22 +3,33 @@ import { useClient } from "./client";
 import { FCM } from "@capacitor-community/fcm";
 import { PushNotifications } from "@capacitor/push-notifications";
 
+type State = {
+  isSubscribed: boolean | null;
+  isSupported: boolean;
+  isLoading: boolean;
+  isDenied: boolean;
+  error: any;
+};
+
 export function useSubscription() {
   const { client } = useClient();
 
-  const data = reactive({
-    isSubscribed: null as boolean | null,
+  const data = reactive<State>({
+    isSubscribed: null,
     isSupported: true,
     isLoading: true,
     isDenied: false,
-    error: null as any,
+    error: null,
   });
 
   async function isSubscribed() {
     data.isLoading = true;
 
     try {
-      const { receive: permission } = await PushNotifications.checkPermissions()
+      const { receive: permission } = await PushNotifications.checkPermissions().catch((err) => {
+        data.isSupported = false
+        return err
+      })
 
       if (permission === 'denied') {
         console.warn("Notification permission not granted", { permission });
@@ -64,7 +75,7 @@ export function useSubscription() {
   async function subscribe() {
     data.isLoading = true;
     try {
-      const {receive: initialPermission} = await PushNotifications.checkPermissions();
+      const {receive: initialPermission} = await PushNotifications.checkPermissions()
       data.isSupported = true;
 
       if (initialPermission === 'denied') {
@@ -81,7 +92,14 @@ export function useSubscription() {
           return;
         }
         data.isDenied = false;
+
+        // Wait for the registration to be available
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         await PushNotifications.register();
+
+        // Wait for the token to be available
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
     } catch (err: any) {
@@ -105,13 +123,13 @@ export function useSubscription() {
       .finally(() => (data.isLoading = false));
   }
 
-  onMounted(logPushNotificationsEvents);
+  onMounted(() => logPushNotificationsEvents(data));
   onMounted(isSubscribed);
 
   return { data, subscribe, unsubscribe };
 }
 
-function logPushNotificationsEvents() {
+function logPushNotificationsEvents(state: State) {
   PushNotifications.addListener('registration',
     (token) => {
       console.info('Push registration success, token:', token);
@@ -121,6 +139,7 @@ function logPushNotificationsEvents() {
   PushNotifications.addListener('registrationError',
     (error: any) => {
       console.error('Error on registration:', error);
+      state.error = error;
     }
   );
 
