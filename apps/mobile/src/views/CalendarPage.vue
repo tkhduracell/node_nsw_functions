@@ -187,7 +187,7 @@ import { useAgenda } from '@/compsables/agenda';
 import { useSubscription } from '@/compsables/subscription';
 
 const { data: agenda, error, execute, isLoading } = useAgenda()
-const { data: subscription, unsubscribe, subscribe } = useSubscription()
+const { data: subscription, unsubscribe, subscribe } = useSubscription('calendar-337667')
 
 const handleRefresh = (event: { target: { complete: () => void } }) => {
   execute()

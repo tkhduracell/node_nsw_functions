@@ -11,7 +11,7 @@ type State = {
   error: any;
 };
 
-export function useSubscription() {
+export function useSubscription(topic: string) {
   const { client } = useClient();
 
   const data = reactive<State>({
@@ -46,7 +46,7 @@ export function useSubscription() {
       data.isDenied = false;
 
       const { token } = await FCM.getToken();
-      const subscribed = await client.isSubscribed(token);
+      const subscribed = await client.isSubscribed(token, topic);
       console.info("Subscription status", { subscribed });
       data.isSubscribed = subscribed
     } catch (err: any) {
@@ -62,7 +62,7 @@ export function useSubscription() {
     const { token } = await FCM.getToken();
     data.isLoading = true;
     return client
-      .unsubscribe(token)
+      .unsubscribe(token, topic)
       .then(() => (data.isSubscribed = false))
       .catch((err) => {
         data.error = err;
@@ -117,7 +117,7 @@ export function useSubscription() {
         console.error("Unable to fetch FCM token", err);
         throw err;
       })
-      .then(({ token }) => client.subscribe(token))
+      .then(({ token }) => client.subscribe(token, topic))
       .then(() => (data.isSubscribed = true))
       .catch((err) => (data.error = err))
       .finally(() => (data.isLoading = false));

@@ -69,9 +69,10 @@ export class NswApiClient {
       return await Promise.all(results)
     }
 
-    async isSubscribed(token: string): Promise<boolean> {
+    async isSubscribed(token: string, topic: string): Promise<boolean> {
       const query = new URLSearchParams()
       query.append('token', token)
+      query.append('topic', topic)
 
       const resp = await fetch(`${this.baseUrl}/notifications-api/status?${query.toString()}`, { method: 'POST' })
       if (resp.ok) {
@@ -82,10 +83,10 @@ export class NswApiClient {
       }
     }
 
-    async subscribe(token: string) {
+    async subscribe(token: string, topic: string) {
       const query = new URLSearchParams()
       query.append('token', token)
-      query.append('topic', 'calendar-337667')
+      query.append('topic', topic)
 
       const resp = await fetch(`${this.baseUrl}/notifications-api/subscribe?${query.toString()}`, { method: 'POST' })
       if (resp.ok) {
@@ -95,10 +96,10 @@ export class NswApiClient {
       }
     }
 
-    async unsubscribe(token: string) {
+    async unsubscribe(token: string, topic: string) {
       const query = new URLSearchParams()
       query.append('token', token)
-      query.append('topic', 'calendar-337667')
+      query.append('topic', topic)
 
       const resp = await fetch(`${this.baseUrl}/notifications-api/unsubscribe?${query.toString()}`, { method: 'POST' })
       if (resp.ok) {
