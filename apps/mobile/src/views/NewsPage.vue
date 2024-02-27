@@ -11,6 +11,52 @@
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
+      <ion-card v-if="subscription.isDenied">
+        <ion-card-header>
+          <ion-card-title>Bevaka</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Du har valt att inte tillåta notifiktioner.</p>
+          <p>Du kan ändra detta under Inställningar &gt; Nackswinget &gt; Notiser.</p>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card v-if="subscription.isSubscribed">
+        <ion-card-header>
+          <ion-card-title>Bevaka</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Du bevakar nyheter på denna enhet.</p>
+          <ion-button @click="unsubscribe">
+            <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
+            <span v-if="!subscription.isLoading">Avsluta bevakning</span>
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card v-if="subscription.isSupported && !subscription.isSubscribed">
+        <ion-card-header>
+          <ion-card-title>Bevaka</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Du kan bevaka nyheter och få notiser.</p>
+          <ion-button @click="subscribe">
+            <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
+            <span v-if="!subscription.isLoading">Bevaka nyheter</span>
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card v-if="subscription.error">
+        <ion-card-header>
+          <ion-card-title>Ett fel inträffade</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>Kunde ej ladda prenumeration.</p>
+          <ion-label>{{ subscription.error }}</ion-label>
+        </ion-card-content>
+      </ion-card>
+
       <ion-card v-if="error">
         <ion-card-header>
           <ion-card-title>Ett fel inträffade</ion-card-title>
@@ -62,14 +108,16 @@ import {
   IonPage, IonHeader, IonToolbar, IonContent,
   IonRow, IonLabel, IonCard, IonCardContent, IonCardHeader,
   IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonImg, IonSpinner,
-  IonRefresher, IonRefresherContent
+  IonRefresher, IonRefresherContent, IonButton
 } from '@ionic/vue';
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
 import { useNews } from '@/compsables/news';
+import { useSubscription } from '@/compsables/subscription';
 
 const { data: news, error, isFetching, execute } = useNews()
+const { data: subscription, unsubscribe, subscribe } = useSubscription('news-nackswinget.se')
 
 const handleRefresh = (event: { target: { complete: () => void } }) => {
   execute()
