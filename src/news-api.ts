@@ -5,9 +5,10 @@ import { prettyJson } from './middleware'
 import { cors } from './lib/cors'
 import { parse } from 'rss-to-json'
 import z from 'zod'
-import { getFirestore } from 'firebase-admin/firestore'
+import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { maxBy } from 'lodash'
 import { Message, getMessaging } from 'firebase-admin/messaging'
+import { decodeXMLStrict } from "entities"
 
 const app = express()
 app.use(express.json())
@@ -36,6 +37,7 @@ export interface News {
       published: number;
       created: number;
       category: string | string[];
+      content: undefined;
       enclosures: {
         url: string;
         medium: string;
@@ -79,31 +81,47 @@ app.get('/', async (req, res) => {
     }
 })
 
-app.get('/update', async (req, res) => {
+app.post('/update', async (req, res) => {
+    const { force } = req.query
     const db = getFirestore()
 
     const docRef = db.collection('news').doc('nackswinget.se')
+
     const doc = await docRef.get()
 
-    if (!doc.exists) return
+    if (!doc.exists) return res.status(404).json({ error: 'Document not found' })
 
     const feed: News = await parse('https://nackswinget.se/feed?cat=-5');
     const newest = maxBy(feed.items, i => i.published)
+    if (newest) {
+        delete newest.content
+    }
 
-    const data = doc.data() as { last: { published: number } }
+    const data = doc.data() as { last_news_item: { published: number } }
 
-    if (newest && newest.published > data.last.published) {
-        logger.info('New news item', { newest, last: data.last })
-        await docRef.update({ last: newest })
+    if (newest && (!data.last_news_item || newest.published > data.last_news_item?.published || force)) {
+        logger.info('New news item', { newest, last: data.last_news_item })
+
+        await docRef.update({ last_news_item: newest, updated_at: FieldValue.serverTimestamp(), })
 
         const message: Message = {
             notification: {
-                title: newest.title,
+                title: 'Nyhet ifrån Nackswinget',
+                body: decodeXMLStrict(newest.title),
                 imageUrl: newest.media.thumbnail.url,
+            },
+            android: {
+                notification: {
+                    imageUrl: newest.media.thumbnail.url,
+                }
+            },
+            apns: {
+                fcmOptions: {
+                    imageUrl: newest.media.thumbnail.url,
+                }
             },
             webpush: {
                 notification: {
-                    title: newest.title,
                     icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg',
                     image: newest.media.thumbnail.url,
                 }
@@ -114,8 +132,11 @@ app.get('/update', async (req, res) => {
 
         await getMessaging().send(message)
 
-        await docRef.update({ message })
+        await docRef.update({ last_message: message })
+
+        return res.json({ message: 'New items' })
     }
+    return res.json({ message: 'No new items' })
 })
 
 export default app
