@@ -366,7 +366,7 @@ jobs:
             --schedule "${CRON_PATTERN}" \
             --time-zone "Europe/Stockholm" \
             --http-method POST \
-            --uri $(gcloud functions describe news-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
+            --uri $(gcloud functions describe news-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")/update \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --max-retry-attempts 3 \
             --min-backoff 1m \
