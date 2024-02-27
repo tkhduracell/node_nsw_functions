@@ -358,6 +358,20 @@ jobs:
             --min-backoff 1m \
             --description "calendar-auth-update: Update NSW with full auth and refreshing all calendars"
 
+      - name: Update scheduler news-update
+        run: |
+          CRON_PATTERN="*/30 * * * *"
+          echo "Scheduling at ${CRON_PATTERN}"
+          gcloud scheduler jobs update http news-update \
+            --schedule "${CRON_PATTERN}" \
+            --time-zone "Europe/Stockholm" \
+            --http-method POST \
+            --uri $(gcloud functions describe news-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
+            --location ${GCLOUD_SCHEDULER_REGION} \
+            --max-retry-attempts 3 \
+            --min-backoff 1m \
+            --description "news-update: Update NSW news"
+
       - name: Trigger update
         run: |
           curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})
