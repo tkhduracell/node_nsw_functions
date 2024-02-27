@@ -5,7 +5,7 @@ import z from 'zod'
 
 import { initializeApp } from 'firebase-admin/app'
 import { type Message, getMessaging } from 'firebase-admin/messaging'
-import { getFirestore } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { cors } from './lib/cors'
 import { prettyJson } from './middleware'
 
@@ -21,75 +21,98 @@ if (require.main === module) {
     app.listen(port, () => { logger.info(`Listening on port ${port}`) })
 }
 
+type Token = {
+    topic: string,
+    topics?: string[],
+    created_at?: Timestamp,
+    updated_at: Timestamp
+}
+
 app.post('/status', async (req, res) => {
-    const { token } = z.object({ token: z.string() }).parse(req.query)
+    const { token, topic } = z.object({ token: z.string(), topic: z.string().default('calendar-337667') }).parse(req.query)
     const db = getFirestore()
     const result = await db.collection('tokens').doc(token).get()
     if (result.exists) {
-        return res.status(200).send({
-            subscribed: true,
-            data: result.data()
-        })
+        const { topic: currentTopic, topics} = result.data() as Token
+        // Check old field and new field
+        const subscribed = currentTopic === topic || (topics && topics.includes(topic))
+        res.status(200).send({
+            subscribed,
+            data: result.data() as Token
+        }).end()
     } else {
         return res.status(200).send({ subscribed: false })
     }
 })
 
 app.post('/subscribe', async (req, res) => {
-    const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
+    const { token, topic } = z.object({ token: z.string(), topic: z.string().default('calendar-337667') }).parse(req.query)
     const response = await getMessaging().subscribeToTopic(token, topic)
 
     const db = getFirestore()
-    await db.collection('tokens').doc(token).set({ created_at: new Date(), topic }, { merge: true })
+    const { topic: old } = (await db.collection('tokens').doc(token).get()).data() as Token
 
-    logger.info('Successfully subscribed to topic:', response)
+    await db.collection('tokens').doc(token).set({
+        updated_at: FieldValue.serverTimestamp(),
+        topics: old ? FieldValue.arrayUnion(topic, old) : FieldValue.arrayUnion(topic),
+        topic: FieldValue.delete()
+    }, { merge: true })
+
+    logger.info('Successfully subscribed to topic', { topic, response })
     return res.status(200).send(response)
 })
 
 app.post('/unsubscribe', async (req, res) => {
-    const { token, topic } = z.object({ token: z.string(), topic: z.string() }).parse(req.query)
+    const { token, topic } = z.object({ token: z.string(), topic: z.string().default('calendar-337667') }).parse(req.query)
     const response = await getMessaging().unsubscribeFromTopic(token, topic)
 
     const db = getFirestore()
-    await db.collection('tokens').doc(token).delete()
+    await db.collection('tokens').doc(token).set({
+        updated_at: FieldValue.serverTimestamp(),
+        topics: FieldValue.arrayRemove(topic),
+        topic: FieldValue.delete()
+    }, { merge: true })
 
-    logger.info('Successfully unsubscribed from topic:', response)
+    logger.info('Successfully unsubscribed from topic', { topic, response})
     return res.status(200).send(response)
 })
 
 app.post('/trigger', async (req, res) => {
-    const { topic, title, body } = z.object({
+    const { topic, token, title, body } = z.object({
         topic: z.string().optional(),
+        token: z.string().optional(),
         title: z.string().optional(),
         body: z.string().optional()
     }).parse(req.query)
-    const response = await mockNotification(topic, title, body)
+    const response = await notification({ topic, token, title, body })
     return res.status(200).send(response)
 })
 
 app.use(express.static(join(__dirname, '..', 'static')))
 
-export async function mockNotification (
-    topicName = 'calendar-337667',
-    title = undefined as string | undefined,
-    body = undefined as string | undefined
-) {
-    const message: Message = {
-        notification: {
-            title: title ?? 'Ny notis',
-            body: body ?? 'Test av notification'
-            // imageUrl: "https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg"
-        },
-        webpush: {
-            notification: {
-                icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg'
-            }
-        },
-        topic: topicName
+export async function notification ({ token, topic, title, body }: { token?: string, topic?: string, title?: string, body?: string }) {
+    const notification = {
+        title: title ?? 'The-dans på Söndag igen!',
+        body: body ?? 'Vi kör The-dans på Söndag igen kl 15-17. Välkomna!',
+        imageUrl: "https://nackswinget.se/wp-content/uploads/2024/01/The-dans-980x560.png"
     }
+    const webpush = {
+        notification: {
+            icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg'
+        }
+    }
+
+    let message: Message
+    if (token) {
+        message = { notification, webpush, token }
+    } else if (topic) {
+        message = { notification, webpush, topic }
+    } else {
+        throw new Error(`Either 'token' or 'topic' must be provided`)
+    }
+
     logger.info({ message })
     const resp = await getMessaging().send(message)
-
     logger.info({ resp })
     return resp
 }
