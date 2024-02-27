@@ -50,11 +50,11 @@ app.post('/subscribe', async (req, res) => {
     const response = await getMessaging().subscribeToTopic(token, topic)
 
     const db = getFirestore()
-    const { topic: old } = (await db.collection('tokens').doc(token).get()).data() as Token
+    const old = (await db.collection('tokens').doc(token).get()).data() as Token | undefined
 
     await db.collection('tokens').doc(token).set({
         updated_at: FieldValue.serverTimestamp(),
-        topics: old ? FieldValue.arrayUnion(topic, old) : FieldValue.arrayUnion(topic),
+        topics: old && old.topic ? FieldValue.arrayUnion(topic, old) : FieldValue.arrayUnion(topic),
         topic: FieldValue.delete()
     }, { merge: true })
 
