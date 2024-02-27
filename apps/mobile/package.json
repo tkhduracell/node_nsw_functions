@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
-    "build:android": "npm run build && cap sync android",
-    "build:ios": "npm run build && cap sync ios",
+    "watch:build": "vite build -w --minify=false",
+    "watch:ios": "watchman-make -p \"src/**/*.*\" --run \"npx vite build -m dev --minify=false && npx cap copy ios\"",
+    "watch:android": "watchman-make -p \"src/**/*.*\" --run \"npx vite build -m dev --minify=false && npx cap copy android\"",
     "open:android": "cap open android",
     "open:ios": "cap open ios",
     "preview": "vite preview",
