@@ -91,14 +91,15 @@ app.post('/trigger', async (req, res) => {
 app.use(express.static(join(__dirname, '..', 'static')))
 
 export async function notification ({ token, topic, title, body }: { token?: string, topic?: string, title?: string, body?: string }) {
-    const notification = {
+    const notification: Message['notification'] = {
         title: title ?? 'The-dans på Söndag igen!',
         body: body ?? 'Vi kör The-dans på Söndag igen kl 15-17. Välkomna!',
         imageUrl: "https://nackswinget.se/wp-content/uploads/2024/01/The-dans-980x560.png"
     }
-    const webpush = {
+    const webpush: Message['webpush'] = {
         notification: {
-            icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg'
+            icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg',
+            image: notification.imageUrl,
         }
     }
 
