@@ -4,13 +4,13 @@
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
 
-        <ion-tab-button tab="tab1" href="/tabs/calendar" >
+        <ion-tab-button tab="tab1" href="/tabs/calendar">
           <ion-icon aria-hidden="true" :icon="calendar" ref="htmlRefHook1" />
           <ion-label>Kalender</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="tab2" href="/tabs/news">
-          <ion-icon aria-hidden="true" :icon="newspaper" ref="htmlRefHook2"/>
+          <ion-icon aria-hidden="true" :icon="newspaper" ref="htmlRefHook2" />
           <ion-label>Nyheter</ion-label>
         </ion-tab-button>
 
@@ -40,3 +40,10 @@ onLongPress(htmlRefHook1, showDeviceToken, { delay: 1000 })
 const htmlRefHook2 = ref<HTMLElement | null>(null)
 onLongPress(htmlRefHook2, showDeviceToken, { delay: 1000 })
 </script>
+
+<style>
+ion-tab-button {
+  /* Prevents long-press from selecting text */
+  user-select: none;
+}
+</style>
