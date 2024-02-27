@@ -12,6 +12,8 @@
     "watch:android": "watchman-make -p \"src/**/*.*\" --run \"npx vite build -m dev --minify=false && npx cap copy android\"",
     "open:android": "cap open android",
     "open:ios": "cap open ios",
+    "release:android": "npm run build && cap sync android && cap open android",
+    "release:ios": "npm run build && cap sync ios && cap open ios",
     "preview": "vite preview",
     "test:e2e": "cypress run",
     "test:unit": "vitest",
