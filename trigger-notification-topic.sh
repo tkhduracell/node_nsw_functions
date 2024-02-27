@@ -2,6 +2,7 @@
 
 # Default topic
 default_topic="calendar-337667"
+default_host="https://notifications-api-7ioginpu3a-lz.a.run.app"
 
 # Prompt for topic, title, and body
 read -p "Enter topic (default: $default_topic): " topic
@@ -31,5 +32,7 @@ encoded_topic=$(urlencode "$topic")
 encoded_title=$(urlencode "$title")
 encoded_body=$(urlencode "$body")
 
+HOST=${HOST:-$default_host}
+
 # Send the request
-curl -X POST "https://notifications-api-7ioginpu3a-lz.a.run.app/trigger?topic=$encoded_topic&title=$encoded_title&body=$encoded_body"
+curl -X POST "${HOST}/trigger?topic=$encoded_topic&title=$encoded_title&body=$encoded_body"
