@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import { RouteRecordRaw } from 'vue-router';
 import TabsPage from '../views/TabsPage.vue'
+import CalendarPage from '../views/CalendarPage.vue'
+import NewsPage from '../views/NewsPage.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -17,11 +19,13 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: 'calendar',
-        component: () => import('@/views/CalendarPage.vue')
+        name: 'Calendar',
+        component: CalendarPage
       },
       {
         path: 'news',
-        component: () => import('@/views/NewsPage.vue')
+        name: 'News',
+        component: NewsPage
       },
     ]
   }
