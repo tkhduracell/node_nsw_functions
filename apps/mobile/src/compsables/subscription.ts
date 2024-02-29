@@ -1,4 +1,4 @@
-import { onMounted, reactive } from "vue";
+import { onMounted, onUnmounted, reactive } from "vue";
 import { useClient } from "./client";
 import { FCM } from "@capacitor-community/fcm";
 import { PushNotifications } from "@capacitor/push-notifications";
@@ -107,8 +107,6 @@ export function useSubscription(topic: string) {
       data.error = err;
       console.warn("Notifications not supported", err);
       return;
-    } finally {
-      data.isLoading = false;
     }
 
     return FCM.getToken()
@@ -123,37 +121,23 @@ export function useSubscription(topic: string) {
       .finally(() => (data.isLoading = false));
   }
 
-  onMounted(() => logPushNotificationsEvents(data));
+  function registerListerners() {
+    PushNotifications.addListener('registration', (token) => {
+      console.info('Push registration success, token:', token);
+    }).catch(() => console.warn("Failed to register registration listener"));
+
+    PushNotifications.addListener('registrationError', (error: any) => {
+      console.error('Error on registration:', error);
+      data.error = error;
+    }).catch(() => console.warn("Failed to register registrationError listener"));
+  }
+
+  onMounted(registerListerners);
   onMounted(isSubscribed);
+  onUnmounted(() => {
+    console.info("PushNotifications: Removing listeners");
+    PushNotifications.removeAllListeners();
+  })
 
   return { data, subscribe, unsubscribe };
-}
-
-function logPushNotificationsEvents(state: State) {
-  PushNotifications.addListener('registration',
-    (token) => {
-      console.info('Push registration success, token:', token);
-    }
-  );
-
-  PushNotifications.addListener('registrationError',
-    (error: any) => {
-      console.error('Error on registration:', error);
-      state.error = error;
-    }
-  );
-
-  // Show us the notification payload if the app is open on our device
-  PushNotifications.addListener('pushNotificationReceived',
-    (notification) => {
-      console.info('Push received:', notification);
-    }
-  );
-
-  // Method called when tapping on a notification
-  PushNotifications.addListener('pushNotificationActionPerformed',
-    (notification) => {
-      console.info('Push action performed:', notification);
-    }
-  );
 }

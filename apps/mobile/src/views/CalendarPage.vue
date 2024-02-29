@@ -89,10 +89,11 @@
                 <h2>Inga träningar denna dag</h2>
               </ion-label>
             </ion-item>
-            <ion-item v-for="event in day.events" :key="day.date + event.name + event.startTime"
-              :data-calendar="event.calendarId">
+            <ion-item v-for="event in day.events" :data-calendar="event.calendarId" :key="event.id"
+              :class="{ 'toasted': `${event.id}` === toasted }" :id="event.id"
+              :ref="(el) => { scrollIfToasted(el as any, event.id) }">
               <ion-grid>
-                <ion-row :key="event.id">
+                <ion-row>
                   <ion-col size="auto">
                     <ion-label style="display: flex; flex-direction: column;">
                       <div>{{ event.startTime }}</div>
@@ -169,6 +170,12 @@ ion-item[data-calendar="358979"] {
   --background: rgba(255, 70, 94, 0.9);
 }
 
+ion-item.toasted {
+  animation: tilt-shaking 0.5s 4 ease-in-out;
+  position: relative;
+  z-index: 1000;
+}
+
 ion-spinner.big {
   width: 100px;
   height: 100px;
@@ -185,7 +192,13 @@ import {
 import { caretDownOutline } from 'ionicons/icons'
 import { useAgenda } from '@/compsables/agenda';
 import { useSubscription } from '@/compsables/subscription';
+import { useRouter } from 'vue-router';
+import { Toast } from '@capacitor/toast';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { useToast } from '@/compsables/common';
 
+const router = useRouter()
+const { toast, toasted } = useToast()
 const { data: agenda, error, execute, isLoading } = useAgenda()
 const { data: subscription, unsubscribe, subscribe } = useSubscription('calendar-337667')
 
@@ -193,4 +206,45 @@ const handleRefresh = (event: { target: { complete: () => void } }) => {
   execute()
     .finally(() => event.target.complete())
 };
+
+function onLaunch(topic: string, subject_id: string, display = false) {
+  if (display) Toast.show({ text: `Calendar: ${topic}, Event: ${subject_id}` });
+  router.push({ name: 'Calendar' })
+    .then(() => setTimeout(() => toast(subject_id), 300))
+}
+
+PushNotifications.addListener('pushNotificationReceived', (notification) => {
+  console.log('Push received', notification.data)
+  const { nsw_topic, nsw_subject_id } = notification.data;
+  if (nsw_topic && nsw_subject_id) {
+    if (nsw_topic.startsWith('calendar')) {
+      onLaunch(nsw_topic, nsw_subject_id, true);
+    }
+  } else {
+    Toast.show({ text: `Invalid notification: ${JSON.stringify(notification)}` });
+  }
+}).catch(() => console.warn("Failed to register pushNotificationReceived listener"));
+
+PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+  console.log('Push action', notification.notification.data);
+  const { nsw_topic, nsw_subject_id } = notification.notification.data;
+  if (nsw_topic && nsw_subject_id) {
+    if (nsw_topic.startsWith('calendar')) {
+      onLaunch(nsw_topic, nsw_subject_id);
+    }
+  } else {
+    Toast.show({ text: `Invalid notification: ${JSON.stringify(notification.notification)}` });
+  }
+}).catch(() => console.warn("Failed to register pushNotificationActionPerformed listener"));
+
+function scrollIfToasted(elm: InstanceType<typeof IonCard>, id: number) {
+  if (toasted.value == id + '') {
+    const e = elm.$el
+    setTimeout(() => {
+      console.log('Scrolling to', id)
+      e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 1000);
+  }
+}
+
 </script>

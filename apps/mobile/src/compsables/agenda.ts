@@ -70,6 +70,6 @@ export function useAgenda() {
     isReady,
     isLoading,
     execute,
-    error,
+    error
   };
 }
