@@ -1,6 +1,6 @@
 import { differenceInDays, differenceInMinutes, format } from 'date-fns'
 import Swedish from 'date-fns/locale/sv'
-import { Messaging } from 'firebase-admin/messaging'
+import { Message, Messaging } from 'firebase-admin/messaging'
 import { ICalEvent } from 'ical-generator'
 import { Calendars } from './types'
 import { logger } from '../logging'
@@ -40,7 +40,7 @@ export class Notifications {
 
     async send(clock: Clock, event: ICalEvent, creator: string | undefined, cal: Calendars[number]) {
         const topicName = `calendar-${cal.id}`
-        const message = {
+        const message: Message = {
             notification: {
                 title: getNotificationTitle(cal.name, creator),
                 body: getNotificationBody(clock, event.start() as Date, event.end() as Date)
@@ -51,7 +51,11 @@ export class Notifications {
                     icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg'
                 }
             },
-            topic: topicName
+            topic: topicName,
+            data: {
+                nsw_topic: topicName,
+                nsw_subject_id: event.uid()
+            }
         }
         logger.info('Sending notification for new event!', {
             cal,

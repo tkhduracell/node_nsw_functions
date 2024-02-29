@@ -7,7 +7,7 @@ import { initializeApp } from 'firebase-admin/app'
 import { type Message, getMessaging } from 'firebase-admin/messaging'
 import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { cors } from './lib/cors'
-import { prettyJson } from './middleware'
+import { errorHandling, prettyJson } from './middleware'
 
 const app = express()
 app.use(loggerMiddleware)
@@ -18,6 +18,7 @@ app.use(prettyJson)
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
+    app.use(errorHandling)
     app.listen(port, () => { logger.info(`Listening on port ${port}`) })
 }
 
@@ -77,23 +78,36 @@ app.post('/unsubscribe', async (req, res) => {
     return res.status(200).send(response)
 })
 
-app.post('/trigger', async (req, res) => {
+app.post('/trigger', async (req, res, next) => {
     const { topic, token, title, body } = z.object({
         topic: z.string().optional(),
         token: z.string().optional(),
         title: z.string().optional(),
         body: z.string().optional()
     }).parse(req.query)
-    const response = await notification({ topic, token, title, body })
-    return res.status(200).send(response)
+    try {
+        const response = await notification({ topic, token, title, body })
+        return res.status(200).send(response)
+    } catch (err) {
+        next(err)
+    }
 })
 
 app.use(express.static(join(__dirname, '..', 'static')))
 
 export async function notification ({ token, topic, title, body }: { token?: string, topic?: string, title?: string, body?: string }) {
+
+    const data = Math.random() > 0.5 ? {
+        nsw_topic: 'calendar-333892',
+        nsw_subject_id: '83002501'
+    } : {
+        nsw_topic: 'news-nackswinget.se',
+        nsw_subject_id: 'https://nackswinget.se/?p=2834'
+    }
+
     const notification: Message['notification'] = {
-        title: title ?? 'The-dans på Söndag igen!',
-        body: body ?? 'Vi kör The-dans på Söndag igen kl 15-17. Välkomna!',
+        title: title ?? data.nsw_topic ?? 'The-dans på Söndag igen!',
+        body: body ?? data.nsw_subject_id ?? 'Vi kör The-dans på Söndag igen kl 15-17. Välkomna!',
         imageUrl: "https://nackswinget.se/wp-content/uploads/2024/01/The-dans-980x560.png"
     }
     const webpush: Message['webpush'] = {
@@ -102,12 +116,17 @@ export async function notification ({ token, topic, title, body }: { token?: str
             image: notification.imageUrl,
         }
     }
+    const  apns: Message['apns'] = {
+        fcmOptions: {
+            imageUrl: notification.imageUrl,
+        }
+    }
 
     let message: Message
     if (token) {
-        message = { notification, webpush, token }
+        message = { notification, webpush, apns, token, data }
     } else if (topic) {
-        message = { notification, webpush, topic }
+        message = { notification, webpush, apns, topic, data }
     } else {
         throw new Error(`Either 'token' or 'topic' must be provided`)
     }

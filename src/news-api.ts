@@ -127,6 +127,10 @@ app.post('/update', async (req, res) => {
                 }
             },
             topic: 'news-nackswinget.se',
+            data: {
+                nsw_topic: 'news-nackswinget.se',
+                nsw_subject_id: newest.id
+            }
         }
         logger.info('Sent notification', { message })
 
