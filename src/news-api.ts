@@ -5,10 +5,12 @@ import { prettyJson } from './middleware'
 import { cors } from './lib/cors'
 import { parse } from 'rss-to-json'
 import z from 'zod'
-import { FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { DocumentReference, DocumentData, FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { maxBy } from 'lodash'
 import { Message, getMessaging } from 'firebase-admin/messaging'
 import { decodeXMLStrict } from "entities"
+import { getStorage } from 'firebase-admin/storage'
+import { GCloudOptions } from './env'
 
 const app = express()
 app.use(express.json())
@@ -80,24 +82,34 @@ app.get('/', async (req, res) => {
         res.json({ error: err.message });
     }
 })
+type NewsState = { last_news_item: { published: number } }
 
 app.post('/update', async (req, res) => {
     const { force } = req.query
     const db = getFirestore()
-
     const docRef = db.collection('news').doc('nackswinget.se')
-
     const doc = await docRef.get()
 
     if (!doc.exists) return res.status(404).json({ error: 'Document not found' })
 
     const feed: News = await parse('https://nackswinget.se/feed?cat=-5');
+    uploadToStorage(feed)
+
+    const data = doc.data() as NewsState
+    try {
+        await notify(docRef, data, feed, !!force)
+        return res.json({ message: 'New items' })
+    } catch (err: any) {
+        logger.error('Unable to notify', err)
+        return res.status(500).json({ error: err.message ?? 'Internal Server Error' })
+    }
+})
+
+async function notify(docRef: DocumentReference, data: NewsState, feed: News, force = false) {
     const newest = maxBy(feed.items, i => i.published)
     if (newest) {
         delete newest.content
     }
-
-    const data = doc.data() as { last_news_item: { published: number } }
 
     if (newest && (!data.last_news_item || newest.published > data.last_news_item?.published || force)) {
         logger.info('New news item', { newest, last: data.last_news_item })
@@ -137,10 +149,30 @@ app.post('/update', async (req, res) => {
         await getMessaging().send(message)
 
         await docRef.update({ last_message: message })
-
-        return res.json({ message: 'New items' })
     }
-    return res.json({ message: 'No new items' })
-})
+}
+
+async function uploadToStorage(feed: News) {
+    const {
+        GCLOUD_BUCKET
+    } = GCloudOptions.parse(process.env)
+    const storage = getStorage()
+    const bucket = storage.bucket(GCLOUD_BUCKET)
+
+    const destination = `news.json`
+    const file = bucket.file(destination)
+
+    logger.info(`Uploading to ${file.cloudStorageURI.toString()}`)
+    await file.save(JSON.stringify(feed), { metadata: {
+        metadata: {},
+        cacheControl: 'public, max-age=30',
+        contentDisposition: `attachment; filename="news.json"`,
+        contentLanguage: 'sv-SE',
+        contentType: 'application/json; charset=utf-8',
+    } })
+
+    logger.info(`Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`)
+    await file.makePublic()
+}
 
 export default app

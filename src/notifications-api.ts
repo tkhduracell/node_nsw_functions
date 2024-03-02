@@ -74,7 +74,7 @@ app.post('/unsubscribe', async (req, res) => {
         topic: FieldValue.delete()
     }, { merge: true })
 
-    logger.info('Successfully unsubscribed from topic', { topic, response})
+    logger.info('Successfully unsubscribed from topic', { topic, response })
     return res.status(200).send(response)
 })
 
