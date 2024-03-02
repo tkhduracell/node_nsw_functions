@@ -11,6 +11,7 @@ import { Message, getMessaging } from 'firebase-admin/messaging'
 import { decodeXMLStrict } from "entities"
 import { getStorage } from 'firebase-admin/storage'
 import { GCloudOptions } from './env'
+import { ALLOWED_ORIGINS } from './lib/cors'
 
 const app = express()
 app.use(express.json())
@@ -22,6 +23,7 @@ if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
     app.listen(port, () => { logger.info(`Listening on port ${port}`) })
+    initializeBucketCors()
 }
 
 export interface News {
@@ -177,3 +179,18 @@ async function uploadToStorage(feed: News) {
 }
 
 export default app
+
+function initializeBucketCors() {
+    logger.info('Initializing bucket CORS')
+    const { GCLOUD_BUCKET } = GCloudOptions.parse(process.env)
+    return getStorage()
+        .bucket(GCLOUD_BUCKET)
+        .setCorsConfiguration([
+            {
+                origin: ALLOWED_ORIGINS,
+                method: ['GET'],
+                responseHeader: ['Content-Type'],
+                maxAgeSeconds: 30,
+            }
+        ])
+}
