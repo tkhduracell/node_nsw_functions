@@ -116,27 +116,27 @@ async function notify(docRef: DocumentReference, data: NewsState, feed: News, fo
         logger.info('New news item', { newest, last: data.last_news_item })
 
         await docRef.update({ last_news_item: newest, updated_at: FieldValue.serverTimestamp(), })
-
+        const imageUrl = newest.media.thumbnail.url
         const message: Message = {
             notification: {
                 title: 'Nyhet ifrån Nackswinget',
                 body: decodeXMLStrict(newest.title),
-                imageUrl: newest.media.thumbnail.url,
+                imageUrl,
             },
             android: {
                 notification: {
-                    imageUrl: newest.media.thumbnail.url,
+                    imageUrl,
                 }
             },
             apns: {
                 fcmOptions: {
-                    imageUrl: newest.media.thumbnail.url,
+                    imageUrl,
                 }
             },
             webpush: {
                 notification: {
                     icon: 'https://nackswinget.se/wp-content/uploads/2023/01/6856391A-C153-414C-A1D0-DFD541889953.jpeg',
-                    image: newest.media.thumbnail.url,
+                    image: imageUrl,
                 }
             },
             topic: 'news-nackswinget.se',
