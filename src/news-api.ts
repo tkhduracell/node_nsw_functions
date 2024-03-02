@@ -1,7 +1,7 @@
 import { logger, loggerMiddleware } from './logging'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
-import { prettyJson } from './middleware'
+import { errorHandling, prettyJson } from './middleware'
 import { cors } from './lib/cors'
 import { parse } from 'rss-to-json'
 import z from 'zod'
@@ -16,7 +16,7 @@ const app = express()
 app.use(express.json())
 app.use(prettyJson)
 app.use(loggerMiddleware)
-app.use(cors)
+app.use(errorHandling)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
@@ -81,7 +81,8 @@ app.get('/', async (req, res) => {
         res.status(500)
         res.json({ error: err.message });
     }
-})
+}, cors)
+
 type NewsState = { last_news_item: { published: number } }
 
 app.post('/update', async (req, res) => {
@@ -93,7 +94,7 @@ app.post('/update', async (req, res) => {
     if (!doc.exists) return res.status(404).json({ error: 'Document not found' })
 
     const feed: News = await parse('https://nackswinget.se/feed?cat=-5');
-    uploadToStorage(feed)
+    await uploadToStorage(feed)
 
     const data = doc.data() as NewsState
     try {
