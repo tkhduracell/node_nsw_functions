@@ -7,13 +7,13 @@ import { logger } from '../logging'
 import { pick } from 'lodash'
 import { Clock } from './clock'
 
-function getNotificationTitle(calendar_name: string, creator?: string) {
+function getNotificationTitle(calendar_name: string, creator?: string): string {
     return calendar_name === 'Friträning' ?
         (creator ? `${creator} har bokat en friträning!` : `Ny friträning bokad!`) :
         `Ny bokning i ${calendar_name}`
 }
 
-function getNotificationBody(clock: Clock, start: Date, end: Date) {
+function getNotificationBody(clock: Clock, start: Date, end: Date): string {
     // Dates are timeone formatted upstream
     const date = format(start, 'do MMMM', { locale: Swedish })
     const hhmm = format(start, 'HH:mm', { locale: Swedish })
@@ -31,6 +31,8 @@ function getNotificationBody(clock: Clock, start: Date, end: Date) {
     }
 }
 
+export type Notification = Required<Pick<Exclude<Message['notification'], undefined>, 'body' | 'title'>>
+
 export class Notifications {
     messaging: Messaging
 
@@ -38,13 +40,14 @@ export class Notifications {
         this.messaging = messaging
     }
 
-    async send(clock: Clock, event: ICalEvent, creator: string | undefined, cal: Calendars[number]) {
+    async send(clock: Clock, event: ICalEvent, creator: string | undefined, cal: Calendars[number]): Promise<Notification> {
         const topicName = `calendar-${cal.id}`
+        const notification: Notification = {
+            title: getNotificationTitle(cal.name, creator),
+            body: getNotificationBody(clock, event.start() as Date, event.end() as Date),
+        }
         const message: Message = {
-            notification: {
-                title: getNotificationTitle(cal.name, creator),
-                body: getNotificationBody(clock, event.start() as Date, event.end() as Date)
-            },
+            notification,
             webpush: {
                 notification: {
                     tag: 'nsw-' + topicName,
@@ -66,7 +69,7 @@ export class Notifications {
         const id = await this.messaging.send(message)
         logger.info('Sent notification ' + id, { cal })
 
-        return message.notification
+        return notification
     }
 
 }
