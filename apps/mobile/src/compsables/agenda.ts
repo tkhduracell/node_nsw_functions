@@ -50,8 +50,8 @@ function adapter({ date, json }: { date: string; json: Activity[] }): Agenda[num
 export function provideAgenda(client: NswApiClient) {
 
   const { state, isReady, isLoading, error, execute } = useAsyncState(
-    () => client.searchByDateRange(new Date(), 14)
-      .then((dates) => dates.map(adapter)),
+    () => client.searchByDateRange()
+      .then(dates => dates.map(adapter)),
     initalState
   )
 

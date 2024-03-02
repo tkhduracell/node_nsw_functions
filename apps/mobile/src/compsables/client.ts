@@ -1,5 +1,6 @@
 import { getPlatforms } from "@ionic/vue"
-import { addDays, format } from "date-fns"
+import { format } from "date-fns"
+import { groupBy, sortBy } from "lodash"
 import { InjectionKey, inject, provide } from "vue"
 
 const clientKey = Symbol() as InjectionKey<NswApiClient>
@@ -11,9 +12,9 @@ export function provideClient() {
     const baseUrlAlt = !!(platforms.includes('ios') || platforms.includes('android'))
     ? 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net'
     : '/api'
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || baseUrlAlt
-
-    const client = new NswApiClient(baseUrl)
+    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? baseUrlAlt
+    const bucket = import.meta.env.VITE_BUCKET ?? 'nackswinget-af7ef.appspot.com'
+    const client = new NswApiClient(baseUrl, bucket)
     provide(baseUrlKey, baseUrl)
     provide(clientKey, client)
     return client
@@ -47,26 +48,20 @@ export interface Activity {
 
 export class NswApiClient {
     readonly baseUrl: string
+    readonly bucket: string
 
-    constructor(baseUrl: string) {
+    constructor(baseUrl: string, bucket: string) {
       this.baseUrl = baseUrl
+      this.bucket = bucket
     }
 
-    async searchByDate(date: string): Promise<Activity[]> {
-      const query = new URLSearchParams()
-      query.append('date', date)
-      return await fetch(`${this.baseUrl}/calendars-api/book/search?${query.toString()}`)
+    async searchByDateRange(calendarId = '337667', days = 30): Promise<{ date: string, json: Activity[] }[]> {
+      const all = await fetch(`https://storage.googleapis.com/${this.bucket}/${calendarId}.${days}d.json`)
         .then(resp => resp.json() as Promise<Activity[]>)
-    }
+      const grouped = groupBy(all, a => format(a.startTime, 'yyyy-MM-dd'))
 
-    async searchByDateRange(date: Date, days: number): Promise<{ date: string, json: Activity[] }[]> {
-      const dates = Array.from({ length: days }, (_, index) =>
-        format(addDays(date, index), 'yyyy-MM-dd')
-      );
-      const results = dates.map(date => this.searchByDate(date)
-        .then(json => ({ json, date }))
-      )
-      return await Promise.all(results)
+      return sortBy(Object.keys(grouped), i => i)
+        .map(date => ({ json: grouped[date], date }))
     }
 
     async isSubscribed(token: string, topic: string): Promise<boolean> {
