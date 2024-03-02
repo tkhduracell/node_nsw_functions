@@ -163,7 +163,7 @@ async function uploadToStorage(feed: News) {
     const destination = `news.json`
     const file = bucket.file(destination)
 
-    logger.info(`Uploading to ${file.cloudStorageURI.toString()}`)
+    logger.info(`Uploading news dump to ${file.cloudStorageURI.toString()}`)
     await file.save(JSON.stringify(feed), { metadata: {
         metadata: {},
         cacheControl: 'public, max-age=30',

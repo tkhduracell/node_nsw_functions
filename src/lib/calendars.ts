@@ -177,6 +177,7 @@ async function writeJsonToGcs(data: ListedActivities, now: Date, bucket: Bucket,
     const upcoming = data.filter(e => e.listedActivity.startTime >= startOfDay(today).toISOString())
         .filter(e => e.listedActivity.startTime < startOfDay(inamonth).toISOString())
     const jsonFile = bucket.file(cal.id + '.30d.json')
+    logger.info(`Uploading calendar dump to ${jsonFile.cloudStorageURI.toString()}`, { cal })
     await jsonFile.save(JSON.stringify(createApiFormat(upcoming), null, 2), { metadata: {
         cacheControl: 'public, max-age=30',
         contentLanguage: 'sv-SE',
