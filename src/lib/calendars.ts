@@ -2,17 +2,17 @@ import { type Browser, type Page } from 'puppeteer'
 import { mapKeys, pick, sortBy } from 'lodash'
 import { getMessaging, type Message } from 'firebase-admin/messaging'
 import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore'
-import { addDays, formatDistance, subDays } from 'date-fns'
+import { addDays, differenceInMinutes, formatDistance, startOfDay, subDays } from 'date-fns'
 import { type Bucket } from '@google-cloud/storage'
 import { sv } from 'date-fns/locale'
 import { IDOActivityOptions } from '../env'
 
-import { type ICalEvent } from 'ical-generator'
+import { ICalCalendar, type ICalEvent } from 'ical-generator'
 import { ActivityApi } from './booking'
 import { fetchCookies } from './cookies'
 import { Notifications } from './notifications'
 import { buildCalendar } from './ical-builder'
-import { type CalendarMetadata, type Calendars, type CalendarNotification, type CalendarMetadataUpdate } from './types'
+import { type CalendarMetadata, type Calendars, type CalendarNotification, type CalendarMetadataUpdate, ListedActivities } from './types'
 import { logger } from '../logging'
 import { Clock } from './clock'
 
@@ -150,67 +150,11 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
 
         const metadata = await fetchMetadata(cal, db)
 
-        logger.info('Sorting new events', { cal })
-        const eventsByUid = sortBy(calendar.events(), e => e.uid())
+        await peekAndNotifyEvent(cal, calendar, today, inaweek, metadata, clock)
 
-        const futureEvents = eventsByUid
-            .filter(e => e.start() >= today) // Must be in future
-        logger.info(`Found ${futureEvents.length} future events`, { cal })
+        await writeJsonToGcs(data, today, bucket, cal)
 
-        const nextWeekEvents = futureEvents
-            .filter(e => e.start() < inaweek)
-        logger.info(`Found ${futureEvents.length} events within 6 days`, { cal })
-
-        const newEvents = nextWeekEvents
-            .filter(e => e.uid() > metadata.calendar_last_uid) // Larger than last uid
-        logger.info(`Found ${futureEvents.length} new events`, { cal })
-
-        const newEvent = newEvents.find(e => true) // Take first
-
-        logger.info(
-            `Found ${newEvents.length} new events`,
-            {
-                cal,
-                newEvent: pick(newEvent?.toJSON(), 'id', 'start', 'end', 'summary'),
-                nextWeekEvents: nextWeekEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary'))
-            }
-        )
-
-        if (newEvent) {
-            const creator = newEvent.organizer()?.name ?? ''
-            const data = await notifyNewEvent(clock, newEvent, creator, cal)
-            metadata.calendar_last_date = newEvent.start() as string
-            metadata.calendar_last_uid = newEvent.uid()
-
-            const notification: CalendarNotification = {
-                at: clock.now().toISOString(),
-                ...data,
-                event: {
-                    id: newEvent.uid(),
-                    start: (newEvent.start() as Date).toISOString(),
-                    description: newEvent.description()?.plain ?? '',
-                }
-            }
-
-            metadata.last_notifications = [notification, ...metadata.last_notifications].slice(0, 5)
-        } else {
-            logger.warn('No next event found', { cal, metadata })
-        }
-
-        const destination = `cal_${cal.id}.ics`
-        const file = bucket.file(destination)
-
-        logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, { cal, metadata })
-        await file.save(calendar.toString(), { metadata: {
-            metadata,
-            cacheControl: 'public, max-age=30',
-            contentDisposition: `attachment; filename="${cal.name} - ${cal.id}.ics"`,
-            contentLanguage: 'sv-SE',
-            contentType: 'text/calendar; charset=utf-8',
-        } })
-
-        logger.info(`Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`, { cal, metadata })
-        await file.makePublic()
+        const icsFile = await writeICStoGcs(cal, bucket, metadata, calendar.toString())
 
         logger.info('Saving metadata', { cal, metadata })
         await db.collection('calendars')
@@ -219,15 +163,43 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
                 ...metadata,
                 size: calendar.length(),
                 updated_at: FieldValue.serverTimestamp(),
-                public_url: file.publicUrl()
+                public_url: icsFile.publicUrl()
             }, { merge: true })
     }
 
-    const [files] = await bucket.getFiles({ prefix: 'cal_' })
-    const metadatas = await Promise.all(files.map(async f => await f.getMetadata()))
-    const data = metadatas.map(([{ metadata }]) => mapKeys(metadata, (_, k) => k.replace('calendar_', '')))
-    const payload = JSON.stringify(data, null, 2)
-    await bucket.file('index.json').save(payload)
+    await writeJSONManifest(bucket)
+}
+
+
+async function writeJsonToGcs(data: ListedActivities, now: Date, bucket: Bucket, cal: { id: string; name: string; orgId: string }) {
+    const today = startOfDay(now)
+    const inamonth = addDays(today, 31) // Include same date if 30d month
+    const upcoming = data.filter(e => e.listedActivity.startTime >= startOfDay(today).toISOString())
+        .filter(e => e.listedActivity.startTime < startOfDay(inamonth).toISOString())
+    const jsonFile = bucket.file(cal.id + '.30d.json')
+    await jsonFile.save(JSON.stringify(createApiFormat(upcoming), null, 2), { metadata: {
+        cacheControl: 'public, max-age=30',
+        contentLanguage: 'sv-SE',
+        contentType: 'application/json; charset=utf-8',
+    }})
+    await jsonFile.makePublic()
+}
+
+export function createApiFormat(data: ListedActivities) {
+    const activities = data.map(e => e.listedActivity);
+
+    const out = activities.map(({ activityId, name, description, startTime, endTime, calendarId }) => {
+        return {
+            id: activityId,
+            name,
+            description,
+            calendarId,
+            startTime,
+            endTime,
+            duration: differenceInMinutes(new Date(endTime), new Date(startTime)),
+        };
+    });
+    return out;
 }
 
 async function fetchPreviousCalendars(db: Firestore, orgId: string): Promise<Calendars> {
@@ -275,4 +247,83 @@ async function notifyNewEvent(clock: Clock, event: ICalEvent, creator: string | 
     const builder = new Notifications(getMessaging());
     const message = await builder.send(clock, event, creator, cal)
     return message
+}
+
+
+async function writeJSONManifest(bucket: Bucket) {
+    const [files] = await bucket.getFiles({ prefix: 'cal_' })
+    const metadatas = await Promise.all(files.map(async (f) => await f.getMetadata()))
+    const data = metadatas.map(([{ metadata }]) => mapKeys(metadata, (_, k) => k.replace('calendar_', '')))
+    const payload = JSON.stringify(data, null, 2)
+    await bucket.file('index.json').save(payload)
+}
+
+async function writeICStoGcs(cal: { id: string; name: string; orgId: string }, bucket: Bucket, metadata: CalendarMetadata, data: string) {
+    const destination = `cal_${cal.id}.ics`
+    const file = bucket.file(destination)
+
+    logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, { cal, metadata })
+    await file.save(data, {
+        metadata: {
+            metadata,
+            cacheControl: 'public, max-age=30',
+            contentDisposition: `attachment; filename="${cal.name} - ${cal.id}.ics"`,
+            contentLanguage: 'sv-SE',
+            contentType: 'text/calendar; charset=utf-8',
+        }
+    })
+
+    logger.info(`Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`, { cal, metadata })
+    await file.makePublic()
+    return file
+}
+
+
+async function peekAndNotifyEvent(cal: { id: string; name: string; orgId: string }, calendar: ICalCalendar, today: Date, inaweek: Date, metadata: CalendarMetadata, clock: Clock) {
+    logger.info('Sorting new events', { cal })
+    const eventsByUid = sortBy(calendar.events(), e => e.uid())
+
+    const futureEvents = eventsByUid
+        .filter(e => e.start() >= today) // Must be in future
+    logger.info(`Found ${futureEvents.length} future events`, { cal })
+
+    const nextWeekEvents = futureEvents
+        .filter(e => e.start() < inaweek)
+    logger.info(`Found ${futureEvents.length} events within 6 days`, { cal })
+
+    const newEvents = nextWeekEvents
+        .filter(e => e.uid() > metadata.calendar_last_uid) // Larger than last uid
+    logger.info(`Found ${futureEvents.length} new events`, { cal })
+
+    const newEvent = newEvents.find(e => true) // Take first
+
+    logger.info(
+        `Found ${newEvents.length} new events`,
+        {
+            cal,
+            newEvent: pick(newEvent?.toJSON(), 'id', 'start', 'end', 'summary'),
+            nextWeekEvents: nextWeekEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary'))
+        }
+    )
+
+    if (newEvent) {
+        const creator = newEvent.organizer()?.name ?? ''
+        const data = await notifyNewEvent(clock, newEvent, creator, cal)
+        metadata.calendar_last_date = newEvent.start() as string
+        metadata.calendar_last_uid = newEvent.uid()
+
+        const notification: CalendarNotification = {
+            at: clock.now().toISOString(),
+            ...data,
+            event: {
+                id: newEvent.uid(),
+                start: (newEvent.start() as Date).toISOString(),
+                description: newEvent.description()?.plain ?? '',
+            }
+        }
+
+        metadata.last_notifications = [notification, ...metadata.last_notifications].slice(0, 5)
+    } else {
+        logger.warn('No next event found', { cal, metadata })
+    }
 }

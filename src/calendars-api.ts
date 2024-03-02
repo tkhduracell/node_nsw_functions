@@ -1,17 +1,17 @@
+import z from 'zod'
+import express from 'express'
+
+import { join } from 'path'
 import { ClockFactory } from './lib/clock';
 import { logger, loggerMiddleware } from './logging'
 import { Storage } from '@google-cloud/storage'
 import { CloudSchedulerClient } from '@google-cloud/scheduler'
-import z from 'zod'
-import { join } from 'path'
-import { updateLean, status } from './lib/calendars'
+import { updateLean, status, createApiFormat } from './lib/calendars'
 import { GCloudOptions, IDOActivityOptions } from './env'
 import { ActivityApi, CookieProvider } from './lib/booking'
 import { getFirestore } from 'firebase-admin/firestore'
 import { fetchCookies } from './lib/cookies'
-import { differenceInMinutes } from 'date-fns'
 import { initializeApp } from 'firebase-admin/app'
-import express from 'express'
 import { errorHandling, prettyJson } from './middleware'
 import { cors } from './lib/cors'
 
@@ -146,19 +146,7 @@ app.get('/book/search', cors, async (req, res) => {
     try {
 
         const { data } = await actApi.fetchActivitiesOnDate(date, calendarId)
-        const activities = data.map(e => e.listedActivity)
-
-        const out = activities.map(({ activityId, name, description, startTime, endTime, calendarId }) => {
-            return {
-                id: activityId,
-                name,
-                description,
-                calendarId,
-                startTime,
-                endTime,
-                duration: differenceInMinutes(new Date(endTime), new Date(startTime)),
-            }
-        })
+        const out = createApiFormat(data);
 
         res.json(out)
     } catch (e: any) {
