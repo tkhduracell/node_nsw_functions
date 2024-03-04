@@ -6,12 +6,13 @@ apps/*/node_modules/
 dist/
 
 *-firebase-adminsdk-*.json
+*-publisher-*.json
+keystore.properties
 
 *.crt
 *.key
 *.csr
 
 apps/mobile/android/.idea/deploymentTargetDropDown.xml
-
 
 _*.md
