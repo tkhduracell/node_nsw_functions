@@ -6,6 +6,7 @@ on:
       - main
 
 env:
+  GITHUB_SHA: ${{ github.sha }}
   GCLOUD_PROJECT: nackswinget-af7ef
   GCLOUD_REGION: europe-north1
   GCLOUD_SCHEDULER_REGION: europe-west6
@@ -88,7 +89,7 @@ jobs:
             --max-instances=10 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
 
   deploy-competitions-api:
     runs-on: ubuntu-latest
@@ -137,7 +138,8 @@ jobs:
             --entry-point=competitions-api \
             --trigger-http \
             --max-instances=10 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --update-env-vars=GITHUB_SHA=${GITHUB_SHA}
 
   deploy-news-api:
     runs-on: ubuntu-latest
@@ -186,7 +188,8 @@ jobs:
             --entry-point=news-api \
             --trigger-http \
             --max-instances=10 \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --update-env-vars=GITHUB_SHA=${GITHUB_SHA}
 
   deploy-calendar-api:
     runs-on: ubuntu-latest
@@ -237,7 +240,7 @@ jobs:
             --max-instances=10 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
 
       - name: Send deploy message to slack
         env:
@@ -298,7 +301,7 @@ jobs:
             --concurrency=1 \
             --allow-unauthenticated \
             --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION}
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
 
       - name: Send deploy message to slack
         env:
