@@ -2,7 +2,6 @@ import { logger, loggerMiddleware } from './logging'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
 import { errorHandling, prettyJson } from './middleware'
-import { cors } from './lib/cors'
 import { parse } from 'rss-to-json'
 import z from 'zod'
 import { DocumentReference, DocumentData, FieldValue, getFirestore } from 'firebase-admin/firestore'
@@ -11,13 +10,14 @@ import { Message, getMessaging } from 'firebase-admin/messaging'
 import { decodeXMLStrict } from "entities"
 import { getStorage } from 'firebase-admin/storage'
 import { GCloudOptions } from './env'
-import { ALLOWED_ORIGINS } from './lib/cors'
+import { ALLOWED_ORIGINS, cors } from './lib/cors'
 
 const app = express()
 app.use(express.json())
 app.use(prettyJson)
 app.use(loggerMiddleware)
 app.use(errorHandling)
+app.use(cors)
 
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
@@ -83,7 +83,7 @@ app.get('/', async (req, res) => {
         res.status(500)
         res.json({ error: err.message });
     }
-}, cors)
+})
 
 type NewsState = { last_news_item: { published: number } }
 
