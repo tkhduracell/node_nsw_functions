@@ -1,4 +1,4 @@
-import { UseFetchReturn, useFetch } from '@vueuse/core'
+import { UseAsyncStateReturn, useAsyncState } from '@vueuse/core'
 import { NswApiClient } from './client'
 import { inject, provide } from 'vue'
 
@@ -36,12 +36,12 @@ export function provideNews(client: NswApiClient) {
   const params = new URLSearchParams()
   params.append('exclude', 'competitions')
 
-  provide('news', useFetch(client.baseUrl + '/news-api?' + params.toString()).get().json<News>())
+  provide('news', useAsyncState(() => client.news(), null))
 }
 
 
 export function useNews() {
-    const { isFetching, error, data, execute } = inject('news') as UseFetchReturn<News>
+    const { isLoading: isFetching, error, state: data, execute } = inject('news') as UseAsyncStateReturn<News, any[], true>
 
     return { isFetching, error, data, execute }
 }

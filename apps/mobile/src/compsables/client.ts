@@ -2,6 +2,7 @@ import { getPlatforms } from "@ionic/vue"
 import { format } from "date-fns"
 import { groupBy, sortBy } from "lodash"
 import { InjectionKey, inject, provide } from "vue"
+import { News } from "./news"
 
 const clientKey = Symbol() as InjectionKey<NswApiClient>
 const baseUrlKey = Symbol() as InjectionKey<string>
@@ -53,6 +54,11 @@ export class NswApiClient {
     constructor(baseUrl: string, bucket: string) {
       this.baseUrl = baseUrl
       this.bucket = bucket
+    }
+
+    async news(): Promise<News> {
+      return await fetch(`https://storage.googleapis.com/${this.bucket}/news.json`)
+        .then(resp => resp.json() as Promise<News>)
     }
 
     async searchByDateRange(calendarId = '337667', days = 30): Promise<{ date: string, json: Activity[] }[]> {
