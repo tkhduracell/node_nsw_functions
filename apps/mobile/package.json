@@ -4,6 +4,9 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
+  "engines": {
+    "node": "18"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build",
@@ -12,8 +15,10 @@
     "watch:android": "watchman-make -p \"src/**/*.*\" --run \"npx vite build -m dev --minify=false && npx cap copy android\"",
     "open:android": "cap open android",
     "open:ios": "cap open ios",
-    "release:android": "npm run build && cap sync android && cap open android",
+    "release:android": "npm run build && cap sync android",
     "release:ios": "npm run build && cap sync ios && cap open ios",
+    "android:build": "cd android && ./gradlew --no-daemon bundleRelease",
+    "android:upload": "cd android && ./gradlew --no-daemon publishBundle",
     "preview": "vite preview",
     "test:e2e": "cypress run",
     "test:unit": "vitest",
@@ -35,11 +40,13 @@
     "@vueuse/core": "^10.7.2",
     "date-fns": "^3.3.1",
     "ionicons": "^7.2.2",
+    "lodash": "^4.17.21",
     "vue": "^3.4.15",
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@capacitor/cli": "5.6.0",
+    "@types/lodash": "^4.14.202",
     "@vitejs/plugin-legacy": "^5.3.0",
     "@vitejs/plugin-vue": "^5.0.3",
     "@vue/eslint-config-typescript": "^12.0.0",
