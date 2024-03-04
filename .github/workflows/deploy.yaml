@@ -189,7 +189,7 @@ jobs:
             --trigger-http \
             --max-instances=10 \
             --allow-unauthenticated \
-            --update-env-vars=GITHUB_SHA=${GITHUB_SHA}
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
 
   deploy-calendar-api:
     runs-on: ubuntu-latest
