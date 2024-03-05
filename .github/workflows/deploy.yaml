@@ -460,11 +460,11 @@ jobs:
 
       - name: Fetch and Write GOOGLE_PLAY_KEYSTORE
         run: |
-          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE" > /tmp/google_play_keystore
+          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE" --out-file /tmp/google_play_keystore
 
       - name: Fetch and Write GOOGLE_PLAY_KEYSTORE_SETTINGS
         run: |
-          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE_SETTINGS" > apps/mobile/android/app/keystore.properties
+          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE_SETTINGS" --out-file apps/mobile/android/app/keystore.properties
 
       - name: Build with Gradle
         run: npm -C apps/mobile run android:build
