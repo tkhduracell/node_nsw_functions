@@ -475,6 +475,12 @@ jobs:
       - name: Build with Gradle
         run: npm -C apps/mobile run android:build
 
+      - name: Build info
+        working-directory: apps/mobile/android
+        run: |
+          ./gradlew buildEnvironment app:buildEnvironment | grep 'com.github.triplet'; \
+          ./gradlew -v | grep 'Gradle'; \
+          ./gradlew buildEnvironment | grep 'com.android.tools.build:gradle:'
 
       - name: Build and upload with Gradle
         run: npm -C apps/mobile run android:upload
