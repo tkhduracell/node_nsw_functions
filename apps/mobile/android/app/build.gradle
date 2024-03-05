@@ -1,9 +1,11 @@
 apply plugin: 'com.android.application'
 apply plugin: 'com.github.triplet.play'
 
-def keystorePropertiesFile = rootProject.file("app/keystore.properties")
-def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+def keystoreProperties = read(
+        System.getenv('ANDROID_KEYSTORE_PROPERTIES')
+                ?: "app/keystore.properties")
+def keyStoreFile = System.getenv('ANDROID_KEYSTORE_PATH')
+        ?: '/tmp/google_play_keystore'
 
 android {
     namespace "org.nackswinget.app"
@@ -25,7 +27,7 @@ android {
         release {
             keyAlias keystoreProperties['keyAlias']
             keyPassword keystoreProperties['keyPassword']
-            storeFile file(keystoreProperties['storeFile'])
+            storeFile file(keyStoreFile)
             storePassword keystoreProperties['storePassword']
         }
     }
@@ -72,4 +74,11 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+Properties read(String p) {
+    def keystorePropertiesFile = rootProject.file(p)
+    def keystoreProperties = new Properties()
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    return keystoreProperties
 }

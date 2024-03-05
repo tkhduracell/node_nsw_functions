@@ -466,21 +466,25 @@ jobs:
 
       - name: Fetch and Write GOOGLE_PLAY_KEYSTORE
         run: |
-          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE" --out-file /tmp/google_play_keystore
+          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE" --out-file /tmp/google_play.keystore
 
       - name: Fetch and Write GOOGLE_PLAY_KEYSTORE_SETTINGS
         run: |
-          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE_SETTINGS" --out-file apps/mobile/android/app/keystore.properties
+          gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE_SETTINGS" --out-file /tmp/keystore.properties
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+          log-accepted-android-sdk-licenses: false
 
       - name: Build with Gradle
+        env:
+          ANDROID_KEYSTORE_PROPERTIES: /tmp/keystore.properties
+          ANDROID_KEYSTORE_PATH: /tmp/google_play.keystore
         run: npm -C apps/mobile run android:build
 
-      - name: Build info
-        working-directory: apps/mobile/android
-        run: |
-          ./gradlew buildEnvironment app:buildEnvironment | grep 'com.github.triplet'; \
-          ./gradlew -v | grep 'Gradle'; \
-          ./gradlew buildEnvironment | grep 'com.android.tools.build:gradle:'
-
       - name: Build and upload with Gradle
+        env:
+          ANDROID_KEYSTORE_PROPERTIES: /tmp/keystore.properties
+          ANDROID_KEYSTORE_PATH: /tmp/google_play.keystore
         run: npm -C apps/mobile run android:upload
