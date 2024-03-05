@@ -39,7 +39,10 @@ android {
 }
 
 play {
-    serviceAccountCredentials.set(file("android-publisher-nackswinget-af7ef-357bc4f3fa27.json"))
+    def credentialsFile = System.getenv('ANDROID_PUBLISHER_CREDENTIALS')
+            ?: System.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+            ?: 'android-publisher-nackswinget-af7ef-357bc4f3fa27.json'
+    serviceAccountCredentials.set(file(credentialsFile))
     defaultToAppBundles.set(true)
 }
 
