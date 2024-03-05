@@ -443,8 +443,8 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 21
+          distribution: corretto
+          java-version: 18
           cache: gradle
 
       - name: Setup Gradle
@@ -471,6 +471,9 @@ jobs:
 
       - name: Build with Gradle
         run: npm -C apps/mobile run android:build
+
+      - name: Test https connection
+        run: curl -X HEAD -v https://androidpublisher.googleapis.com/androidpublisher/v3/applications/org.nackswinget.app/
 
       - name: Build and upload with Gradle
         run: npm -C apps/mobile run android:upload
