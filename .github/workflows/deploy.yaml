@@ -443,8 +443,9 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: corretto
+          distribution: zulu
           java-version: 18
+          java-package: jdk
           cache: gradle
 
       - name: Test https androidpublisher connection
