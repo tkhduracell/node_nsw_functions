@@ -485,7 +485,6 @@ jobs:
         run: npm -C apps/mobile run android:build
 
       - name: Build and upload with Gradle
-        if: false
         env:
           ANDROID_KEYSTORE_PROPERTIES: /tmp/keystore.properties
           ANDROID_KEYSTORE_PATH: /tmp/google_play.keystore
