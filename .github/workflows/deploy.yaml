@@ -484,7 +484,7 @@ jobs:
 
       - name: Build and upload with Gradle
         env:
-          SSL_CERT_DIR: "/etc/ssl/certs"
+          GRADLE_OPTS: -Djavax.net.debug=ssl
           ANDROID_KEYSTORE_PROPERTIES: /tmp/keystore.properties
           ANDROID_KEYSTORE_PATH: /tmp/google_play.keystore
         run: npm -C apps/mobile run android:upload
