@@ -443,7 +443,7 @@ jobs:
 
       - uses: actions/setup-java@v4
         with:
-          distribution: microsoft
+          distribution: corretto
           java-version: 18
 
       - name: Test https androidpublisher connection
