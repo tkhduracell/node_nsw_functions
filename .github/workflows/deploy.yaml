@@ -418,6 +418,7 @@ jobs:
     strategy:
       matrix:
         node-version: [20.x]
+
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -446,9 +447,6 @@ jobs:
           distribution: corretto
           java-version: 18
 
-      - name: Test https androidpublisher connection
-        run: curl --head -v https://androidpublisher.googleapis.com/androidpublisher/v3/applications/org.nackswinget.app/
-
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
 
@@ -463,13 +461,16 @@ jobs:
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Fetch and Write GOOGLE_PLAY_KEYSTORE
+      - name: Fetch and write GOOGLE_PLAY_KEYSTORE
         run: |
           gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE" --out-file /tmp/google_play.keystore
+          echo "ANDROID_KEYSTORE_PATH=/tmp/google_play.keystore" >> "$GITHUB_ENV"
 
-      - name: Fetch and Write GOOGLE_PLAY_KEYSTORE_SETTINGS
+      - name: Fetch and write GOOGLE_PLAY_KEYSTORE_SETTINGS
         run: |
           gcloud secrets versions access latest --secret="GOOGLE_PLAY_KEYSTORE_SETTINGS" --out-file /tmp/keystore.properties
+          echo "ANDROID_KEYSTORE_PROPERTIES=/tmp/keystore.properties" >> "$GITHUB_ENV"
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -477,14 +478,4 @@ jobs:
           log-accepted-android-sdk-licenses: false
 
       - name: Build with Gradle
-        env:
-          ANDROID_KEYSTORE_PROPERTIES: /tmp/keystore.properties
-          ANDROID_KEYSTORE_PATH: /tmp/google_play.keystore
         run: npm -C apps/mobile run android:build
-
-      - name: Build and upload with Gradle
-        env:
-          GRADLE_OPTS: -Djavax.net.debug=ssl
-          ANDROID_KEYSTORE_PROPERTIES: /tmp/keystore.properties
-          ANDROID_KEYSTORE_PATH: /tmp/google_play.keystore
-        run: npm -C apps/mobile run android:upload
