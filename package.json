@@ -16,6 +16,7 @@
     "dev:notifications-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/notifications-api.ts'",
     "dev:news-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/news-api.ts'",
     "dev:index": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
+    "dev:book": "live-server --port=3000 --watch=static/ --mount=/:static/booking.html --proxy=/book/search:https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api/book/search",
     "demo": "node --inspect --loader ts-node/esm -r dotenv/config src/demo.ts",
     "clean": "rm -rf dist"
   },

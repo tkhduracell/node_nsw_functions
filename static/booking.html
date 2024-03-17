@@ -31,17 +31,33 @@
             </div>
             <div v-else>
             <v-form fast-fail @submit.prevent>
+                <v-select
+                    variant="outlined"
+                    label="Typ av friträning"
+                    v-model="form.type"
+                    density="comfortable"
+                    :items="['Friträning', 'Tematräning']"
+                ></v-select>
+
                 <v-text-field
-                    v-model="form.title"
-                    label="Titel"
+                    variant="outlined"
+                    v-model="form.customTitle"
+                    label="Tema på träningen"
+                    hint="Ange tema, t.ex. Boogie Woogie, Lindy Hop, Bugg Högtempo, etc."
+                    persistent-hint
+                    class="mb-4"
+                    v-if="form.type === 'Tematräning'"
                 ></v-text-field>
 
                 <v-text-field
+                    variant="outlined"
+                    class="mt-2"
                     v-model="form.responsible"
                     label="Ansvarig"
                 ></v-text-field>
 
                 <v-text-field
+                    variant="outlined"
                     v-model="form.tel"
                     label="Telefonnummer"
                 ></v-text-field>
@@ -62,6 +78,7 @@
                     hide-header
                     :min="minDate"
                     text="text" title=""
+                    first-day-of-week="3"
                 ></v-date-picker>
 
                 <div v-if="activities" class="mb-6 ml-8">
@@ -80,6 +97,7 @@
                 </div>
 
                 <v-text-field
+                    variant="outlined"
                     v-model="form.time"
                     type="time"
                     label="Tid"
@@ -98,19 +116,29 @@
                     v-model="form.duration"></v-slider>
 
                 <v-text-field
+                    variant="outlined"
                     class="mt-4"
                     v-model="form.password"
                     type="password"
                     label="Lösenord (Vårt gemensama lösenord)"
                 ></v-text-field>
 
+                <div class="mb-4 text-caption">
+                    <p>Tänk på (<a href="https://nackswinget.se/fritraning/fritraning-interna-rutiner/">Interna rutiner</a>)</p>
+                    <ul class="ml-6">
+                        <li>Lämna 15 min till nästkommande kurs</li>
+                        <li>Lås upp nödutgången</li>
+                        <li>Sopa av golvet och stäng av fläktar/ljus innan du lämnar</li>
+                    </ul>
+                </div>
+
                 <v-btn type="submit" color="primary" block height="48" @click="submit" :loading="loading"
-                    :disabled="!form.title || !form.responsible || !form.tel || !form.date || !form.duration || !form.time || !form.password">
-                    Boka
+                    :disabled="(form.type === 'Tematräning' && !form.customTitle) || !form.responsible || !form.tel || !form.date || !form.duration || !form.time || !form.password">
+                    Boka nu!
                 </v-btn>
             </v-form>
             </div>
-            <div class="text-caption mt-4">© Filip Lindqvist 2023</div>
+            <div class="text-caption mt-4">© Filip Lindqvist {{ new Date().getFullYear() }}</div>
         </v-sheet>
     </v-app>
   </div>
@@ -139,7 +167,8 @@
                 const loading = ref(false)
                 const activities = ref()
                 const form = reactive({
-                    title: 'Friträning',
+                    type: 'Friträning',
+                    customTitle: '',
                     responsible: null,
                     tel: null,
                     location: 'Ceylon',
@@ -149,7 +178,7 @@
                     duration: null,
                 })
 
-                const savedKeys = ['responsible', 'tel', 'password']
+                const savedKeys = ['responsible', 'tel', 'password', 'type', 'customTitle']
                 for (const key of savedKeys) {
                     const nsKey = 'booking:' + key
                     onMounted(() => { if (nsKey in localStorage) form[key] = localStorage.getItem(nsKey) })
@@ -172,8 +201,9 @@
 
                 async function submit() {
                     loading.value = true
-                    const { tel,  responsible, ...values } = form
-                    const body = { ...values, description: responsible + ' - ' + tel }
+                    const { tel,  responsible, customTitle, type, ...values } = form
+                    const title = type === 'Friträning' ? 'Friträning' : `Tematräning - ${customTitle}`
+                    const body = { ...values, title, description: responsible + ' - ' + tel }
                     const result = await fetch('book', {
                         method: 'POST',
                         headers: { 'content-type': 'application/json' },
