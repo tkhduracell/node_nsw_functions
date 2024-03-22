@@ -23,6 +23,11 @@ const routes: Array<RouteRecordRaw> = [
         component: CalendarPage
       },
       {
+        path: 'book',
+        name: 'Book',
+        component: () => import('@/views/BookPage.vue')
+      },
+      {
         path: 'news',
         name: 'News',
         component: NewsPage
