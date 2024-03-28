@@ -227,7 +227,7 @@
                         // Im I running in an iframe?
                         if (window.location !== window.parent.location) {
                             try {
-                                window.parent.postMessage({ detail: { ...body, password: '' } }, '*')
+                                parent.postMessage({ ...body, password: '' }, '*')
                             } catch (e) { console.error('Failed to dispatch booking event', e) }
                         } else {
                             alert('Träningen bokades, du skickas nu till kalendern\n\nOBS: Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern')
