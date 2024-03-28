@@ -114,8 +114,8 @@
                 ></v-text-field>
 
                 <div class="text-h5">
-                    Välj Längd
-                    <span v-if="form.duration"> - {{ form.duration }} minuter</span>
+                    <span v-if="form.duration">{{ form.duration }} minuter</span>
+                    <span v-else>Välj träningens längd</span>
                 </div>
 
                 <v-slider color="primary" step="15"
