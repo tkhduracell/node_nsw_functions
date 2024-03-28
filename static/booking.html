@@ -224,8 +224,15 @@
                     })
                     const { status, statusText, ok} = result
                     if (ok) {
-                        alert('Träningen bokades, du skickas nu till kalendern\n\nOBS: Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern')
-                        document.location = "https://nackswinget.se/fritraning/fritraningstider/"
+                        // Im I running in an iframe?
+                        if (window.location !== window.parent.location) {
+                            try {
+                                window.parent.dispatchEvent(new CustomEvent('nsw:booking', { detail: { ...body, password: '' } }))
+                            } catch (e) { console.error('Failed to dispatch booking event', e) }
+                        } else {
+                            alert('Träningen bokades, du skickas nu till kalendern\n\nOBS: Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern')
+                            document.location = "https://nackswinget.se/fritraning/fritraningstider/"
+                        }
                     } else {
                         const res = await result.json()
                         alert('Gick ej att skapa bokning: \n' + JSON.stringify(res, null, 2) + "\nStatus: " + JSON.stringify({ok, status, statusText}))
