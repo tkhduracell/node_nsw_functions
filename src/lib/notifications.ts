@@ -7,7 +7,13 @@ import { logger } from '../logging'
 import { pick } from 'lodash'
 import { Clock } from './clock'
 
-function getNotificationTitle(calendar_name: string, creator?: string): string {
+function getNotificationTitle(title: string, calendar_name: string, creator?: string): string {
+    if (title.toLocaleLowerCase().includes('friträning')) {
+        return creator ? `${creator} har bokat en friträning!` : `Ny friträning bokad!`
+    }
+    if (title.toLocaleLowerCase().includes('tematräning')) {
+        return creator ? `${creator} har bokat en tematräning!` : `Ny tematräning bokad!`
+    }
     return calendar_name === 'Friträning' ?
         (creator ? `${creator} har bokat en friträning!` : `Ny friträning bokad!`) :
         `Ny bokning i ${calendar_name}`
@@ -43,7 +49,7 @@ export class Notifications {
     async send(clock: Clock, event: ICalEvent, creator: string | undefined, cal: Calendars[number]): Promise<Notification> {
         const topicName = `calendar-${cal.id}`
         const notification: Notification = {
-            title: getNotificationTitle(cal.name, creator),
+            title: getNotificationTitle(event.summary(), cal.name, creator),
             body: getNotificationBody(clock, event.start() as Date, event.end() as Date),
         }
         const message: Message = {
