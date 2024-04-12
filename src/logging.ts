@@ -10,7 +10,7 @@ export const loggerMiddleware = (req: Request, res: Response, next: NextFunction
 }
 
 export const logger = winston.createLogger({
-    level: 'debug',
+    level: process.env.LOG_LEVEL ?? 'debug',
     transports: [new winston.transports.Console({ handleExceptions: true, handleRejections: true })],
     format: process.env.NODE_ENV === 'production'
         ? winston.format.combine(
@@ -36,7 +36,6 @@ export const logger = winston.createLogger({
                 ? { ...info, traceId }
                 : info
             })(),
-            winston.format.json(),
             winston.format.timestamp(),
             winston.format.colorize({ message: true, level: true })
         )

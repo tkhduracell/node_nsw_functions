@@ -9,8 +9,8 @@
   "scripts": {
     "pre-build": "node node_modules/puppeteer/install.js",
     "build": "tsc",
-    "test": "jest",
-    "test:watch": "jest --watchAll",
+    "test": "DOTENV_CONFIG_PATH=.env.test jest",
+    "test:watch": "DOTENV_CONFIG_PATH=.env.test jest --watchAll",
     "dev:calendars-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/calendars-api.ts'",
     "dev:calendars-update-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/calendars-update-api.ts'",
     "dev:notifications-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/notifications-api.ts'",
