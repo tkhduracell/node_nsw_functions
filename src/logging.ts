@@ -11,7 +11,7 @@ export const loggerMiddleware = (req: Request, res: Response, next: NextFunction
 
 export const logger = winston.createLogger({
     level: 'debug',
-    transports: [new winston.transports.Console()],
+    transports: [new winston.transports.Console({ handleExceptions: true, handleRejections: true })],
     format: process.env.NODE_ENV === 'production'
         ? winston.format.combine(
             winston.format.errors({ stack: true }),
