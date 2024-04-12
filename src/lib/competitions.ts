@@ -137,7 +137,7 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
         try {
             calendar.createEvent(event)
         } catch (err) {
-            logger.error('Invalid event', event, err)
+            logger.error(new Error('Invalid event', { cause: err }) as any, event)
         }
 
         logger.info([data.name, data.start_date, data.classes, data.city].join(' '))

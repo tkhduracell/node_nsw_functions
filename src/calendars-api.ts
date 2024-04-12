@@ -95,7 +95,7 @@ app.post('/update', async (req, res) => {
     try {
         await updateLean(bucket, db, ClockFactory.native(), orgId)
     } catch (err: any) {
-        logger.error('Error in updateLean()', err)
+        logger.error(new Error('Error in updateLean()', { cause: err }))
 
         return res.status(500)
             .send({ message: `Unable to perform update: ${err?.message}` })
@@ -115,7 +115,7 @@ app.get('/update', async (req, res) => {
         return res.status(200)
             .json(result)
     } catch (err: any) {
-        logger.error('Error in status()', err)
+        logger.error(new Error('Error in status()', { cause: err }))
 
         return res.status(500)
             .json({ message: `Unable to perform update: ${err?.message}` })
@@ -149,12 +149,12 @@ app.get('/book/search', cors, async (req, res) => {
         const out = createApiFormat(data);
 
         res.json(out)
-    } catch (e: any) {
-        if ('response' in e) {
-            const { status, statusText, url } = e.response as Response
+    } catch (err: any) {
+        if ('response' in err) {
+            const { status, statusText, url } = err.response as Response
             logger.error('Unable to fetch activities, got HTTP ' + status, { response: { status, statusText, url } })
         } else {
-            logger.error('Unable to fetch activities, unknown ', e)
+            logger.error(new Error('Unable to fetch activities', { cause: err }))
         }
         res.status(500).json({
             sucesss: false,
@@ -202,12 +202,12 @@ app.post('/book', async (req, res) => {
             logger.info('Triggering update of activity in cloud schduler', event)
             triggerAsyncActivityUpdate()
 
-        } catch (e: any) {
-            if ('response' in e) {
-                const { status, statusText, url } = e.response as Response
+        } catch (err: any) {
+            if ('response' in err) {
+                const { status, statusText, url } = err.response as Response
                 logger.error('Unable to complete booking, got HTTP ' + status, { response: { status, statusText, url } })
             } else {
-                logger.error('Unable to complete booking, unknown error', e)
+                logger.error(new Error('Unable to complete booking, unknown error', { cause: err }))
             }
             res.status(500).json({
                 sucesss: false,

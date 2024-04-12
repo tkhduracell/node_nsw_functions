@@ -79,7 +79,7 @@ app.get('/', async (req, res) => {
         res.header('Cache-Control', 'no-store')
         res.json(feed)
     } catch (err: any) {
-        logger.error(err);
+        logger.error(new Error('Failed fetching feed', { cause: err }))
         res.status(500)
         res.json({ error: err.message });
     }
@@ -103,7 +103,7 @@ app.post('/update', async (req, res) => {
         await notify(docRef, data, feed, !!force)
         return res.json({ message: 'New items' })
     } catch (err: any) {
-        logger.error('Unable to notify', err)
+        logger.error(new Error('Unable to notify', { cause: err }))
         return res.status(500).json({ error: err.message ?? 'Internal Server Error' })
     }
 })
