@@ -69,6 +69,8 @@ app.post('/', async (req, res) => {
         await update(browser, bucket, db, ClockFactory.native(), orgId)
     } catch (err: any) {
         logger.error(new Error('Error in update()', { cause: err }))
+        logger.error(err)
+        logger.error(err.stack)
 
         await dumpScreenshots(browser, bucket, `org-${orgId}-update`)
 
