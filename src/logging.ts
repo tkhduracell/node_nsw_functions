@@ -14,7 +14,6 @@ export const logger = winston.createLogger({
     transports: [new winston.transports.Console({ handleExceptions: true, handleRejections: true })],
     format: process.env.NODE_ENV === 'production'
         ? winston.format.combine(
-            winston.format.errors({ stack: true }),
             winston.format(info => {
                 const traceId = asyncLocalStorage.getStore() as string
                 return traceId
@@ -26,10 +25,10 @@ export const logger = winston.createLogger({
                     }
                     : info
             })(),
+            winston.format.errors({ stack: true }),
             winston.format.json()
         )
         : winston.format.combine(
-            winston.format.errors({ stack: true }),
             winston.format(info => {
                 const traceId = asyncLocalStorage.getStore() as string
                 return traceId
@@ -37,6 +36,7 @@ export const logger = winston.createLogger({
                 : info
             })(),
             winston.format.timestamp(),
+            winston.format.errors({ stack: true }),
             winston.format.colorize({ message: true, level: true })
         )
 })
