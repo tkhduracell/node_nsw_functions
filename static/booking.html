@@ -136,7 +136,7 @@
                         <li>Lämna 15 min till nästkommande kurs</li>
                         <li>Lås upp nödutgången</li>
                         <li>Sopa av golvet och stäng av fläktar/ljus innan du lämnar</li>
-                        <li class="warn" v-if="isWithinMin(form.date, form.time, 90)">Boka minst 2 timmar innan</li>
+                        <li class="warn" v-if="isWithinMin(form.date, form.time, 55)">Boka minst en timme innan</li>
                     </ul>
                 </div>
 
@@ -265,7 +265,7 @@
                             !form.duration ||
                             !form.time ||
                             !form.password ||
-                            isWithinMin(form.date, form.time, 90)
+                            isWithinMin(form.date, form.time, 55)
                     }),
                     submit
                 }
