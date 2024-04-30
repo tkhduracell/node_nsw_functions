@@ -6,6 +6,7 @@ import { formatInTimeZone } from 'date-fns-tz'
 import { type Protocol } from 'puppeteer'
 import { type fetch } from 'cross-fetch'
 import { logger } from '../logging'
+import z from 'zod'
 
 export interface CookieProvider {
     get(): Protocol.Network.CookieParam[]
@@ -48,8 +49,15 @@ export class ActivityApi {
         }
 
         const data = await response.json()
-        if (!(typeof data === 'object')) {
-            throw new Error('No json response from API:', { cause: response.statusText })
+
+        const schema = z.object({
+            listedActivity: z.array(z.object({}))
+        })
+
+        const state = schema.safeParse(data)
+        if (!state.success) {
+            logger.warn("Invalid payload from API", { error: state.error.format(), response: data })
+            throw new Error('No json response from API:', { cause: state.error.cause })
         }
 
         return { data: data as ListedActivities, response }
