@@ -125,8 +125,10 @@ export class ActivityApi {
                 const [out] = json.activities
                 return out
             }
+            logger.error('Unable to create activity', { json })
             throw new Error('Unable to create activity', { cause: json })
         }
+        logger.warn('Unable to create activity due to IDO error', { url, ok, status, statusText })
         throw new Error('Unable to create activity', { cause: { url, ok, status, statusText } })
     }
 }
