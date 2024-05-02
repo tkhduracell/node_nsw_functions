@@ -12,19 +12,17 @@
     "build": "tsc",
     "test": "DOTENV_CONFIG_PATH=.env.test jest",
     "test:watch": "DOTENV_CONFIG_PATH=.env.test jest --watchAll",
-
-    "run:calendars-api": "node -r ts-node/register --inspect -r dotenv/config src/calendars-api.ts",
-    "run:calendars-update-api": "node -r ts-node/register --inspect -r dotenv/config src/calendars-update-api.ts",
-    "run:notifications-api": "node -r ts-node/register --inspect -r dotenv/config src/notifications-api.ts",
-    "run:news-api": "node -r ts-node/register --inspect -r dotenv/config src/news-api.ts",
+    "run:calendars-api": "node -r ts-node/register -r source-map-support/register -r dotenv/config --inspect src/calendars-api.ts",
+    "run:calendars-update-api": "node -r ts-node/register -r source-map-support/register -r dotenv/config --inspect src/calendars-update-api.ts",
+    "run:notifications-api": "node -r ts-node/register -r source-map-support/register -r dotenv/config --inspect src/notifications-api.ts",
+    "run:news-api": "node -r ts-node/register -r source-map-support/register -r dotenv/config --inspect src/news-api.ts",
     "dev:calendars-api": "nodemon --watch src --ext ts --exec 'npm run run:calendars-api'",
     "dev:calendars-update-api": "nodemon --watch src --ext ts --exec 'npm run run:calendars-update-api'",
     "dev:notifications-api": "nodemon --watch src --ext ts --exec 'npm run run:notifications-api'",
     "dev:news-api": "nodemon --watch src --ext ts --exec 'npm run run:news-api'",
-
     "dev:index": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
     "dev:book": "live-server --port=3000 --watch=static/ --mount=/:static/booking.html --proxy=/book/search:https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api/book/search",
-    "demo": "node --inspect -r ts-node/register -r dotenv/config src/demo.ts",
+    "demo": "node --inspect -r ts-node/register -r dotenv/config -r source-map-support/register src/demo.ts",
     "clean": "rm -rf dist"
   },
   "author": "Filip Lindqvist",
@@ -46,6 +44,7 @@
     "pino": "^9.0.0",
     "puppeteer": "^21.7.0",
     "rss-to-json": "^2.1.1",
+    "source-map-support": "^0.5.21",
     "zod": "^3.23.5"
   },
   "devDependencies": {
