@@ -27,7 +27,7 @@ export const logger = pino({
     messageKey: 'message',
     formatters: {
         level: (label) => {
-            return { level: label.toUpperCase() };
+            return { severity: label.toUpperCase(), level: undefined };
         },
     },
     mixin () {
