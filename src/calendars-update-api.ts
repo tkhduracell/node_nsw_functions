@@ -68,7 +68,7 @@ app.post('/', async (req, res) => {
         logger.info('Updating calendar', { orgId })
         await update(browser, bucket, db, ClockFactory.native(), orgId)
     } catch (err: any) {
-        logger.error(new Error('Error in update()', { cause: err }))
+        logger.error('Error in update()', { err })
         logger.error(err)
         logger.error(err.stack)
 

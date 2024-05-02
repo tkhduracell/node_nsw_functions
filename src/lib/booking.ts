@@ -45,7 +45,7 @@ export class ActivityApi {
         })
 
         if (!response.ok) {
-            throw new Error(`Error response ${response.status} ${response.statusText}`, { cause: await response.text() })
+            throw new Error(`Error response ${response.status} ${response.statusText}: ${await response.text()}`)
         }
 
         const data = await response.json()
@@ -56,8 +56,8 @@ export class ActivityApi {
 
         const state = schema.safeParse(data)
         if (!state.success) {
-            logger.warn("Invalid payload from API", { error: state.error.format(), response: data })
-            throw new Error('No json response from API:', { cause: state.error.cause })
+            logger.warn("Invalid payload from API", { err: state.error.stack, response: data })
+            throw new Error('No json response from API: ' + state.error.flatten().formErrors.join(','))
         }
 
         return { data: data as ListedActivities, response }
@@ -126,10 +126,10 @@ export class ActivityApi {
                 return out
             }
             logger.error('Unable to create activity', { json })
-            throw new Error('Unable to create activity', { cause: json })
+            throw new Error('Unable to create activity')
         }
         logger.warn('Unable to create activity due to IDO error', { url, ok, status, statusText })
-        throw new Error('Unable to create activity', { cause: { url, ok, status, statusText } })
+        throw new Error('Unable to create activity')
     }
 }
 
