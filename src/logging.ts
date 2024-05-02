@@ -5,11 +5,23 @@ import { randomUUID } from 'crypto'
 
 import { type Request, type NextFunction, type Response } from 'express'
 
-const asyncLocalStorage = new AsyncLocalStorage<{ requestId: string}>()
+const asyncLocalStorage = new AsyncLocalStorage<{ 
+    requestId: string,
+    requestMethod: string, 
+    requestUrl: string, 
+    userAgent?: string, 
+    referer?: string
+}>()
 
 export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const requestId = req.headers['X-Cloud-Trace-Context'] ?? req.headers['x-cloud-trace-context'] ?? randomUUID()
-    asyncLocalStorage.run({requestId: requestId as string}, () => next())
+    asyncLocalStorage.run({
+        requestId: requestId as string,
+        requestMethod: req.method,
+        requestUrl: req.url,
+        userAgent: req.headers['user-agent'],
+        referer: req.headers['referer']
+    }, () => next())
 }
 
 const transport = process.env.NODE_ENV !== 'production' ? {
@@ -31,12 +43,12 @@ export const logger = pino({
         },
     },
     mixin () {
-        const requestId = asyncLocalStorage.getStore()?.requestId ?? randomUUID()
+        const { requestId, ...rest } = asyncLocalStorage.getStore() ?? { requestId: randomUUID() }
         return {
-            requestId,
+            ...rest,
             'logging.googleapis.com/spanId': requestId,
             'logging.googleapis.com/trace': `projects/${process.env.GCLOUD_PROJECT}/traces/${requestId}`,
-            'logging.googleapis.com/trace_sampled': true
+            // 'logging.googleapis.com/trace_sampled': true
          }
     }
 })
