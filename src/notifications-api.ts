@@ -89,7 +89,7 @@ app.post('/trigger', async (req, res, next) => {
         const response = await notification({ topic, token, title, body })
         return res.status(200).send(response)
     } catch (err) {
-        next(err)
+        logger.error(err, 'Failed to send notification')
     }
 })
 
@@ -131,9 +131,9 @@ export async function notification ({ token, topic, title, body }: { token?: str
         throw new Error(`Either 'token' or 'topic' must be provided`)
     }
 
-    logger.info({ message })
+    logger.info('Sending notification', { message })
     const resp = await getMessaging().send(message)
-    logger.info({ resp })
+    logger.info('Sent notification!', { resp, message })
     return resp
 }
 

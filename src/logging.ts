@@ -48,7 +48,7 @@ export const logger = pino({
             ...rest,
             'logging.googleapis.com/spanId': requestId,
             'logging.googleapis.com/trace': `projects/${process.env.GCLOUD_PROJECT}/traces/${requestId}`,
-            // 'logging.googleapis.com/trace_sampled': true
+            'logging.googleapis.com/trace_sampled': true
          }
     }
 })
