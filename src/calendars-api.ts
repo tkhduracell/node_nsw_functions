@@ -22,7 +22,6 @@ app.use(loggerMiddleware)
 app.use(errorHandling)
 
 if (require.main === module) {
-    console.clear()
     console.info('Starting calendars-api')
     const port = process.env.PORT ?? 8080
     initializeApp()
