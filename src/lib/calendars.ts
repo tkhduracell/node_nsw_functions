@@ -90,10 +90,10 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, cl
 
         await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
-        logger.info('Restoring old cookies', { orgId })
+        logger.info({ orgId }, 'Restoring old cookies')
         await page.setCookie(...cookies)
 
-        logger.info('Finding calendars', { orgId })
+        logger.info({ orgId }, 'Finding calendars')
         const cals = await fetchCalendars(page, orgId)
 
         const actApi = new ActivityApi(orgId, baseUrl, { get: () => cookies }, fetch)
@@ -106,7 +106,7 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, cl
 export async function updateLean(bucket: Bucket, db: Firestore, clock: Clock, orgId: string) {
     const { ACTIVITY_BASE_URL: baseUrl } = IDOActivityOptions.parse(process.env)
     try {
-        logger.info('Fetching previous cookies', { orgId })
+        logger.info({ orgId }, 'Fetching previous cookies')
         const cookies = await fetchCookies(db, orgId)
 
         const actApi = new ActivityApi(orgId, baseUrl, { get: () => cookies }, fetch)
@@ -142,11 +142,11 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
     const inaweek = addDays(today, 6)
 
     for (const cal of cals) {
-        logger.info('Fetching activities', { cal, lastquater, inayear })
+        logger.info(cal, 'Fetching activities: %o', { cal, lastquater, inayear })
         const { data, response } = await actApi.fetchActivities(lastquater, inayear, cal.id)
 
         const calendar = buildCalendar(response.url, data, cal)
-        logger.info(`Built ICalendar successfully with ${calendar.length()} events`, { cal })
+        logger.info(cal, `Built ICalendar successfully with %d events: %o`,calendar.length())
 
         const metadata = await fetchMetadata(cal, db)
 
@@ -156,7 +156,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
 
         const icsFile = await writeICStoGcs(cal, bucket, metadata, calendar.toString())
 
-        logger.info('Saving metadata', { cal, metadata })
+        logger.info(cal, 'Saving metadata: %o', metadata)
         await db.collection('calendars')
             .doc(cal.id ?? '')
             .set({
@@ -234,7 +234,7 @@ async function fetchMetadata(cal: Calendars[number], db: Firestore): Promise<Cal
 
     Object.assign(metadata, previous)
     metadata.calendar_last_uid = metadata.calendar_last_uid ?? ''
-    logger.info('Read old metadata', { cal, metadata })
+    logger.info(cal, 'Read old metadata: %o', metadata)
 
     return metadata
 }
@@ -263,7 +263,7 @@ async function writeICStoGcs(cal: { id: string; name: string; orgId: string }, b
     const destination = `cal_${cal.id}.ics`
     const file = bucket.file(destination)
 
-    logger.info(`Uploading to ${file.cloudStorageURI.toString()}`, { cal, metadata })
+    logger.info(cal, `Uploading to %s, metadata: %o`, file.cloudStorageURI.toString(), metadata)
     await file.save(data, {
         metadata: {
             metadata,
@@ -274,37 +274,35 @@ async function writeICStoGcs(cal: { id: string; name: string; orgId: string }, b
         }
     })
 
-    logger.info(`Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`, { cal, metadata })
+    logger.info(cal, `Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}, metadata: %o`, metadata)
     await file.makePublic()
     return file
 }
 
 
 async function peekAndNotifyEvent(cal: { id: string; name: string; orgId: string }, calendar: ICalCalendar, today: Date, inaweek: Date, metadata: CalendarMetadata, clock: Clock) {
-    logger.info('Sorting new events', { cal })
+    logger.info(cal, 'Sorting new events')
     const eventsByUid = sortBy(calendar.events(), e => e.uid())
 
     const futureEvents = eventsByUid
         .filter(e => e.start() >= today) // Must be in future
-    logger.info(`Found ${futureEvents.length} future events`, { cal })
+    logger.info(cal, `Found ${futureEvents.length} future events`)
 
     const nextWeekEvents = futureEvents
         .filter(e => e.start() < inaweek)
-    logger.info(`Found ${futureEvents.length} events within 6 days`, { cal })
+    logger.info(cal, `Found ${futureEvents.length} events within 6 days`)
 
     const newEvents = nextWeekEvents
         .filter(e => e.uid() > metadata.calendar_last_uid) // Larger than last uid
-    logger.info(`Found ${futureEvents.length} new events`, { cal })
+    logger.info(cal, `Found ${futureEvents.length} new events`)
 
     const newEvent = newEvents.find(e => true) // Take first
 
     logger.info(
-        `Found ${newEvents.length} new events`,
-        {
-            cal,
-            newEvent: pick(newEvent?.toJSON(), 'id', 'start', 'end', 'summary'),
-            nextWeekEvents: nextWeekEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary'))
-        }
+        cal,
+        `Found ${newEvents.length} new events: %o, next week: %o`,
+        pick(newEvent?.toJSON(), 'id', 'start', 'end', 'summary'),
+        nextWeekEvents.map(e => pick(e?.toJSON(), 'id', 'start', 'end', 'summary'))
     )
 
     if (newEvent) {
@@ -325,6 +323,6 @@ async function peekAndNotifyEvent(cal: { id: string; name: string; orgId: string
 
         metadata.last_notifications = [notification, ...metadata.last_notifications].slice(0, 5)
     } else {
-        logger.warn('No next event found', { cal, metadata })
+        logger.warn(cal, 'No next event found, metadata: %o', metadata)
     }
 }

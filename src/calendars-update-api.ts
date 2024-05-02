@@ -61,11 +61,11 @@ app.post('/', async (req, res) => {
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
 
-    logger.info('Launching browser', { orgId })
+    logger.info( { orgId }, 'Launching browser')
     const browser = await launchBrowser()
 
     try {
-        logger.info('Updating calendars for org ' + orgId, { orgId })
+        logger.info( { orgId }, 'Updating calendars for org %s', orgId)
         await update(browser, bucket, db, ClockFactory.native(), orgId)
     } catch (err: any) {
         logger.error(err, 'Error in update()')

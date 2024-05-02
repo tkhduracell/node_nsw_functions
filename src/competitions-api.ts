@@ -13,7 +13,7 @@ app.use(loggerMiddleware)
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => { logger.info(`Listening on port ${port}`) })
+    app.listen(port, () => { logger.info('🚀 Listening on port %s', port) })
 }
 
 app.get('/', async (req, res) => {

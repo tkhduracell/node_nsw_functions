@@ -66,14 +66,13 @@ export class Notifications {
                 nsw_subject_id: event.uid()
             }
         }
-        logger.info('Sending notification for new event!', {
-            cal,
+        logger.info(cal, 'Sending notification for new event! %o', {
             notification: message.notification,
             event: pick(event.toJSON(), 'id', 'start', 'summary', 'description')
         })
 
         const id = await this.messaging.send(message)
-        logger.info('Sent notification ' + id, { cal })
+        logger.info(cal, 'Sent notification %s', id)
 
         return notification
     }

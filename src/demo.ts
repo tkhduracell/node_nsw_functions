@@ -29,7 +29,7 @@ async () => {
     const start = startOfDay(parseISO(date))
     const end = startOfDay(addDays(start, 1))
 
-    logger.info({ start, end })
+    logger.info({ start, end }, "Start and end dates")
     logger.info({
         start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
         end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
@@ -82,7 +82,7 @@ async () => {
         venueName: 'Ceylon'
     })
 
-    logger.debug(JSON.stringify(result, null, 2))
+    logger.debug('%o', result)
     process.exit(0)
 }
 

@@ -32,7 +32,7 @@ export class ActivityApi {
         const startTime = `${formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
         const endTime = `${formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
 
-        logger.debug('Fetching activities', { startTime, endTime, id: calendarId })
+        logger.info('Fetching activities: %o', { startTime, endTime, id: calendarId })
         const response = await this.fetch(`${this.baseUrl}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
             method: 'GET',
             headers: {
@@ -56,7 +56,7 @@ export class ActivityApi {
 
         const state = schema.safeParse(data)
         if (!state.success) {
-            logger.warn("Invalid payload from API", { err: state.error.stack, response: data })
+            logger.warn(state.error, "Invalid payload from API: %s", { data })
             throw new Error('No json response from API: ' + state.error.flatten().formErrors.join(','))
         }
 
@@ -71,7 +71,7 @@ export class ActivityApi {
         const start = addMinutes(addHours(startOfDate, parseInt(hh)), parseInt(mm))
         const end = addMinutes(start, duration)
 
-        logger.info('Calling bookActivityRaw', { activity: { startOfDate, start, end } })
+        logger.info('Calling bookActivityRaw %o', { activity: { startOfDate, start, end } })
         return await this.bookActivityRaw(calendarId, {
             name: title,
             description,
@@ -102,7 +102,7 @@ export class ActivityApi {
             },
             reSendSummon: false
         }
-        logger.info('Calling IDO SaveActivity', { activity: body.activity })
+        logger.info('Calling IDO SaveActivity %o', { activity: body.activity })
 
         const result = await this.fetch(`${this.baseUrl}/Activities/SaveActivity`, {
             headers: {
@@ -125,10 +125,10 @@ export class ActivityApi {
                 const [out] = json.activities
                 return out
             }
-            logger.error('Unable to create activity', { json })
+            logger.error({json}, 'Unable to create activity: %o', { json })
             throw new Error('Unable to create activity')
         }
-        logger.warn('Unable to create activity due to IDO error', { url, ok, status, statusText })
+        logger.warn('Unable to create activity due to IDO error: %o', { url, ok, status, statusText })
         throw new Error('Unable to create activity')
     }
 }

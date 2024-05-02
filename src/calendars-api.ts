@@ -109,7 +109,7 @@ app.get('/update', async (req, res) => {
     const db = getFirestore()
 
     try {
-        logger.info('Getting calendar status', { orgId })
+        logger.info({ orgId }, 'Getting calendar status')
         const result = await status(db, orgId, ClockFactory.native())
         return res.status(200)
             .json(result)
@@ -130,7 +130,7 @@ app.get('/book/search', cors, async (req, res) => {
 
     const query = await QuerySchema.safeParseAsync(req.query)
     if (!query.success) {
-        logger.error('Invalid request', query.error.flatten().fieldErrors)
+        logger.error(query.error, 'Invalid request %o', query.error.flatten().fieldErrors)
         return res.status(400).send(JSON.stringify({
             sucesss: false,
             error: 'Invalid request: ' + Object.keys(query.error.flatten().fieldErrors).join(',')
@@ -151,7 +151,7 @@ app.get('/book/search', cors, async (req, res) => {
     } catch (err: any) {
         if ('response' in err) {
             const { status, statusText, url } = err.response as Response
-            logger.error('Unable to fetch activities, got HTTP ' + status, { response: { status, statusText, url } })
+            logger.error({ response: { status, statusText, url } }, 'Unable to fetch activities, got HTTP %d (%s)', status, statusText)
         } else {
             logger.error(err, 'Unable to fetch activities')
         }
@@ -190,7 +190,7 @@ app.post('/book', async (req, res) => {
 
         const actApi = new ActivityApi(orgId, baseUrl, await cookies(), fetch)
 
-        logger.info('Booking activity', event)
+        logger.info({event}, 'Booking activity')
         try {
             const { activityId } = await actApi.bookActivity(calendarId, event)
             res.status(200).send({
@@ -198,13 +198,13 @@ app.post('/book', async (req, res) => {
                 id: activityId
             })
 
-            logger.info('Triggering update of activity in cloud schduler', event)
+            logger.info({event}, 'Triggering update of activity in cloud schduler')
             triggerAsyncActivityUpdate()
 
         } catch (err: any) {
             if ('response' in err) {
                 const { status, statusText, url } = err.response as Response
-                logger.error('Unable to complete booking, got HTTP ' + status, { response: { status, statusText, url } })
+                logger.error({ response: { status, statusText, url } }, 'Unable to complete booking, got HTTP %d (%s)', status, statusText)
             } else {
                 logger.error(err, 'Unable to complete booking, unknown error')
             }
@@ -214,7 +214,7 @@ app.post('/book', async (req, res) => {
             })
         }
     } else {
-        logger.error('Invalid request', { error: data.error.flatten().fieldErrors })
+        logger.error({ error: data.error }, 'Invalid request: %o', { error: data.error.flatten().fieldErrors })
         res.status(400).json({
             sucesss: false,
             error: 'Invalid booking: ' + Object.keys(data.error.flatten().fieldErrors).join(',')
@@ -227,8 +227,8 @@ function triggerAsyncActivityUpdate() {
     const schduler = new CloudSchedulerClient({ projectId: GCLOUD_PROJECT })
     const jobName = 'calendar-update-lean-5m'
     schduler.runJob({ name: `projects/${GCLOUD_PROJECT}/locations/europe-west6/jobs/${jobName}` })
-        .then(() => logger.info('Schduling of ' + jobName + ' complete!'))
-        .catch((err: any) => logger.warn('Schduling of ' + jobName + ' failed!', err))
+        .then(() => logger.info('Schduling of %s complete!', jobName))
+        .catch((err: any) => logger.warn(err, 'Schduling of %s failed!', jobName))
 }
 
 export default app

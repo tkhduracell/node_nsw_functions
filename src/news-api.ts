@@ -62,7 +62,7 @@ app.get('/', async (req, res) => {
     const params = await z.object({ exclude: z.enum(['competitions']).optional() }).safeParseAsync(req.query)
 
     if (!params.success) {
-        logger.error('Invalid query parameters', params.error)
+        logger.error('Invalid query parameters: %o', params.error)
         res.status(400)
         res.json({ error: 'Invalid query parameters' })
         return
@@ -79,7 +79,7 @@ app.get('/', async (req, res) => {
         res.header('Cache-Control', 'no-store')
         res.json(feed)
     } catch (err: any) {
-        logger.error('Failed fetching feed', { err })
+        logger.error(err, 'Failed fetching feed')
         res.status(500)
         res.json({ error: err.message });
     }
@@ -103,7 +103,7 @@ app.post('/update', async (req, res) => {
         await notify(docRef, data, feed, !!force)
         return res.json({ message: 'New items' })
     } catch (err: any) {
-        logger.error('Unable to notify', { err })
+        logger.error(err, 'Unable to notify')
         return res.status(500).json({ error: err.message ?? 'Internal Server Error' })
     }
 })
@@ -115,7 +115,7 @@ async function notify(docRef: DocumentReference, data: NewsState, feed: News, fo
     }
 
     if (newest && (!data.last_news_item || newest.published > data.last_news_item?.published || force)) {
-        logger.info('New news item', { newest, last: data.last_news_item })
+        logger.info({ newest, last: data.last_news_item }, 'New news item!')
 
         await docRef.update({ last_news_item: newest, updated_at: FieldValue.serverTimestamp(), })
         const imageUrl = newest.media.thumbnail.url
@@ -147,7 +147,7 @@ async function notify(docRef: DocumentReference, data: NewsState, feed: News, fo
                 nsw_subject_id: newest.id
             }
         }
-        logger.info('Sent notification', { message })
+        logger.info('Sent notification: %o', message)
 
         await getMessaging().send(message)
 
@@ -165,7 +165,7 @@ async function uploadToStorage(feed: News) {
     const destination = `news.json`
     const file = bucket.file(destination)
 
-    logger.info(`Uploading news dump to ${file.cloudStorageURI.toString()}`)
+    logger.info('Uploading news dump to %s', file.cloudStorageURI.toString())
     await file.save(JSON.stringify(feed), { metadata: {
         metadata: {},
         cacheControl: 'public, max-age=30',

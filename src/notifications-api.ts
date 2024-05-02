@@ -59,7 +59,7 @@ app.post('/subscribe', async (req, res) => {
         topic: FieldValue.delete()
     }, { merge: true })
 
-    logger.info('Successfully subscribed to topic', { topic, response })
+    logger.info({ topic, response }, 'Successfully subscribed to topic')
     return res.status(200).send(response)
 })
 
@@ -74,7 +74,7 @@ app.post('/unsubscribe', async (req, res) => {
         topic: FieldValue.delete()
     }, { merge: true })
 
-    logger.info('Successfully unsubscribed from topic', { topic, response })
+    logger.info({ topic, response }, 'Successfully unsubscribed from topic')
     return res.status(200).send(response)
 })
 
@@ -131,9 +131,9 @@ export async function notification ({ token, topic, title, body }: { token?: str
         throw new Error(`Either 'token' or 'topic' must be provided`)
     }
 
-    logger.info('Sending notification', { message })
+    logger.info({ message }, 'Sending notification')
     const resp = await getMessaging().send(message)
-    logger.info('Sent notification!', { resp, message })
+    logger.info({ resp, message }, 'Sent notification!')
     return resp
 }
 
