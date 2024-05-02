@@ -3,7 +3,9 @@ import { HttpFetch } from './types'
 
 
 test('should fetch activities', async () => {
-    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve({}) } as Response)
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve({
+        listedActivity: []
+    }) } as Response)
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch as HttpFetch)
 
@@ -13,6 +15,16 @@ test('should fetch activities', async () => {
     const [url, opts] = call
     expect(url).toBe('http://mock.app/activities/getactivities?calendarId=1&startTime=2023-11-19+00%3A00%3A00&endTime=2023-11-20+00%3A00%3A00')
     expect(opts).toHaveProperty('method', 'GET')
+})
+
+test('should throw if invalid format on activities', async () => {
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve({
+        listedActivity: 123
+    }) } as Response)
+
+    const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch as HttpFetch)
+
+    expect(api.fetchActivitiesOnDate('2023-11-18T23:00:00.000Z', '1')).rejects.toThrow('No json response from API:')
 })
 
 test('should book activities', async () => {
