@@ -1,42 +1,34 @@
-import winston from 'winston'
-import { AsyncLocalStorage } from 'node:async_hooks'
+import pino from 'pino'
+
+import { AsyncLocalStorage } from 'async_hooks'
+import { randomUUID } from 'crypto'
+
 import { type Request, type NextFunction, type Response } from 'express'
 
-const asyncLocalStorage = new AsyncLocalStorage()
+const asyncLocalStorage = new AsyncLocalStorage<{ requestId: string}>()
 
 export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    const requestId = req.headers['X-Cloud-Trace-Context'] ?? req.headers['x-cloud-trace-context'] ?? 'N/A'
-    asyncLocalStorage.run(requestId, () => next())
+    const requestId = req.headers['X-Cloud-Trace-Context'] ?? req.headers['x-cloud-trace-context'] ?? randomUUID()
+    asyncLocalStorage.run({requestId: requestId as string}, () => next())
 }
 
-export const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL ?? 'debug',
-    transports: [new winston.transports.Console({ handleExceptions: true, handleRejections: true })],
-    format: process.env.NODE_ENV === 'production'
-        ? winston.format.combine(
-            winston.format(info => {
-                const traceId = asyncLocalStorage.getStore() as string
-                return traceId
-                    ? {
-                        ...info,
-                        'logging.googleapis.com/spanId': traceId,
-                        'logging.googleapis.com/trace': `projects/${process.env.GCLOUD_PROJECT}/traces/${traceId}`,
-                        'logging.googleapis.com/trace_sampled': true
-                    }
-                    : info
-            })(),
-            winston.format.errors({ stack: true }),
-            winston.format.json()
-        )
-        : winston.format.combine(
-            winston.format(info => {
-                const traceId = asyncLocalStorage.getStore() as string
-                return traceId
-                ? { ...info, traceId }
-                : info
-            })(),
-            winston.format.timestamp(),
-            winston.format.errors({ stack: true }),
-            winston.format.colorize({ message: true, level: true })
-        )
+const transport = process.env.NODE_ENV !== 'production' ? {
+    target: 'pino-pretty',
+    options: {
+        colorize: true
+    },
+} : undefined
+
+export const logger = pino({
+    level: process.env.LOG_LEVEL ?? 'info',
+    transport,
+    mixin () {
+        const requestId = asyncLocalStorage.getStore()?.requestId ?? randomUUID()
+        return {
+            requestId,
+            'logging.googleapis.com/spanId': requestId,
+            'logging.googleapis.com/trace': `projects/${process.env.GCLOUD_PROJECT}/traces/${requestId}`,
+            'logging.googleapis.com/trace_sampled': true
+         }
+    }
 })

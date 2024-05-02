@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Utility HTTP functions related to nackswinget",
   "main": "dist/index.js",
+  "type": "commonjs",
   "engines": {
     "node": "20"
   },
@@ -11,13 +12,19 @@
     "build": "tsc",
     "test": "DOTENV_CONFIG_PATH=.env.test jest",
     "test:watch": "DOTENV_CONFIG_PATH=.env.test jest --watchAll",
-    "dev:calendars-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/calendars-api.ts'",
-    "dev:calendars-update-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/calendars-update-api.ts'",
-    "dev:notifications-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/notifications-api.ts'",
-    "dev:news-api": "nodemon --watch src --ext ts --exec 'node --inspect --loader ts-node/esm -r dotenv/config src/news-api.ts'",
+
+    "run:calendars-api": "node -r ts-node/register --inspect -r dotenv/config src/calendars-api.ts",
+    "run:calendars-update-api": "node -r ts-node/register --inspect -r dotenv/config src/calendars-update-api.ts",
+    "run:notifications-api": "node -r ts-node/register --inspect -r dotenv/config src/notifications-api.ts",
+    "run:news-api": "node -r ts-node/register --inspect -r dotenv/config src/news-api.ts",
+    "dev:calendars-api": "nodemon --watch src --ext ts --exec 'npm run run:calendars-api'",
+    "dev:calendars-update-api": "nodemon --watch src --ext ts --exec 'npm run run:calendars-update-api'",
+    "dev:notifications-api": "nodemon --watch src --ext ts --exec 'npm run run:notifications-api'",
+    "dev:news-api": "nodemon --watch src --ext ts --exec 'npm run run:news-api'",
+
     "dev:index": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
     "dev:book": "live-server --port=3000 --watch=static/ --mount=/:static/booking.html --proxy=/book/search:https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api/book/search",
-    "demo": "node --inspect --loader ts-node/esm -r dotenv/config src/demo.ts",
+    "demo": "node --inspect -r ts-node/register -r dotenv/config src/demo.ts",
     "clean": "rm -rf dist"
   },
   "author": "Filip Lindqvist",
@@ -36,14 +43,13 @@
     "firebase-admin": "^12.0.0",
     "ical-generator": "^6.0.1",
     "lodash": "^4.17.21",
+    "pino": "^9.0.0",
     "puppeteer": "^21.7.0",
     "rss-to-json": "^2.1.1",
-    "source-map-support": "^0.5.21",
-    "winston": "^3.13.0",
-    "zod": "^3.22.4"
+    "zod": "^3.23.5"
   },
   "devDependencies": {
-    "@tsconfig/node20": "^20.1.2",
+    "@tsconfig/node20": "^20.1.4",
     "@types/cors": "^2.8.17",
     "@types/jest": "^29.5.11",
     "@types/lodash": "^4.14.202",
@@ -58,6 +64,7 @@
     "jest": "^29.7.0",
     "live-server": "^1.2.2",
     "nodemon": "^3.0.2",
+    "pino-pretty": "^11.0.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
