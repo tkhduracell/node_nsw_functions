@@ -56,7 +56,7 @@ export class ActivityApi {
 
         const state = schema.safeParse(data)
         if (!state.success) {
-            logger.warn(state.error, "Invalid payload from API: %s", { data })
+            logger.warn(state.error, "Invalid payload from API: %o", { data })
             throw new Error('No json response from API: ' + state.error.flatten().formErrors.join(','))
         }
 
