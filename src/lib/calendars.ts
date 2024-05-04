@@ -146,7 +146,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
         const { data, response } = await actApi.fetchActivities(lastquater, inayear, cal.id)
 
         const calendar = buildCalendar(response.url, data, cal)
-        logger.info(cal, `Built ICalendar successfully with %d events: %o`,calendar.length())
+        logger.info(cal, `Built ICalendar successfully with %d events`, calendar.length())
 
         const metadata = await fetchMetadata(cal, db)
 
