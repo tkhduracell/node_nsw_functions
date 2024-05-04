@@ -415,7 +415,7 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
-          YYYYMMDD=$(date '+%Y-%m-%d %H:%M:%S %z')
+          YYYYMMDD=$(date '+%Y-%m-%d %H:%M:%S')
           MESSAGE=" 🚀 NSW functions has been deployed! 🚀\nAt: ${YYYYMMDD}"
           curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" ${SLACK_WEBHOOK}
 

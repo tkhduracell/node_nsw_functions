@@ -15,4 +15,5 @@
     },
     "eslint.format.enable": true,
     "editor.snippetSuggestions": "none",
+    "typescript.tsdk": "node_modules/typescript/lib",
 }
