@@ -50,14 +50,12 @@ export class ActivityApi {
 
         const data = await response.json()
 
-        const schema = z.object({
-            listedActivity: z.array(z.object({}))
-        })
+        const schema = z.array(z.object({}))
 
         const state = schema.safeParse(data)
         if (!state.success) {
-            logger.warn(state.error, "Invalid payload from API: %o", { data })
-            throw new Error('No json response from API: ' + state.error.flatten().formErrors.join(','))
+            logger.warn(state.error, "Invalid payload from API: %o", data)
+            throw new Error('No json response from API: ' + JSON.stringify(data))
         }
 
         return { data: data as ListedActivities, response }

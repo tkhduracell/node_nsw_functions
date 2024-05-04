@@ -3,9 +3,8 @@ import { HttpFetch } from './types'
 
 
 test('should fetch activities', async () => {
-    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve({
-        listedActivity: []
-    }) } as Response)
+    const resp = [{}]
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch as HttpFetch)
 
@@ -18,9 +17,7 @@ test('should fetch activities', async () => {
 })
 
 test('should throw if invalid format on activities', async () => {
-    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve({
-        listedActivity: 123
-    }) } as Response)
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve({}) } as Response)
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch as HttpFetch)
 
