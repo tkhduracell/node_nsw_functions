@@ -1,5 +1,5 @@
 import { type Browser, type Page } from 'puppeteer'
-import { mapKeys, pick, sortBy } from 'lodash'
+import { mapKeys, omit, pick, sortBy } from 'lodash'
 import { getMessaging, type Message } from 'firebase-admin/messaging'
 import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore'
 import { addDays, differenceInMinutes, formatDistance, startOfDay, subDays } from 'date-fns'
@@ -156,7 +156,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
 
         const icsFile = await writeICStoGcs(cal, bucket, metadata, calendar.toString())
 
-        logger.info(cal, 'Saving metadata: %o', metadata)
+        logger.info(cal, 'Saving metadata: %o', omit(metadata, 'last_notifications'))
         await db.collection('calendars')
             .doc(cal.id ?? '')
             .set({
@@ -234,11 +234,10 @@ async function fetchMetadata(cal: Calendars[number], db: Firestore): Promise<Cal
 
     Object.assign(metadata, previous)
     metadata.calendar_last_uid = metadata.calendar_last_uid ?? ''
-    logger.info(cal, 'Read old metadata: %o', metadata)
+    logger.info(cal, 'Read old metadata: %o', omit(metadata, 'last_notifications'))
 
     return metadata
 }
-
 
 async function sleep(ms: number = 20000) {
     return await new Promise((resolve, reject) => setTimeout(resolve, ms))
@@ -249,7 +248,6 @@ async function notifyNewEvent(clock: Clock, event: ICalEvent, creator: string | 
     const message = await builder.send(clock, event, creator, cal)
     return message
 }
-
 
 async function writeJSONManifest(bucket: Bucket) {
     const [files] = await bucket.getFiles({ prefix: 'cal_' })
@@ -323,6 +321,6 @@ async function peekAndNotifyEvent(cal: { id: string; name: string; orgId: string
 
         metadata.last_notifications = [notification, ...metadata.last_notifications].slice(0, 5)
     } else {
-        logger.warn(cal, 'No next event found, metadata: %o', metadata)
+        logger.warn(cal, 'No next event found, metadata: %o', omit(metadata, 'last_notifications'))
     }
 }
