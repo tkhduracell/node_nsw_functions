@@ -105,7 +105,7 @@ export class ActivityApi {
         }
 
         if (description.toLowerCase().startsWith('test - ')) {
-            logger.info('Testing of SaveActivity, ignoring %o', { activity: body.activity })    
+            logger.info('Testing of SaveActivity, ignoring %o', { activity: body.activity })
             return { activityId: 0 }
         }
 
