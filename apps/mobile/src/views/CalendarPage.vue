@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header>
       <ion-toolbar>
-        <ion-img src="./nsw-logo.png" style="margin-start: 1em; height: 32px;"></ion-img>
+        <ion-img src="./nsw-logo.png" :style="{ marginStart: '1em', height: '32px' }"></ion-img>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true" class="ion-padding">
@@ -22,27 +22,29 @@
 
       <ion-card v-if="subscription.isSubscribed">
         <ion-card-header>
-          <ion-card-title>Bevaka</ion-card-title>
+          <ion-card-title>Bevakning</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Du bevakar friträningar på denna enhet.</p>
-          <ion-button @click="unsubscribe">
+          <ion-button @click="unsubscribe" fill="solid">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
             <span v-if="!subscription.isLoading">Avsluta bevakning</span>
           </ion-button>
         </ion-card-content>
       </ion-card>
 
-      <ion-card v-if="subscription.isSupported && !subscription.isSubscribed">
+      <ion-card v-if="subscription.isSupported && !subscription.isSubscribed && !subscription.isDismissed">
         <ion-card-header>
-          <ion-card-title>Bevaka</ion-card-title>
+          <ion-card-title>Vill du få notiser?</ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <p>Du kan bevaka friträning och få notiser när någon bokar ny träning.</p>
-          <ion-button @click="subscribe">
+          <p>Du kan bevaka friträning och få notiser när någon bokar ny träning. Detta genom att trycka på knappen nedan
+            och godkänna notifiktioner.</p>
+          <ion-button @click="subscribe" fill="solid">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
             <span v-if="!subscription.isLoading">Bevaka friträningar</span>
           </ion-button>
+          <ion-button @click="subscription.isDismissed = true" fill="clear" size="small">Nej tack</ion-button>
         </ion-card-content>
       </ion-card>
 
@@ -115,6 +117,9 @@
           </ion-list>
         </ion-card-content>
       </ion-card>
+      <ion-button fill="clear" size="small" v-if="subscription.isDismissed" @click="subscription.isDismissed = false">
+        Vill du ha notifiktioner?
+      </ion-button>
     </ion-content>
   </ion-page>
 </template>
@@ -240,10 +245,13 @@ PushNotifications.addListener('pushNotificationActionPerformed', (notification) 
 function scrollIfToasted(elm: InstanceType<typeof IonCard>, id: number) {
   if (toasted.value == id + '') {
     const e = elm.$el
+    console.log('Scrolling to', id, 'in 1 sec & 2 secs')
     setTimeout(() => {
-      console.log('Scrolling to', id)
       e.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 1000);
+    setTimeout(() => {
+      e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 2000);
   }
 }
 

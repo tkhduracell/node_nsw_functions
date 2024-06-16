@@ -1,24 +1,28 @@
-import { onMounted, onUnmounted, reactive } from "vue";
+import { MaybeRef, computed, onMounted, onUnmounted, reactive } from "vue";
 import { useClient } from "./client";
 import { FCM } from "@capacitor-community/fcm";
 import { PushNotifications } from "@capacitor/push-notifications";
+import { useLocalStorage } from "@vueuse/core";
 
 type State = {
   isSubscribed: boolean | null;
   isSupported: boolean;
   isLoading: boolean;
   isDenied: boolean;
+  isDismissed: MaybeRef<boolean>;
   error: any;
 };
 
 export function useSubscription(topic: string) {
   const { client } = useClient();
 
+  const dismissed = useLocalStorage("subscription-dismissed", false);
   const data = reactive<State>({
     isSubscribed: null,
     isSupported: true,
     isLoading: true,
     isDenied: false,
+    isDismissed: computed({ set: val => dismissed.value = val, get: () => dismissed.value }),
     error: null,
   });
 
