@@ -7,10 +7,13 @@ import { type Protocol } from 'puppeteer'
 import { type fetch } from 'cross-fetch'
 import { logger } from '../logging'
 import z from 'zod'
+import { de } from 'date-fns/locale'
 
 export interface CookieProvider {
     get(): Protocol.Network.CookieParam[]
 }
+
+export type ActivityResult = Pick<ActivityCreateResponse['activities'][number], 'activityId'>
 
 export class ActivityApi {
 
@@ -62,7 +65,7 @@ export class ActivityApi {
     }
 
 
-    async bookActivity(calendarId: string, { location, date, time, duration, title, description }: ActivityBooking): Promise<ActivityCreateResponse['activities'][0]> {
+    async bookActivity(calendarId: string, { location, date, time, duration, title, description }: ActivityBooking): Promise<ActivityResult> {
         const [hh, mm] = time.split(/[:$]/)
 
         const startOfDate = parseISO(date)
@@ -79,7 +82,7 @@ export class ActivityApi {
         })
     }
 
-    async bookActivityRaw(calendarId: string, { venueName, start, end, name, description }: ActivityBookingRaw): Promise<ActivityCreateResponse['activities'][0]> {
+    async bookActivityRaw(calendarId: string, { venueName, start, end, name, description }: ActivityBookingRaw): Promise<ActivityResult> {
         const startDateTimeString = formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
         const endDateTimeString = formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
 
@@ -100,6 +103,12 @@ export class ActivityApi {
             },
             reSendSummon: false
         }
+
+        if (description.toLowerCase().startsWith('test - ')) {
+            logger.info('Testing of SaveActivity, ignoring %o', { activity: body.activity })    
+            return { activityId: 0 }
+        }
+
         logger.info('Calling IDO SaveActivity %o', { activity: body.activity })
 
         const result = await this.fetch(`${this.baseUrl}/Activities/SaveActivity`, {
