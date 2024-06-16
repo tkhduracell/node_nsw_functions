@@ -169,6 +169,7 @@ app.get('/book', async (req, res) => {
         }
     })
 })
+app.options('/book', cors);
 
 app.post('/book', async (req, res) => {
     const BookingSchema = z.object({
