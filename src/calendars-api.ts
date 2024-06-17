@@ -50,7 +50,7 @@ app.get('/', async (req, res) => {
         return res.header('Content-Type', 'application/json').send(file).end()
     }
 
-    const {id, dl} = z.object({
+    const { id, dl } = z.object({
         id: z.string().regex(/\d+/),
         dl: z.string().transform(v => v === 'true').default("true")
     }).parse(req.query)
@@ -191,7 +191,7 @@ app.post('/book', async (req, res) => {
 
         const actApi = new ActivityApi(orgId, baseUrl, await cookies(), fetch)
 
-        logger.info({event}, 'Booking activity')
+        logger.info({ event }, 'Booking activity')
         try {
             const { activityId } = await actApi.bookActivity(calendarId, event)
             res.status(200).send({
@@ -199,7 +199,7 @@ app.post('/book', async (req, res) => {
                 id: activityId
             })
 
-            logger.info({event}, 'Triggering update of activity in cloud schduler')
+            logger.info({ event }, 'Triggering update of activity in cloud schduler')
             triggerAsyncActivityUpdate()
 
         } catch (err: any) {
