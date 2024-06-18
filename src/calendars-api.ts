@@ -199,8 +199,12 @@ app.post('/book', async (req, res) => {
                 id: activityId
             })
 
-            logger.info({ event }, 'Triggering update of activity in cloud schduler')
-            triggerAsyncActivityUpdate()
+            if (activityId === 0) {
+                logger.info({ event }, 'Testing complete, skipping update schedule.')
+            } else {
+                logger.info({ event }, 'Triggering update of activity in cloud schduler.')
+                triggerAsyncActivityUpdate()
+            }
 
         } catch (err: any) {
             if ('response' in err) {
