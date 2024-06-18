@@ -162,6 +162,7 @@ app.get('/book/search', cors, async (req, res) => {
     }
 })
 
+
 app.get('/book', async (req, res) => {
     res.sendFile(join(__dirname, '..', 'static', 'booking.html'), {
         headers: {
@@ -170,7 +171,6 @@ app.get('/book', async (req, res) => {
     })
 })
 app.options('/book', cors);
-
 app.post('/book', async (req, res) => {
     const BookingSchema = z.object({
         title: z.string().min(3),
