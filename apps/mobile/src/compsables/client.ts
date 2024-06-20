@@ -64,7 +64,7 @@ export class NswApiClient {
     async searchByDateRange(calendarId = '337667', days = 30): Promise<{ date: string, json: Activity[] }[]> {
       const all = await fetch(`https://storage.googleapis.com/${this.bucket}/${calendarId}.${days}d.json`)
         .then(resp => resp.json() as Promise<Activity[]>)
-      const grouped = groupBy(all, a => format(a.startTime, 'yyyy-MM-dd'))
+      const grouped = groupBy(all, a => format(new Date(a.startTime), 'yyyy-MM-dd'))
 
       return sortBy(Object.keys(grouped), i => i)
         .map(date => ({ json: grouped[date], date }))
