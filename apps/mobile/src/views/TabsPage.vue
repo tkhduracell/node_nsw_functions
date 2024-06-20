@@ -9,7 +9,7 @@
           <ion-label>Kalender</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="tab2" href="/tabs/book" v-if="bookingEnabled">
+        <ion-tab-button tab="tab2" href="/tabs/book" v-if="dev || bookingEnabled">
           <ion-icon aria-hidden="true" :icon="accessibility" />
           <ion-label>Boka</ion-label>
         </ion-tab-button>
@@ -31,6 +31,8 @@ import { onLongPress, useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 import { Toast } from '@capacitor/toast';
 import { FCM } from '@capacitor-community/fcm';
+
+const dev = process.env.NODE_ENV !== 'production'
 
 const showDeviceToken = () => {
   FCM.getToken().then(({ token }) => {
@@ -55,5 +57,6 @@ onLongPress(newsButtonRef, showDeviceToken, { delay: 1000 })
 ion-tab-button {
   /* Prevents long-press from selecting text */
   user-select: none;
+  --user-select: none;
 }
 </style>

@@ -138,6 +138,10 @@
   }
 }
 
+ion-content {
+  --padding-top: 0em;
+}
+
 ion-item[data-calendar] {
   --border-radius: 6px;
   margin-bottom: 4px;

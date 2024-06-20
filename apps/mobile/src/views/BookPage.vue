@@ -11,7 +11,8 @@
           <ion-card-content>
 
             <b style="display: block; margin-top: 1em;">Typ av friträning</b>
-            <ion-select label-placement="floating" v-model="data.mode" interface="action-sheet">
+            <ion-select label-placement="floating" label="Välj typ av träning" v-model="data.mode"
+              interface="action-sheet" fill="solid">
               <ion-select-option value="regular">Friträning</ion-select-option>
               <ion-select-option value="theme">Tematräning</ion-select-option>
             </ion-select>
@@ -23,10 +24,11 @@
             </div>
 
             <b style="display: block; margin-top: 1em;">Ansvarig</b>
-            <ion-input label="Ditt namn" v-model="data.responsible" label-placement="floating"></ion-input>
-            <ion-input label="Telefonnummmer" v-model="data.tel" label-placement="floating"></ion-input>
+            <ion-input label="Ditt namn" v-model="data.responsible" label-placement="floating" fill="solid"></ion-input>
+            <ion-input label="Telefonnummmer" v-model="data.tel" label-placement="floating" fill="solid"></ion-input>
 
             <b style="display: block; margin-top: 1em; margin-bottom: 0.5em;">Välj Datum / Tid</b>
+
             <ion-datetime :min="min" locale="sv-SE" :first-day-of-week="1" v-model="data.date" presentation="date-time"
               minuteValues="0,15,30,45" :prefer-wheel="true"
               hourValues="7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23">
@@ -36,7 +38,7 @@
             <div v-if="activities" class="activities">
               <b v-if="activities.length > 0">Andra aktiviteter denna dag<br /></b>
               <b v-else>✅ Inga andra aktiviteter denna dag</b>
-              <div v-for="act in activities" class="activity" :key="act.id">
+              <div v-for="act in activities" class="activity" :key="act.calendarId + ':' + act.id">
                 <div class="startTime">{{ act.startTime.replace(/.*T(\d\d:\d\d).*/gi, '$1') }}</div>
                 <div class="name-duration">
                   <div class="name">{{ act.name }}</div>
@@ -46,8 +48,13 @@
             </div>
 
             <b style="display: block; margin-top: 1em;">Träningens längd</b>
-            <ion-range :label="data.duration ? `${data.duration} minuter` : ''" label-placement="stacked" :ticks="true"
-              :snaps="true" :step="15" :min="30" :max="120" v-model="data.duration"></ion-range>
+            <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center;">
+              <ion-button :fill="data.duration === duration ? 'solid' : 'outline'" expand="block"
+                style="flex-basis: 32%;" @click="data.duration = duration"
+                v-for="duration in [60, 75, 90, 60 * 2, 60 * 2 + 30, 60 * 3]" :key="'dir' + duration">
+                {{ duration }} min
+              </ion-button>
+            </div>
 
             <b style="display: block; margin-top: 1em;">Lösenord</b>
             <ion-input label="Vårt gemensama lösenord" v-model="data.pass" type="password"
@@ -89,6 +96,18 @@ ion-range {
 
 ion-label {
   font-size: 5em;
+}
+
+ion-input {
+  --background: var(--ion-color-light);
+  --border-radius: 6px;
+
+  --padding-bottom: 16px;
+  --padding-end: 10px;
+  --padding-start: 10px;
+  --padding-top: 2px;
+
+  margin-top: 0.4em;
 }
 
 .activities {
@@ -141,12 +160,15 @@ ion-label {
 import { Toast } from '@capacitor/toast';
 import {
   IonPage, IonContent, IonDatetime, IonInput,
-  IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonRange
+  IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonButton
 
 } from '@ionic/vue';
 import { useLocalStorage } from '@vueuse/core';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
+import { formatInTimeZone } from 'date-fns-tz'
+import { addHours, startOfTomorrow } from 'date-fns';
 
 const router = useRouter()
 
@@ -161,6 +183,7 @@ const min = computed(() => {
   const today = new Date()
   const inOneHour = new Date(today.getTime() + 60 * 60 * 1000)
   today.setHours(inOneHour.getHours(), 0, 0, 0)
+
   return today.toISOString()
 })
 
@@ -185,7 +208,7 @@ const data = reactive({
     get: () => _tel.value,
     set: (value) => _tel.value = value
   }),
-  duration: undefined as number | undefined,
+  duration: 120 as number | undefined,
   date: undefined as string | undefined
 });
 
@@ -210,27 +233,39 @@ type Activity = {
   duration: number;
 }
 
-const activities = ref<Activity[]>([
-  //{ id: 0, name: 'Friträning', description: 'Filip - 00000', calendarId: 123, startTime: '2024-06-01T12:00:00', endTime: '', duration: 120 },
-  //{ id: 0, name: 'Tematräning - Boogie Woogie', description: 'Filip - 00000', calendarId: 123, startTime: '2024-06-01T14:00:00', endTime: '', duration: 120 },
-  //{ id: 0, name: 'Friträning', description: 'Filip - 00000', calendarId: 123, startTime: '2024-06-01T16:00:00', endTime: '', duration: 120 }
-])
+const activities = ref<Activity[]>([])
 
 const baseUrl = 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api'
 watch(() => data.date, () => {
-  fetch(`${baseUrl}/book/search?date=${data.date}`)
-    .then(response => response.json())
-    .then(data => {
-      if (!data.success) {
-        throw new Error(data.error)
+  axios.get(`${baseUrl}/book/search?date=${data.date}`)
+    .then(response => {
+      if (!Array.isArray(response.data)) {
+        throw new Error(response.data)
       }
-      activities.value = data
+      activities.value = response.data
     })
     .catch(error => {
       console.error('Error:', error)
-      activities.value = []
+      activities.value = [{
+        id: 0, name: str(error), description: error,
+        calendarId: 123, startTime: '2024-06-01T12:00:00', endTime: '', duration: 120
+      }]
     })
 })
+
+onMounted(() => {
+  resetDateToTomorrow();
+})
+
+function resetDateToTomorrow() {
+  let tomorrow = startOfTomorrow()
+  if (tomorrow.getDay() === 0 || tomorrow.getDay() === 6) {
+    tomorrow = addHours(tomorrow, 12)
+  } else {
+    tomorrow = addHours(tomorrow, 19)
+  }
+  data.date = formatInTimeZone(tomorrow, 'Europe/Stockholm', 'yyyy-MM-dd\'T\'HH:mm:ss')
+}
 
 function onSubmit() {
   const book = {
@@ -244,27 +279,34 @@ function onSubmit() {
     calendarId: '337667'
   }
 
-  fetch(`${baseUrl}/book`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(book)
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data)
-      return Toast.show({
-        text: 'Träningen bokades, du skickas nu till kalendern\n\nOBS: Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern', duration: 'long'
+  axios.post(`${baseUrl}/book`, book)
+    .then(async () => {
+      await Toast.show({
+        text: `Träningen bokades, du skickas nu till kalendern\n\nOBS: 
+        Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern`,
+        duration: 'long'
       })
-    })
-    .then(() => {
-      router.push({ name: '/tabs/calendar' })
+      return router.push({ name: '/tabs/calendar' })
     })
     .catch(error => {
-      Toast.show({ text: 'Något gick fel, försök igen' })
+      Toast.show({ text: process.env.NODE_ENV === 'production' ? 'Något gick fel, försök igen' : str(error) })
       console.error('Error:', error)
     })
+}
+
+function str(x: any): string {
+  if (x instanceof Error) {
+    return x.message;
+  } else if (typeof x === 'object') {
+    if (Array.isArray(x)) {
+      return `[${x.map((item: any) => str(item)).join(', ')}]`;
+    } else {
+      const properties = Object.entries(x).map(([key, value]) => `${key}: ${str(value)}`);
+      return `{${properties.join(', ')}}`;
+    }
+  } else {
+    return String(x);
+  }
 }
 
 </script>

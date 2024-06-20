@@ -90,10 +90,6 @@ ion-toolbar {
   background: var(--ion-color-dark);
 }
 
-ion-button {
-  --background: var(--nsw-red);
-}
-
 @media (prefers-color-scheme: dark) {
   /*
    * Dark Colors
