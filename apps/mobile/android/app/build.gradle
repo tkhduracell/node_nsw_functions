@@ -3,7 +3,7 @@ apply plugin: 'com.github.triplet.play'
 
 def keystoreProperties = read(
         System.getenv('ANDROID_KEYSTORE_PROPERTIES')
-                ?: "app/keystore.properties")
+                ?: "/tmp/google_play_keystore.properties")
 def keyStoreFile = System.getenv('ANDROID_KEYSTORE_PATH')
         ?: '/tmp/google_play_keystore'
 
