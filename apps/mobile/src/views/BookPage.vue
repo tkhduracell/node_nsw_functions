@@ -36,15 +36,18 @@
             </ion-datetime>
 
             <div v-if="activities" class="activities">
-              <b v-if="activities.length > 0">Andra aktiviteter denna dag<br /></b>
-              <b v-else>✅ Inga andra aktiviteter denna dag</b>
-              <div v-for="act in activities" class="activity" :key="act.calendarId + ':' + act.id">
-                <div class="startTime">{{ act.startTime.replace(/.*T(\d\d:\d\d).*/gi, '$1') }}</div>
-                <div class="name-duration">
-                  <div class="name">{{ act.name }}</div>
-                  <div class="duration">{{ act.duration }} minuter</div>
+              <b v-if="activities.length > 0" key="header">Andra aktiviteter denna dag<br /></b>
+              <b v-else key="empty-header">✅ Inga andra aktiviteter denna dag</b>
+
+              <TransitionGroup name="list">
+                <div v-for="act in activities" class="activity" :key="act.calendarId + ':' + act.id">
+                  <div class="startTime">{{ act.startTime.replace(/.*T(\d\d:\d\d).*/gi, '$1') }}</div>
+                  <div class="name-duration">
+                    <div class="name">{{ act.name }}</div>
+                    <div class="duration">{{ act.duration }} minuter</div>
+                  </div>
                 </div>
-              </div>
+              </TransitionGroup>
             </div>
 
             <b style="display: block; margin-top: 1em;">Träningens längd</b>
@@ -153,6 +156,26 @@ ion-input {
 
 .errors .error {
   color: var(--ion-color-danger);
+}
+
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.list-leave-active {
+  position: absolute;
 }
 </style>
 <script setup lang="ts">
