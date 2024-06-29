@@ -318,7 +318,10 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: gcloud config set project "${GCLOUD_PROJECT}"
+        run: | 
+          gcloud config set project "${GCLOUD_PROJECT}"
+          gcloud config set functions/region europe-north1
+          gcloud config set functions/gen2 true
 
       - name: Update scheduler calendar-update-lean-5m
         run: |
@@ -326,19 +329,19 @@ jobs:
             --schedule "*/5 0-1,7-23 * * *" \
             --time-zone "Europe/Stockholm" \
             --http-method POST \
-            --uri $(gcloud functions describe calendars-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})/update \
+            --uri $(gcloud functions describe calendars-api --format='value(serviceConfig.uri)')/update \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --description "calendars-api: Lean update NSW GCS .ics files (5m)"
 
       - name: Update scheduler calendar-auth-update
         run: |
-          CRON_PATTERN="$(( RANDOM % 61 )) 0-1/2,6-23/2 * * *"
+          CRON_PATTERN="$(( RANDOM % 60 )) 0-1/2,6-23/2 * * *"
           echo "Scheduling at ${CRON_PATTERN}"
           gcloud scheduler jobs update http calendar-auth-update \
             --schedule "${CRON_PATTERN}" \
             --time-zone "Europe/Stockholm" \
             --http-method POST \
-            --uri $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}") \
+            --uri $(gcloud functions describe calendars-update-api --format='value(serviceConfig.uri)') \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --max-retry-attempts 3 \
             --min-backoff 1m \
@@ -352,15 +355,29 @@ jobs:
             --schedule "${CRON_PATTERN}" \
             --time-zone "Europe/Stockholm" \
             --http-method POST \
-            --uri $(gcloud functions describe news-api --gen2 --format='value(serviceConfig.uri)' --region="${GCLOUD_REGION}")/update \
+            --uri $(gcloud functions describe news-api --format='value(serviceConfig.uri)')/update \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --max-retry-attempts 3 \
             --min-backoff 1m \
             --description "news-update: Update NSW news"
 
+      - name: Update scheduler competitions-update
+        run: |
+          CRON_PATTERN="$(( RANDOM % 60 )) * * * *"
+          echo "Scheduling at ${CRON_PATTERN}"
+          gcloud scheduler jobs update http competitions-update \
+            --schedule "${CRON_PATTERN}" \
+            --time-zone "Europe/Stockholm" \
+            --http-method POST \
+            --uri "$(gcloud functions describe competitions-api --format='value(serviceConfig.uri)')/?force=true" \
+            --location ${GCLOUD_SCHEDULER_REGION} \
+            --max-retry-attempts 3 \
+            --min-backoff 1m \
+            --description "news-update: Update competitions calendar"
+
       - name: Trigger update
         run: |
-          curl -v -X POST $(gcloud functions describe calendars-update-api --gen2 --format='value(serviceConfig.uri)' --region=${GCLOUD_REGION})
+          curl -v -X POST $(gcloud functions describe calendars-update-api --format='value(serviceConfig.uri)')
 
   clean-artifacts:
     runs-on: ubuntu-latest
