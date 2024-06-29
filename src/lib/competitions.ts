@@ -4,10 +4,62 @@ import fetch from 'cross-fetch'
 import z from 'zod'
 
 import { load } from 'cheerio'
-import ical from 'ical-generator'
+import ical, { ICalCalendar} from 'ical-generator'
 import { logger } from '../logging'
+import { Storage } from '@google-cloud/storage'
+import { GCloudOptions } from '../env'
+import { addDays, addHours } from 'date-fns'
 
-export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
+
+const com = z.object({
+    name: z.string(),
+    start_date: z.string(),
+    branch: z.string(),
+    classes: z.string(),
+    type: z.string(),
+    city: z.string(),
+    organizer: z.string(),
+    federation: z.string(),
+    last_regestration_date: z.string(),
+    game_regs: z.string().optional(),
+    open: z.boolean().optional(),
+    cancelled: z.boolean().optional()
+})
+
+type Competition = z.infer<typeof com>
+
+export async function getCompetitions(classTypes?: 'R' | 'N' | 'X' | '', force = false, debug = false) {
+    const {
+        GCLOUD_PROJECT,
+        GCLOUD_BUCKET
+    } = GCloudOptions.parse(process.env)
+    const storage = new Storage({ projectId: GCLOUD_PROJECT })
+    const bucket = storage.bucket(GCLOUD_BUCKET)
+    
+    const file = bucket.file('dans.se_competitions_' + (classTypes ?? 'all') + '.ics')
+    
+    const [exists] = await file.exists()
+    if (!force && !debug && exists) {
+        const [metadata] = await file.getMetadata()
+        const expires = new Date(metadata?.metadata?.expiresAt ?? Date.now())
+        const isCacheValid = expires.getTime() > Date.now()
+        if (isCacheValid) {
+            console.log('Fetching competitions from cache', {expires})
+            const [payload] = await file.download()
+            return payload.toString('utf-8')
+        }
+    }
+    
+    console.log('Fetching competitions from dans.se')
+    const cal = await fetchCompetitions(classTypes, debug)
+
+    await file.save(cal.toString(), { contentType: 'text/calendar' })
+    await file.setMetadata({ metadata: { expiresAt: addHours(new Date(), 3).toISOString() } })
+
+    return cal.toString()
+}
+
+export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debug = false): Promise<ICalCalendar> {
     const body = new URLSearchParams([
         ['cwi_db_FilterTemplate[filterName]', ''],
         ['cwi_db_FilterTemplate[id]', '0'],
@@ -75,21 +127,6 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
         }
     })
 
-    const com = z.object({
-        name: z.string(),
-        start_date: z.string(),
-        branch: z.string(),
-        classes: z.string(),
-        type: z.string(),
-        city: z.string(),
-        organizer: z.string(),
-        federation: z.string(),
-        last_regestration_date: z.string(),
-        game_regs: z.string().optional(),
-        open: z.boolean().optional(),
-        cancelled: z.boolean().optional()
-    })
-
     const doc = load(await res.text())
     const tbl = doc('table.dynamicTable')
 
@@ -130,7 +167,7 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
             allDay: true,
             timezone: 'CEST',
             summary: data.name,
-            description: JSON.stringify(data, null, 2),
+            description: debug ? JSON.stringify(data, null, 2) : prettyDescription(data),
             location: data.city
         }
 
@@ -142,3 +179,14 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '') {
     }
     return calendar
 }
+
+function prettyDescription(event: Competition): string  {
+    const details = {
+        "Organisatör": event.organizer,
+        "Stad": event.city,
+        "Klasser": event.classes,
+        "Sista anmälningsdag": event.last_regestration_date
+    }
+    return Object.entries(details).map(([k, v]) => `${k}: ${v}`).join('\n')
+}
+
