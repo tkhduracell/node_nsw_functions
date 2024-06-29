@@ -28,7 +28,7 @@ const com = z.object({
 
 type Competition = z.infer<typeof com>
 
-export async function getCompetitions(classTypes?: 'R' | 'N' | 'X' | '', force = false, debug = false) {
+export async function updateCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debug = false) {
     const {
         GCLOUD_PROJECT,
         GCLOUD_BUCKET
@@ -36,26 +36,25 @@ export async function getCompetitions(classTypes?: 'R' | 'N' | 'X' | '', force =
     const storage = new Storage({ projectId: GCLOUD_PROJECT })
     const bucket = storage.bucket(GCLOUD_BUCKET)
     
-    const file = bucket.file('dans.se_competitions_' + (classTypes ?? 'all') + '.ics')
-    
-    const [exists] = await file.exists()
-    if (!force && !debug && exists) {
-        const [metadata] = await file.getMetadata()
-        const expires = new Date(metadata?.metadata?.expiresAt ?? Date.now())
-        const isCacheValid = expires.getTime() > Date.now()
-        if (isCacheValid) {
-            console.log('Fetching competitions from cache', {expires})
-            const [payload] = await file.download()
-            return payload.toString('utf-8')
-        }
-    }
+    const fileName = `dans.se_competitions_${classTypes ?? 'all'}.ics`
+    const file = bucket.file(fileName)
     
     console.log('Fetching competitions from dans.se')
     const cal = await fetchCompetitions(classTypes, debug)
 
-    await file.save(cal.toString(), { contentType: 'text/calendar' })
-    await file.setMetadata({ metadata: { expiresAt: addHours(new Date(), 3).toISOString() } })
+    logger.info(cal, `Uploading to %s`, file.cloudStorageURI.toString())
+    await file.save(cal.toString(), {
+        metadata: {
+            cacheControl: 'public, max-age=30',
+            contentDisposition: `attachment; filename="${fileName}.ics"`,
+            contentLanguage: 'sv-SE',
+            contentType: 'text/calendar; charset=utf-8',
+        }
+    })
 
+    logger.info(cal, `Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`)
+    await file.makePublic()
+    
     return cal.toString()
 }
 
