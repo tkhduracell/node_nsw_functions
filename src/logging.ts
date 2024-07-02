@@ -9,8 +9,7 @@ const asyncLocalStorage = new AsyncLocalStorage<{
     requestId: string,
     requestMethod: string, 
     requestUrl: string, 
-    userAgent?: string, 
-    referer?: string
+    headers?: Request['headers'],
 }>()
 
 export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -19,8 +18,7 @@ export const loggerMiddleware = (req: Request, res: Response, next: NextFunction
         requestId: requestId as string,
         requestMethod: req.method,
         requestUrl: req.url,
-        userAgent: req.headers['user-agent'],
-        referer: req.headers['referer']
+        headers: req.headers,
     }, () => next())
 }
 
