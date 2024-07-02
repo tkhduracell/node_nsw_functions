@@ -171,7 +171,7 @@ app.get('/book', async (req, res) => {
     })
 })
 app.options('/book', cors);
-app.post('/book', async (req, res) => {
+app.post('/book', cors, async (req, res) => {
     const BookingSchema = z.object({
         title: z.string().min(3),
         description: z.string().min(3),
