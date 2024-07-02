@@ -309,7 +309,7 @@ function onSubmit() {
         Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern`,
         duration: 'long'
       })
-      return router.push({ name: '/tabs/calendar' })
+      router.push('/tabs/calendar')
     })
     .catch(error => {
       Toast.show({ text: process.env.NODE_ENV === 'production' ? 'Något gick fel, försök igen' : str(error) })
