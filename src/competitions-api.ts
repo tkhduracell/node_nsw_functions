@@ -24,12 +24,10 @@ app.get('/update', async (req, res) => {
         })
         .parse(req.query)
 
-    const cal = await updateCompetitions(opts.classTypes, opts.debug)
+    const { data, size, url } = await updateCompetitions(opts.classTypes, opts.debug)
+    console.log('Updated cometitions', { url, size })
 
-    res
-        .header('Content-Type', 'text/calendar')
-        .header('Content-Disposition', `attachment; filename="dans.se_competitions_${opts.classTypes ?? 'all'}.ics"`)
-        .send(cal.toString())
+    res.json({ data, size, url })
 })
 
 export default app

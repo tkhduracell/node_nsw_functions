@@ -343,8 +343,8 @@ jobs:
             --http-method POST \
             --uri $(gcloud functions describe calendars-update-api --format='value(serviceConfig.uri)') \
             --location ${GCLOUD_SCHEDULER_REGION} \
-            --max-retry-attempts 3 \
-            --min-backoff 1m \
+            --max-retry-attempts 5 \
+            --min-backoff 5m \
             --description "calendar-auth-update: Update NSW with full auth and refreshing all calendars"
 
       - name: Update scheduler news-update
@@ -369,10 +369,10 @@ jobs:
             --schedule "${CRON_PATTERN}" \
             --time-zone "Europe/Stockholm" \
             --http-method POST \
-            --uri "$(gcloud functions describe competitions-api --format='value(serviceConfig.uri)')/?force=true" \
+            --uri "$(gcloud functions describe competitions-api --format='value(serviceConfig.uri)')/update" \
             --location ${GCLOUD_SCHEDULER_REGION} \
             --max-retry-attempts 3 \
-            --min-backoff 1m \
+            --min-backoff 5m \
             --description "news-update: Update competitions calendar"
 
       - name: Trigger update

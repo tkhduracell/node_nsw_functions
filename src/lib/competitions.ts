@@ -55,7 +55,7 @@ export async function updateCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debu
     logger.info(cal, `Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`)
     await file.makePublic()
     
-    return cal.toString()
+    return { data: cal.toString(), url: file.publicUrl(), size: cal.length() }
 }
 
 export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debug = false): Promise<ICalCalendar> {
