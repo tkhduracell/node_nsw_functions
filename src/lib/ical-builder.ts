@@ -3,7 +3,7 @@ import { type ListedActivities } from './types'
 import { parseISO } from 'date-fns'
 
 import { logger } from '../logging'
-import { utcToZonedTime } from 'date-fns-tz'
+import { toZonedTime } from 'date-fns-tz'
 
 export function buildCalendar(url: string, activities: ListedActivities, subject: { name: string, id: string }): ICalCalendar {
     const calendar = new ICalCalendar()
@@ -51,5 +51,5 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
 
 function formatInStockholmTimeZone(isoDateString: string) {
     const date = parseISO(isoDateString);
-    return utcToZonedTime(date, 'Europe/Stockholm')
+    return toZonedTime(date, 'Europe/Stockholm')
 }

@@ -1,5 +1,5 @@
 import { differenceInDays, differenceInMinutes, format } from 'date-fns'
-import Swedish from 'date-fns/locale/sv'
+import { sv } from 'date-fns/locale/sv'
 import { Message, Messaging } from 'firebase-admin/messaging'
 import { ICalEvent } from 'ical-generator'
 import { Calendars } from './types'
@@ -21,11 +21,11 @@ function getNotificationTitle(title: string, calendar_name: string, creator?: st
 
 function getNotificationBody(clock: Clock, start: Date, end: Date): string {
     // Dates are timeone formatted upstream
-    const date = format(start, 'do MMMM', { locale: Swedish })
-    const hhmm = format(start, 'HH:mm', { locale: Swedish })
-    const hhmm_end = format(end, 'HH:mm', { locale: Swedish })
+    const date = format(start, 'do MMMM', { locale: sv })
+    const hhmm = format(start, 'HH:mm', { locale: sv })
+    const hhmm_end = format(end, 'HH:mm', { locale: sv })
 
-    const weekday = format(start, 'EEEE', { locale: Swedish }).replace(/^./, s => s.toUpperCase())
+    const weekday = format(start, 'EEEE', { locale: sv }).replace(/^./, s => s.toUpperCase())
     const duration = differenceInMinutes(end, start)
     const inDays = differenceInDays(start, clock.now())
 
