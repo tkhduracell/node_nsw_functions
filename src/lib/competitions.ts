@@ -8,7 +8,7 @@ import ical, { ICalCalendar} from 'ical-generator'
 import { logger } from '../logging'
 import { Storage } from '@google-cloud/storage'
 import { GCloudOptions } from '../env'
-import { addDays, addHours } from 'date-fns'
+import { addDays, addHours, format, subDays } from 'date-fns'
 
 
 const com = z.object({
@@ -28,7 +28,7 @@ const com = z.object({
 
 type Competition = z.infer<typeof com>
 
-export async function updateCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debug = false) {
+export async function updateCompetitions(system?: 'BRR', debug = false) {
     const {
         GCLOUD_PROJECT,
         GCLOUD_BUCKET
@@ -36,11 +36,11 @@ export async function updateCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debu
     const storage = new Storage({ projectId: GCLOUD_PROJECT })
     const bucket = storage.bucket(GCLOUD_BUCKET)
     
-    const fileName = `dans.se_competitions_${classTypes ?? 'all'}.ics`
+    const fileName = `dans.se_competitions_${system ?? 'all'}.ics`
     const file = bucket.file(fileName)
     
     console.log('Fetching competitions from dans.se')
-    const cal = await fetchCompetitions(classTypes, debug)
+    const cal = await fetchCompetitions(system, debug)
 
     logger.info(cal, `Uploading to %s`, file.cloudStorageURI.toString())
     await file.save(cal.toString(), {
@@ -58,22 +58,22 @@ export async function updateCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debu
     return { data: cal.toString(), url: file.publicUrl(), size: cal.length() }
 }
 
-export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debug = false): Promise<ICalCalendar> {
+export async function fetchCompetitions(system?: 'BRR', debug = false): Promise<ICalCalendar> {
     const body = new URLSearchParams([
         ['cwi_db_FilterTemplate[filterName]', ''],
         ['cwi_db_FilterTemplate[id]', '0'],
         ['cwi_db_FilterTemplate[isDefault_sent]', '1'],
         ['cwi_event_Events[branch]', 'mainBranchId_1001'],
-        ['cwi_event_Events[classTypes]', classTypes ?? ''],
+        ['cwi_event_Events[classTypes]', ''],
         ['cwi_event_Events[dateInterval][interval]', 'future'],
         ['cwi_event_Events[dateInterval][maxDate]', ''],
-        ['cwi_event_Events[dateInterval][minDate]', '2023-01-01'],
+        ['cwi_event_Events[dateInterval][minDate]', format(subDays(new Date(), 90), 'yyyy-MM-dd')],
         ['cwi_event_Events[fedId]', '0'],
         ['cwi_event_Events[firstRow]', '1'],
         ['cwi_event_Events[isCanceled]', ''],
         ['cwi_event_Events[lastSelectedArea]', 'filter'],
-        ['cwi_event_Events[maxRows]', '50'],
-        ['cwi_event_Events[maxRowsEnum]', '50'],
+        ['cwi_event_Events[maxRows]', '100'],
+        ['cwi_event_Events[maxRowsEnum]', '100'],
         ['cwi_event_Events[nailedTabs][compact_sent]"', '1'],
         ['cwi_event_Events[nailedTabs][compact]"', '1'],
         ['cwi_event_Events[nailedTabs][filter_sent]"', '1'],
@@ -136,7 +136,7 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debug
         'federation', 'last_regestration_date', 'game_regs'
     ]
 
-    const calendar = ical({ name: ('Tävlingar ' + (classTypes ?? '')).trim() })
+    const calendar = ical({ name: ('Tävlingar ' + (system ?? '')).trim() })
 
     for (const row of rows) {
         const tr = load(row)
@@ -169,6 +169,8 @@ export async function fetchCompetitions(classTypes?: 'R' | 'N' | 'X' | '', debug
             description: debug ? JSON.stringify(data, null, 2) : prettyDescription(data),
             location: data.city
         }
+
+        if (system === 'BRR' && data.classes === '-') continue
 
         try {
             calendar.createEvent(event)
