@@ -3,9 +3,9 @@ apply plugin: 'com.github.triplet.play'
 
 def keystoreProperties = read(
         System.getenv('ANDROID_KEYSTORE_PROPERTIES')
-                ?: "/tmp/google_play_keystore.properties")
+                ?: "./google_play_keystore.properties")
 def keyStoreFile = System.getenv('ANDROID_KEYSTORE_PATH')
-        ?: '/tmp/google_play_keystore'
+        ?: './google_play_keystore.key'
 
 android {
     namespace "org.nackswinget.app"
@@ -14,7 +14,7 @@ android {
         applicationId "org.nackswinget.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 12
+        versionCode 13
         versionName "1.0." + versionCode
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -37,6 +37,10 @@ android {
             signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    defaultConfig {
+        archivesBaseName = "${applicationId}-v${versionName}-${versionCode}"
     }
 }
 
