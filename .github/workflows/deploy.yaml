@@ -378,6 +378,7 @@ jobs:
       - name: Trigger update
         run: |
           curl -v -X POST $(gcloud functions describe calendars-update-api --format='value(serviceConfig.uri)')
+          curl -v -X POST $(gcloud functions describe competitions-api --format='value(serviceConfig.uri)')
 
   clean-artifacts:
     runs-on: ubuntu-latest

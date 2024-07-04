@@ -16,7 +16,7 @@ if (require.main === module) {
     app.listen(port, () => { logger.info('🚀 Listening on port %s', port) })
 }
 
-app.get('/update', async (req, res) => {
+app.post('/update', async (req, res) => {
     const opts = 
         z.object({
             classTypes:  z.enum(['X', 'N', 'R', '']).optional(),
