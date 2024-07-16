@@ -1,13 +1,11 @@
-import { addHours, addMinutes, parseISO, addDays } from 'date-fns'
+import { addHours, addMinutes, parseISO, addDays, parse } from 'date-fns'
 
 
 import { HttpFetch, type ActivityCreateResponse, type ListedActivities } from './types'
-import { formatInTimeZone } from 'date-fns-tz'
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz'
 import { type Protocol } from 'puppeteer'
-import { type fetch } from 'cross-fetch'
 import { logger } from '../logging'
 import z from 'zod'
-import { de } from 'date-fns/locale'
 
 export interface CookieProvider {
     get(): Protocol.Network.CookieParam[]
@@ -66,11 +64,9 @@ export class ActivityApi {
 
 
     async bookActivity(calendarId: string, { location, date, time, duration, title, description }: ActivityBooking): Promise<ActivityResult> {
-        const [hh, mm] = time.split(/[:$]/)
-
-        const startOfDate = parseISO(date)
-        const start = addMinutes(addHours(startOfDate, parseInt(hh)), parseInt(mm))
-        const end = addMinutes(start, duration)
+        
+        const startOfDate = parseDateString()
+        const { start, end } = parseTimeString()
 
         logger.info('Calling bookActivityRaw %o', { activity: { startOfDate, start, end } })
         return await this.bookActivityRaw(calendarId, {
@@ -80,12 +76,25 @@ export class ActivityApi {
             start,
             end
         })
+
+        function parseTimeString() {
+            const [hours, minutes] = time.split(/[:$]/)
+            const start = addMinutes(addHours(startOfDate, parseInt(hours)), parseInt(minutes))
+            const end = addMinutes(start, duration)
+            return { start, end }
+        }
+
+        function parseDateString() {
+            if (date.match(/^\d{4}-\d{2}-\d{2}$/gi)) {
+                return toZonedTime(date, 'Europe/Stockholm')
+            }
+            return parseISO(date)
+        }
     }
 
     async bookActivityRaw(calendarId: string, { venueName, start, end, name, description }: ActivityBookingRaw): Promise<ActivityResult> {
         const startDateTimeString = formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
         const endDateTimeString = formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-LL-dd HH:mm:ss')
-
         const body = {
             activity: {
                 calendarId,

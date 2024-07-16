@@ -89,3 +89,24 @@ test('should book activities with right datetime', async () => {
     expect(activity).toHaveProperty('startDateTimeString', '2023-11-18 13:37:00')
     expect(activity).toHaveProperty('endDateTimeString', '2023-11-18 14:37:00')
 })
+
+test('should book activities with short date', async () => {
+    const resp = { success: true, activities: [{ foo: 'bar' }] }
+
+    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)
+
+    const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
+
+    await api.bookActivity('1', { title: 'Friträning', location: 'Ceylon', date: '2023-11-17', time: '13:37', duration: 60, description: 'Filip - 0702683230' })
+
+    const [call] = fetch.mock.calls
+    const [url, opts] = call
+    expect(url).toBe('http://mock.app/Activities/SaveActivity')
+
+    const body = JSON.parse(opts?.body as string)
+    expect(body).toHaveProperty('activity')
+
+    const { activity } = body
+    expect(activity).toHaveProperty('startDateTimeString', '2023-11-17 13:37:00')
+    expect(activity).toHaveProperty('endDateTimeString', '2023-11-17 14:37:00')
+})
