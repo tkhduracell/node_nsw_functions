@@ -29,7 +29,7 @@
 
             <b style="display: block; margin-top: 1em; margin-bottom: 0.5em;">Välj Datum / Tid</b>
 
-            <ion-datetime :min="min" locale="sv-SE" :first-day-of-week="1" v-model="data.date" presentation="date-time"
+            <ion-datetime :min="min" locale="sv-SE" :first-day-of-week="1" v-model="data.datetime" presentation="date-time"
               minuteValues="0,15,30,45" :prefer-wheel="true"
               hourValues="7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23">
               <span slot="time-label">Starttid</span>
@@ -189,11 +189,14 @@ import {
 import { useLocalStorage } from '@vueuse/core';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
 import { formatInTimeZone } from 'date-fns-tz'
 import { addHours, startOfTomorrow } from 'date-fns';
+import { Activity } from '@/compsables/client';
+import { useClient } from '@/compsables/client';
+import { ActivityInit } from '@/compsables/client';
 
 const router = useRouter()
+const {client} = useClient()
 
 const _mode = useLocalStorage<string>('mode', null);
 const _theme = useLocalStorage<string>('theme', null);
@@ -232,7 +235,7 @@ const data = reactive({
     set: (value) => _tel.value = value
   }),
   duration: 120 as number | undefined,
-  date: undefined as string | undefined
+  datetime: undefined as string | undefined
 });
 
 const errors = computed(() => {
@@ -240,32 +243,21 @@ const errors = computed(() => {
   if (!data.mode) errors.push('Välja typ av träning')
   if (!data.responsible) errors.push('Ange ansvarig')
   if (!data.tel) errors.push('Ange telefonnummer')
-  if (!data.date) errors.push('Välja datum och tid')
+  if (!data.datetime) errors.push('Välja datum och tid')
   if (!data.duration) errors.push('Välja en längd på träningen')
   if (!data.pass) errors.push('Ange lösenord')
   return errors.map(s => " - " + s)
 })
 
-type Activity = {
-  id: number;
-  name: string;
-  description: string;
-  calendarId: number;
-  startTime: string;
-  endTime: string;
-  duration: number;
-}
+
 
 const activities = ref<Activity[]>([])
 
-const baseUrl = 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api'
-watch(() => data.date, () => {
-  axios.get(`${baseUrl}/book/search?date=${data.date}`)
-    .then(response => {
-      if (!Array.isArray(response.data)) {
-        throw new Error(response.data)
-      }
-      activities.value = response.data
+watch(() => data.datetime, (dt) => {
+  if (!dt) return
+  client.searchByDate(dt)
+    .then(acts => {
+      activities.value = acts
     })
     .catch(error => {
       console.error('Error:', error)
@@ -287,23 +279,29 @@ function resetDateToTomorrow() {
   } else {
     tomorrow = addHours(tomorrow, 19)
   }
-  data.date = formatInTimeZone(tomorrow, 'Europe/Stockholm', 'yyyy-MM-dd\'T\'HH:mm:ss')
+  data.datetime = formatInTimeZone(tomorrow, 'Europe/Stockholm', 'yyyy-MM-dd\'T\'HH:mm:ss')
 }
 
 function onSubmit() {
-  const book = {
+  const book: ActivityInit = {
     title: data.mode === 'theme' ? `Tematräning - ${data.theme}` : 'Friträning',
     description: data.responsible + ' - ' + data.tel,
     location: 'Ceylon',
-    date: new Date(data.date ?? '').toISOString(),
-    time: data.date?.replace(/.*T(\d\d:\d\d).*/gi, '$1'),
-    duration: data.duration,
+    date: formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'yyyy-MM-dd'),
+    time: formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'HH:mm'),
+    duration: data.duration!,
     password: data.pass,
     calendarId: '337667'
   }
 
-  axios.post(`${baseUrl}/book`, book)
+  client.book(book)
     .then(async () => {
+      if (data.responsible.toLocaleLowerCase().startsWith('test')) {
+        await Toast.show({
+          text: `JSON: ${JSON.stringify(book, null, 2)}`,
+          duration: 'long'
+        })
+      }
       await Toast.show({
         text: `Träningen bokades, du skickas nu till kalendern\n\nOBS: 
         Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern`,
