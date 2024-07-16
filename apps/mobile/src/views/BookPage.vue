@@ -79,7 +79,10 @@
               <div class="error" v-for="e in errors" :key="e">{{ e }}</div>
             </div>
             <ion-button expand="block" style="margin-top: 1em;" @click="onSubmit"
-              :disabled="errors && errors.length > 0">Boka</ion-button>
+              :disabled="errors && errors.length > 0 || state.submitting" fill="solid">
+              {{ state.submitting ? 'Bokar' : 'Boka' }}
+              <ion-spinner slot="start" name="circles" v-if="state.submitting"></ion-spinner>
+            </ion-button>
           </ion-card-content>
         </ion-card>
 
@@ -178,7 +181,7 @@ ion-input {
 
 import { Toast } from '@capacitor/toast';
 import {
-  IonPage, IonContent, IonDatetime, IonInput, 
+  IonPage, IonContent, IonDatetime, IonInput, IonSpinner,
   IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonButton
 } from '@ionic/vue';
 import NswToolbar from '@/components/NswToolbar.vue';
@@ -236,6 +239,7 @@ const data = reactive({
   duration: 120 as number | undefined,
   datetime: undefined as string | undefined
 });
+const state = reactive({ submitting: false })
 
 const errors = computed(() => {
   const errors = []
@@ -281,6 +285,7 @@ function resetDateToTomorrow() {
 onMounted(() => resetDateToTomorrow())
 
 function onSubmit() {
+  state.submitting = true
   const book: ActivityInit = {
     title: data.mode === 'theme' ? `Tematräning - ${data.theme}` : 'Friträning',
     description: data.responsible + ' - ' + data.tel,
@@ -300,17 +305,18 @@ function onSubmit() {
           duration: 'long'
         })
       }
-      await Toast.show({
+      Toast.show({
         text: `Träningen bokades, du skickas nu till kalendern\n\nOBS: 
         Det kan ta upp till 1-2 minuter innan bokningen syns i kalendern`,
-        duration: 'long'
+        duration: isDev ? 'short' : 'long'
       })
-      router.push('/tabs/calendar')
+      return router.push('/tabs/calendar')
     })
     .catch(error => {
-      Toast.show({ text: isDev ? str(error) : 'Något gick fel, försök igen' })
       console.error('Error:', error)
+      return Toast.show({ text: isDev ? str(error) : 'Något gick fel, försök igen', duration: 'short' })
     })
+    .finally(() => state.submitting = false)
 }
 
 function str(x: any): string {
