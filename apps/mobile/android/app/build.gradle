@@ -3,7 +3,7 @@ apply plugin: 'com.github.triplet.play'
 
 def keystoreProperties = read(
         System.getenv('ANDROID_KEYSTORE_PROPERTIES')
-                ?: "./google_play_keystore.properties")
+                ?: "app/google_play_keystore.properties")
 def keyStoreFile = System.getenv('ANDROID_KEYSTORE_PATH')
         ?: './google_play_keystore.key'
 
@@ -14,7 +14,7 @@ android {
         applicationId "org.nackswinget.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 13
+        versionCode 14
         versionName "1.0." + versionCode
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
