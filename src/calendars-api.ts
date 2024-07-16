@@ -176,8 +176,10 @@ app.post('/book', cors, async (req, res) => {
         title: z.string().min(3),
         description: z.string().min(3),
         location: z.string().default(''),
-        date: z.string().regex(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/),
-        time: z.string().regex(/[0-9][0-9]:[0-9][0-9].*/),
+        date: z.string().regex(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/).or(
+            z.string().regex(/\d{4}-\d{2}-\d{2}/)
+        ),
+        time: z.string().regex(/[0-9][0-9]:[0-9][0-9]/),
         duration: z.number().min(30).max(300),
         password: z.enum(['Ceylon2023']),
         calendarId: z.enum(['337667']).default('337667')
@@ -219,7 +221,7 @@ app.post('/book', cors, async (req, res) => {
             })
         }
     } else {
-        logger.error({ error: data.error }, 'Invalid request: %o', { error: data.error.flatten().fieldErrors })
+        logger.error({ fieldErrors: data.error.flatten().fieldErrors, body: req.body }, 'Validation of request failed: %w', data.error.flatten().fieldErrors)
         res.status(400).json({
             sucesss: false,
             error: 'Invalid booking: ' + Object.keys(data.error.flatten().fieldErrors).join(',')
