@@ -1,11 +1,7 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-img src="./nsw-logo.png" style="margin-start: 1em; height: 32px;"></ion-img>
-      </ion-toolbar>
-    </ion-header>
+    <nsw-toolbar />
     <ion-content :fullscreen="true" class="ion-padding">
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
         <ion-refresher-content></ion-refresher-content>

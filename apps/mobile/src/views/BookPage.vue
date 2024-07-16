@@ -1,6 +1,7 @@
 <!-- eslint-disable vue/no-v-text-v-html-on-component -->
 <template>
   <ion-page>
+    <nsw-toolbar />
     <ion-content>
       <form>
         <ion-card>
