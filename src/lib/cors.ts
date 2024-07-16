@@ -13,7 +13,7 @@ export const ALLOWED_ORIGINS = [
 const options: CorsOptions = {
     origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-App-Version', 'X-App-Id', 'X-App-Build', 'X-App-Name'],
 }
 
 export const cors = setupCors(options)
