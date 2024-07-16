@@ -221,7 +221,7 @@ app.post('/book', cors, async (req, res) => {
             })
         }
     } else {
-        logger.error({ fieldErrors: data.error.flatten().fieldErrors, body: req.body }, 'Validation of request failed: %w', data.error.flatten().fieldErrors)
+        logger.error({ fieldErrors: data.error.flatten().fieldErrors, body: req.body }, 'Validation of request failed: %o', data.error.flatten().fieldErrors)
         res.status(400).json({
             sucesss: false,
             error: 'Invalid booking: ' + Object.keys(data.error.flatten().fieldErrors).join(',')
