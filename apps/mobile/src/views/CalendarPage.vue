@@ -60,7 +60,12 @@
         </ion-card-header>
         <ion-card-content>
           <p>Kunde ej ladda kalender</p>
-          <ion-label>{{ error }}</ion-label>
+          <ion-label v-if="isDev && 'code' in error">
+            <pre>{{ JSON.stringify((error as AxiosError).toJSON(), null, 2) }}</pre>
+          </ion-label>
+          <ion-label v-else>
+            {{ error }}
+          </ion-label>
         </ion-card-content>
       </ion-card>
 
@@ -188,11 +193,12 @@ ion-spinner.big {
 </style>
 <script setup lang="ts">
 import {
-  IonPage, IonHeader, IonToolbar, IonContent, IonButton,
+  IonPage, IonContent, IonButton, 
   IonRow, IonList, IonItem, IonLabel, IonCard, IonCardContent, IonCardHeader,
-  IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonIcon, IonImg, IonSpinner,
+  IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonIcon, IonSpinner,
   IonRefresher, IonRefresherContent
 } from '@ionic/vue';
+import NswToolbar from '@/components/NswToolbar.vue';
 
 import { caretDownOutline } from 'ionicons/icons'
 import { useAgenda } from '@/compsables/agenda';
@@ -200,9 +206,11 @@ import { useSubscription } from '@/compsables/subscription';
 import { useRouter } from 'vue-router';
 import { Toast } from '@capacitor/toast';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { useToast } from '@/compsables/common';
+import { useAppMode, useToast } from '@/compsables/common';
+import { AxiosError } from 'axios';
 
 const router = useRouter()
+const { isDev } = useAppMode()
 const { toast, toasted } = useToast()
 const { data: agenda, error, execute, isLoading } = useAgenda()
 const { data: subscription, unsubscribe, subscribe } = useSubscription('calendar-337667')

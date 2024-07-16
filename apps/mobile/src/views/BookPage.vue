@@ -85,15 +85,10 @@
 
       </form>
     </ion-content>
-
   </ion-page>
 </template>
 
 <style scoped>
-ion-content {
-  --padding-top: 3em;
-}
-
 ion-range {
   --knob-size: 40px;
 }
@@ -183,10 +178,11 @@ ion-input {
 
 import { Toast } from '@capacitor/toast';
 import {
-  IonPage, IonContent, IonDatetime, IonInput,
+  IonPage, IonContent, IonDatetime, IonInput, 
   IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonSelect, IonSelectOption, IonButton
-
 } from '@ionic/vue';
+import NswToolbar from '@/components/NswToolbar.vue';
+
 import { useLocalStorage } from '@vueuse/core';
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -195,9 +191,11 @@ import { addHours, startOfTomorrow } from 'date-fns';
 import { Activity } from '@/compsables/client';
 import { useClient } from '@/compsables/client';
 import { ActivityInit } from '@/compsables/client';
+import { useAppMode } from '@/compsables/common';
 
 const router = useRouter()
-const {client} = useClient()
+const { client } = useClient()
+const { isDev } = useAppMode()
 
 const _mode = useLocalStorage<string>('mode', null);
 const _theme = useLocalStorage<string>('theme', null);
@@ -250,13 +248,14 @@ const errors = computed(() => {
   return errors.map(s => " - " + s)
 })
 
-
+const date = computed(() => data.datetime && formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'yyyy-MM-dd'))
+const time = computed(() => data.datetime && formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'HH:mm'))
 
 const activities = ref<Activity[]>([])
 
-watch(() => data.datetime, (dt) => {
-  if (!dt) return
-  client.searchByDate(dt)
+watch(date, (yyyymmddd) => {
+  if (!yyyymmddd) return
+  client.searchByDate(yyyymmddd)
     .then(acts => {
       activities.value = acts
     })
@@ -264,13 +263,9 @@ watch(() => data.datetime, (dt) => {
       console.error('Error:', error)
       activities.value = [{
         id: 0, name: str(error), description: error,
-        calendarId: 123, startTime: '2024-06-01T12:00:00', endTime: '', duration: 120
+        calendarId: 123, startTime: '2024-06-01T00:00:00', endTime: '', duration: 0
       }]
     })
-})
-
-onMounted(() => {
-  resetDateToTomorrow();
 })
 
 function resetDateToTomorrow() {
@@ -283,23 +278,25 @@ function resetDateToTomorrow() {
   data.datetime = formatInTimeZone(tomorrow, 'Europe/Stockholm', 'yyyy-MM-dd\'T\'HH:mm:ss')
 }
 
+onMounted(() => resetDateToTomorrow())
+
 function onSubmit() {
   const book: ActivityInit = {
     title: data.mode === 'theme' ? `Tematräning - ${data.theme}` : 'Friträning',
     description: data.responsible + ' - ' + data.tel,
-    location: 'Ceylon',
-    date: formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'yyyy-MM-dd'),
-    time: formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'HH:mm'),
+    date: date.value!,
+    time: time.value!,
     duration: data.duration!,
     password: data.pass,
+    location: 'Ceylon',
     calendarId: '337667'
   }
 
   client.book(book)
     .then(async () => {
-      if (data.responsible.toLocaleLowerCase().startsWith('test')) {
+      if (data.responsible.toLocaleLowerCase().startsWith('test') || isDev) {
         await Toast.show({
-          text: `JSON: ${JSON.stringify(book, null, 2)}`,
+          text: `${JSON.stringify(book, null, 2)}`,
           duration: 'long'
         })
       }
@@ -311,7 +308,7 @@ function onSubmit() {
       router.push('/tabs/calendar')
     })
     .catch(error => {
-      Toast.show({ text: process.env.NODE_ENV === 'production' ? 'Något gick fel, försök igen' : str(error) })
+      Toast.show({ text: isDev ? str(error) : 'Något gick fel, försök igen' })
       console.error('Error:', error)
     })
 }

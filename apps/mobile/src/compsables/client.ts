@@ -74,6 +74,18 @@ export class NswApiClient {
       this.retrieveAppInfo().then((metadata) => {
         Object.assign(this.headers, metadata)
       })
+
+      axios.interceptors.request.use(request => {
+        // log resuest method url
+        console.info('REQ', request.method?.toUpperCase(), request.url, request.params) 
+        return request
+      })
+      axios.interceptors.response.use(response => {
+        // log response method, url, status, status text
+        console.info('RESP', response.config.method?.toUpperCase(), response.config.url, response.config.params, '⏩️',
+          response.status, response.statusText)
+        return response
+      })
     }
 
     async retrieveAppInfo() {
@@ -96,7 +108,10 @@ export class NswApiClient {
     }
 
     async searchByDate(date: string): Promise<Activity[]> {
-      return await axios.get<Activity[]>(`${this.baseUrl}/calendars-api/book/search?date=${date}`)
+      return await axios.get<Activity[]>(`${this.baseUrl}/calendars-api/book/search`, { 
+        params: { date },
+        headers: this.headers 
+      })
         .then(response => {
           if (!Array.isArray(response.data)) {
             throw new Error(response.data)
@@ -106,16 +121,15 @@ export class NswApiClient {
     }
 
     async book(activity: ActivityInit) {
-      return axios.post<{ success: boolean }>(`${this.baseUrl}/calendars-api/book`, activity)
+      return axios.post<{ success: boolean }>(`${this.baseUrl}/calendars-api/book`, activity, { headers: this.headers })
         .then(resp => resp.data)
     }
 
     async isSubscribed(token: string, topic: string): Promise<boolean> {
-      const query = new URLSearchParams()
-      query.append('token', token)
-      query.append('topic', topic)
-
-      const resp = await axios.post<{ subscribed: boolean }>(`${this.baseUrl}/notifications-api/status?${query.toString()}`, undefined, { headers: this.headers })
+      const resp = await axios.post<{ subscribed: boolean }>(`${this.baseUrl}/notifications-api/status`, undefined, { 
+        params: { token, topic },
+        headers: this.headers 
+      })
       if (resp.status === 200) {
         return resp.data.subscribed
       } else {
@@ -124,11 +138,10 @@ export class NswApiClient {
     }
 
     async subscribe(token: string, topic: string) {
-      const query = new URLSearchParams()
-      query.append('token', token)
-      query.append('topic', topic)
-
-      const resp = await axios.post(`${this.baseUrl}/notifications-api/subscribe?${query.toString()}`, undefined, { params: {}, headers: this.headers })
+      const resp = await axios.post(`${this.baseUrl}/notifications-api/subscribe`, undefined, { 
+        params: { token, topic }, 
+        headers: this.headers 
+      })
       if (resp.status === 200) {
         return true
       } else {
@@ -137,11 +150,10 @@ export class NswApiClient {
     }
 
     async unsubscribe(token: string, topic: string) {
-      const query = new URLSearchParams()
-      query.append('token', token)
-      query.append('topic', topic)
-
-      const resp = await axios.post(`${this.baseUrl}/notifications-api/unsubscribe?${query.toString()}`, undefined,{ headers: this.headers })
+      const resp = await axios.post(`${this.baseUrl}/notifications-api/unsubscribe`, undefined, {
+        params: { token, topic }, 
+        headers: this.headers 
+      })
       if (resp.status === 200) {
         return true
       } else {

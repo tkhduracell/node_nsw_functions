@@ -59,7 +59,12 @@
         </ion-card-header>
         <ion-card-content>
           <p>Kunde ej ladda nyheter</p>
-          <ion-label>{{ error }}</ion-label>
+          <ion-label v-if="isDev && 'code' in error">
+            <pre>{{ JSON.stringify((error as AxiosError).toJSON(), null, 2) }}</pre>
+          </ion-label>
+          <ion-label v-else>
+            {{ error }}
+          </ion-label>
         </ion-card-content>
       </ion-card>
 
@@ -111,11 +116,12 @@ ion-card.toasted {
 </style>
 <script setup lang="ts">
 import {
-  IonPage, IonHeader, IonToolbar, IonContent,
+  IonPage, IonContent, 
   IonRow, IonLabel, IonCard, IonCardContent, IonCardHeader,
-  IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonImg, IonSpinner,
+  IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonSpinner,
   IonRefresher, IonRefresherContent, IonButton
 } from '@ionic/vue';
+import NswToolbar from '@/components/NswToolbar.vue';
 
 import { format } from 'date-fns';
 import { sv } from 'date-fns/locale';
@@ -124,10 +130,11 @@ import { useSubscription } from '@/compsables/subscription';
 import { useRouter } from 'vue-router';
 import { Toast } from '@capacitor/toast';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { useToast } from '@/compsables/common';
+import { useAppMode, useToast } from '@/compsables/common';
+import { AxiosError } from 'axios';
 
 const router = useRouter()
-
+const { isDev } = useAppMode()
 const { toast, toasted } = useToast()
 const { data: news, error, isFetching, execute } = useNews()
 const { data: subscription, unsubscribe, subscribe } = useSubscription('news-nackswinget.se')

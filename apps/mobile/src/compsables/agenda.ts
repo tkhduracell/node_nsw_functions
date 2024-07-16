@@ -1,5 +1,5 @@
 import { NswApiClient } from './client';
-import { inject, onMounted, provide } from "vue";
+import { Ref, inject, onMounted, provide } from "vue";
 import { format, parseISO } from "date-fns";
 import { sv } from "date-fns/locale";
 import { Activity } from "@/compsables/client";
@@ -70,6 +70,6 @@ export function useAgenda() {
     isReady,
     isLoading,
     execute,
-    error
+    error: error as Ref<Error | null>,
   };
 }

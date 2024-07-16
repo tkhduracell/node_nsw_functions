@@ -1,6 +1,6 @@
 import { UseAsyncStateReturn, useAsyncState } from '@vueuse/core'
 import { NswApiClient } from './client'
-import { inject, provide } from 'vue'
+import { Ref, inject, provide } from 'vue'
 
 export interface News {
     title: string;
@@ -43,5 +43,5 @@ export function provideNews(client: NswApiClient) {
 export function useNews() {
     const { isLoading: isFetching, error, state: data, execute } = inject('news') as UseAsyncStateReturn<News, any[], true>
 
-    return { isFetching, error, data, execute }
+    return { isFetching, error: error as Ref<Error>, data, execute }
 }

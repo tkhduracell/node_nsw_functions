@@ -15,8 +15,9 @@ import Logo from '@/assets/nsw-logo.png'
 </script>
 
 <style>
-ion-header ion-toolbar ion-img {
-    height: 38px;
-    --height: 38px;
+ion-header ion-toolbar ion-img::part(image) {
+  height: 42px;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 </style>

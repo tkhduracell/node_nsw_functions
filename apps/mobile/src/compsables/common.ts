@@ -1,5 +1,10 @@
 import { ref } from 'vue';
 
+export function useAppMode() {
+    const mode = import.meta.env.MODE as 'production' | 'development' | 'staging'
+    return { mode, isDev: mode === 'development', isProd: mode === 'production', isStaging: mode === 'staging' }
+}
+
 export function useToast(def?: string, timeout = 5000) {
     const toasted = ref<string | null>(def ?? null)
 

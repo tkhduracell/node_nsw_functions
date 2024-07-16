@@ -9,7 +9,7 @@
           <ion-label>Kalender</ion-label>
         </ion-tab-button>
 
-        <ion-tab-button tab="tab2" href="/tabs/book" v-if="dev || bookingEnabled">
+        <ion-tab-button tab="tab2" href="/tabs/book" v-if="isDev || bookingEnabled">
           <ion-icon aria-hidden="true" :icon="accessibility" />
           <ion-label>Boka</ion-label>
         </ion-tab-button>
@@ -31,8 +31,9 @@ import { onLongPress, useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 import { Toast } from '@capacitor/toast';
 import { FCM } from '@capacitor-community/fcm';
+import { useAppMode } from '@/compsables/common';
 
-const dev = process.env.NODE_ENV !== 'production'
+const { isDev } = useAppMode()
 
 const showDeviceToken = () => {
   FCM.getToken().then(({ token }) => {
@@ -45,7 +46,7 @@ const bookingEnabled = useLocalStorage('bookingEnabled', false)
 
 const calendarButtonRef = ref<HTMLElement | null>(null)
 onLongPress(calendarButtonRef, async () => {
-  await Toast.show({ text: 'Du kan nu boka' })
+  Toast.show({ text: 'Du kan nu boka', duration: 'short' })
   bookingEnabled.value = true
 }, { delay: 1000 })
 
