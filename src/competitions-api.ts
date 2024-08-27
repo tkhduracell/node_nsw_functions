@@ -17,12 +17,12 @@ if (require.main === module) {
 }
 
 app.post('/update', async (req, res) => {
-    const opts = 
-        z.object({
-            system:  z.enum(['BRR']).default('BRR'),
+    const opts
+        = z.object({
+            system: z.enum(['BRR']).default('BRR'),
             debug: z.boolean().optional()
         })
-        .parse(req.query)
+            .parse(req.query)
 
     const { data, size, url } = await updateCompetitions(opts.system, opts.debug)
     console.log('Updated cometitions', { url, size })

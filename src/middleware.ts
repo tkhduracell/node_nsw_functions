@@ -14,10 +14,10 @@ export const prettyJson = (req: Request, res: Response, next: NextFunction) => {
     next()
 }
 
-export const errorHandling = (err: Error, req: Request, res: Response, next: NextFunction) => {
+export const errorHandling = (err: Error, req: Request, res: Response) => {
     logger.error('Uncaught error, sending "internal error" as response', { err })
     res.status((err as any).status ?? 500).json({
         error: err.message,
         success: false,
-    });
-};
+    })
+}

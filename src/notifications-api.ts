@@ -19,13 +19,15 @@ if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
     app.use(errorHandling)
-    app.listen(port, () => { logger.info(`Listening on port ${port}`) })
+    app.listen(port, () => {
+        logger.info(`Listening on port ${port}`)
+    })
 }
 
-type Token = {
-    topic: string,
-    topics?: string[],
-    created_at?: Timestamp,
+interface Token {
+    topic: string
+    topics?: string[]
+    created_at?: Timestamp
     updated_at: Timestamp
 }
 
@@ -34,14 +36,15 @@ app.post('/status', async (req, res) => {
     const db = getFirestore()
     const result = await db.collection('tokens').doc(token).get()
     if (result.exists) {
-        const { topic: currentTopic, topics} = result.data() as Token
+        const { topic: currentTopic, topics } = result.data() as Token
         // Check old field and new field
         const subscribed = currentTopic === topic || (topics && topics.includes(topic))
         res.status(200).send({
             subscribed,
             data: result.data() as Token
         }).end()
-    } else {
+    }
+    else {
         return res.status(200).send({ subscribed: false })
     }
 })
@@ -78,7 +81,7 @@ app.post('/unsubscribe', async (req, res) => {
     return res.status(200).send(response)
 })
 
-app.post('/trigger', async (req, res, next) => {
+app.post('/trigger', async (req, res) => {
     const { topic, token, title, body } = z.object({
         topic: z.string().optional(),
         token: z.string().optional(),
@@ -88,27 +91,29 @@ app.post('/trigger', async (req, res, next) => {
     try {
         const response = await notification({ topic, token, title, body })
         return res.status(200).send(response)
-    } catch (err) {
+    }
+    catch (err) {
         logger.error(err, 'Failed to send notification')
     }
 })
 
 app.use(express.static(join(__dirname, '..', 'static')))
 
-export async function notification ({ token, topic, title, body }: { token?: string, topic?: string, title?: string, body?: string }) {
-
-    const data = Math.random() > 0.5 ? {
-        nsw_topic: 'calendar-333892',
-        nsw_subject_id: '83002501'
-    } : {
-        nsw_topic: 'news-nackswinget.se',
-        nsw_subject_id: 'https://nackswinget.se/?p=2834'
-    }
+export async function notification({ token, topic, title, body }: { token?: string, topic?: string, title?: string, body?: string }) {
+    const data = Math.random() > 0.5
+        ? {
+                nsw_topic: 'calendar-333892',
+                nsw_subject_id: '83002501'
+            }
+        : {
+                nsw_topic: 'news-nackswinget.se',
+                nsw_subject_id: 'https://nackswinget.se/?p=2834'
+            }
 
     const notification: Message['notification'] = {
         title: title ?? data.nsw_topic ?? 'The-dans på Söndag igen!',
         body: body ?? data.nsw_subject_id ?? 'Vi kör The-dans på Söndag igen kl 15-17. Välkomna!',
-        imageUrl: "https://nackswinget.se/wp-content/uploads/2024/01/The-dans-980x560.png"
+        imageUrl: 'https://nackswinget.se/wp-content/uploads/2024/01/The-dans-980x560.png'
     }
     const webpush: Message['webpush'] = {
         notification: {
@@ -116,7 +121,7 @@ export async function notification ({ token, topic, title, body }: { token?: str
             image: notification.imageUrl,
         }
     }
-    const  apns: Message['apns'] = {
+    const apns: Message['apns'] = {
         fcmOptions: {
             imageUrl: notification.imageUrl,
         }
@@ -125,9 +130,11 @@ export async function notification ({ token, topic, title, body }: { token?: str
     let message: Message
     if (token) {
         message = { notification, webpush, apns, token, data }
-    } else if (topic) {
+    }
+    else if (topic) {
         message = { notification, webpush, apns, topic, data }
-    } else {
+    }
+    else {
         throw new Error(`Either 'token' or 'topic' must be provided`)
     }
 

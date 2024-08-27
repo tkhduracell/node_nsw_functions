@@ -1,5 +1,4 @@
-import { addHours, addMinutes, parseISO, addDays, parse } from 'date-fns'
-
+import { addHours, addMinutes, parseISO, addDays } from 'date-fns'
 
 import { HttpFetch, type ActivityCreateResponse, type ListedActivities } from './types'
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz'
@@ -14,12 +13,11 @@ export interface CookieProvider {
 export type ActivityResult = Pick<ActivityCreateResponse['activities'][number], 'activityId'>
 
 export class ActivityApi {
-
     constructor(private readonly orgId: string, private readonly baseUrl: string, private readonly cookies: CookieProvider, private readonly fetch: HttpFetch) {
-        this.orgId = orgId;
-        this.cookies = cookies;
-        this.baseUrl = baseUrl;
-        this.fetch = fetch;
+        this.orgId = orgId
+        this.cookies = cookies
+        this.baseUrl = baseUrl
+        this.fetch = fetch
     }
 
     async fetchActivitiesOnDate(date: string, calendarId: string) {
@@ -37,11 +35,11 @@ export class ActivityApi {
         const response = await this.fetch(`${this.baseUrl}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
             method: 'GET',
             headers: {
-                cookie: this.cookies.get().map(ck => ck.name + '=' + ck.value).join(';'),
-                Referer: `${this.baseUrl}/Calendars/View/${calendarId}`,
+                'cookie': this.cookies.get().map(ck => ck.name + '=' + ck.value).join(';'),
+                'Referer': `${this.baseUrl}/Calendars/View/${calendarId}`,
                 'Referrer-Policy': 'strict-origin-when-cross-origin',
                 'x-requested-with': 'XMLHttpRequest',
-                accept: 'application/json, text/javascript, */*; q=0.01'
+                'accept': 'application/json, text/javascript, */*; q=0.01'
             }
         })
 
@@ -55,16 +53,14 @@ export class ActivityApi {
 
         const state = schema.safeParse(data)
         if (!state.success) {
-            logger.warn(state.error, "Invalid payload from API: %o", data)
+            logger.warn(state.error, 'Invalid payload from API: %o', data)
             throw new Error('No json response from API: ' + JSON.stringify(data))
         }
 
         return { data: data as ListedActivities, response }
     }
 
-
     async bookActivity(calendarId: string, { location, date, time, duration, title, description }: ActivityBooking): Promise<ActivityResult> {
-        
         const startOfDate = parseDateString()
         const { start, end } = parseTimeString()
 
@@ -122,13 +118,13 @@ export class ActivityApi {
 
         const result = await this.fetch(`${this.baseUrl}/Activities/SaveActivity`, {
             headers: {
-                Referer: `${this.baseUrl}/Activities/Create/?calendarId=null&isFromActivity=true`,
+                'Referer': `${this.baseUrl}/Activities/Create/?calendarId=null&isFromActivity=true`,
                 'Referrer-Policy': 'strict-origin-when-cross-origin',
-                accept: 'application/json, text/javascript, */*; q=0.01',
+                'accept': 'application/json, text/javascript, */*; q=0.01',
                 'accept-language': 'en-US,en;q=0.9,sv-SE;q=0.8,sv;q=0.7',
                 'content-type': 'application/json',
                 'x-requested-with': 'XMLHttpRequest',
-                cookie: this.cookies.get().map(ck => ck.name + '=' + ck.value).join(';')
+                'cookie': this.cookies.get().map(ck => ck.name + '=' + ck.value).join(';')
             },
             body: JSON.stringify(body),
             method: 'POST'

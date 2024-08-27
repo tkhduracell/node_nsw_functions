@@ -1,4 +1,3 @@
-
 export class ClockFactory {
     static native(): Clock {
         return { now: () => new Date() }

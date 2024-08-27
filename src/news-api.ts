@@ -4,10 +4,10 @@ import { initializeApp } from 'firebase-admin/app'
 import { errorHandling, prettyJson } from './middleware'
 import { parse } from 'rss-to-json'
 import z from 'zod'
-import { DocumentReference, DocumentData, FieldValue, getFirestore } from 'firebase-admin/firestore'
+import { DocumentReference, FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { maxBy } from 'lodash'
 import { Message, getMessaging } from 'firebase-admin/messaging'
-import { decodeXMLStrict } from "entities"
+import { decodeXMLStrict } from 'entities'
 import { getStorage } from 'firebase-admin/storage'
 import { GCloudOptions } from './env'
 import { ALLOWED_ORIGINS, cors } from './lib/cors'
@@ -22,43 +22,44 @@ app.use(cors)
 if (require.main === module) {
     const port = process.env.PORT ?? 8080
     initializeApp()
-    app.listen(port, () => { logger.info(`Listening on port ${port}`) })
+    app.listen(port, () => {
+        logger.info(`Listening on port ${port}`)
+    })
     initializeBucketCors()
 }
 
 export interface News {
-    title: string;
-    description: string;
-    link: string;
-    image: string;
-    category: string[];
+    title: string
+    description: string
+    link: string
+    image: string
+    category: string[]
     items: {
-      id: string;
-      title: string;
-      description: string;
-      link: string;
-      author: string;
-      published: number;
-      created: number;
-      category: string | string[];
-      content: undefined;
-      enclosures: {
-        url: string;
-        medium: string;
-      }[];
-      media: {
-        thumbnail: {
-          url: string;
-          medium: string;
-        };
-      };
-    }[];
+        id: string
+        title: string
+        description: string
+        link: string
+        author: string
+        published: number
+        created: number
+        category: string | string[]
+        content: undefined
+        enclosures: {
+            url: string
+            medium: string
+        }[]
+        media: {
+            thumbnail: {
+                url: string
+                medium: string
+            }
+        }
+    }[]
 }
 
 export type NewsItem = News['items'][number]
 
 app.get('/', async (req, res) => {
-
     const params = await z.object({ exclude: z.enum(['competitions']).optional() }).safeParseAsync(req.query)
 
     if (!params.success) {
@@ -75,17 +76,18 @@ app.get('/', async (req, res) => {
     }
 
     try {
-        const feed: News = await parse('https://nackswinget.se/feed?' + query.toString());
+        const feed: News = await parse('https://nackswinget.se/feed?' + query.toString())
         res.header('Cache-Control', 'no-store')
         res.json(feed)
-    } catch (err: any) {
+    }
+    catch (err: any) {
         logger.error(err, 'Failed fetching feed')
         res.status(500)
-        res.json({ error: err.message });
+        res.json({ error: err.message })
     }
 })
 
-type NewsState = { last_news_item: { published: number } }
+interface NewsState { last_news_item: { published: number } }
 
 app.post('/update', async (req, res) => {
     const { force } = req.query
@@ -95,14 +97,15 @@ app.post('/update', async (req, res) => {
 
     if (!doc.exists) return res.status(404).json({ error: 'Document not found' })
 
-    const feed: News = await parse('https://nackswinget.se/feed?cat=-5');
+    const feed: News = await parse('https://nackswinget.se/feed?cat=-5')
     await uploadToStorage(feed)
 
     const data = doc.data() as NewsState
     try {
         await notify(docRef, data, feed, !!force)
         return res.json({ message: 'New items' })
-    } catch (err: any) {
+    }
+    catch (err: any) {
         logger.error(err, 'Unable to notify')
         return res.status(500).json({ error: err.message ?? 'Internal Server Error' })
     }
@@ -117,7 +120,7 @@ async function notify(docRef: DocumentReference, data: NewsState, feed: News, fo
     if (newest && (!data.last_news_item || newest.published > data.last_news_item?.published || force)) {
         logger.info({ newest, last: data.last_news_item }, 'New news item!')
 
-        await docRef.update({ last_news_item: newest, updated_at: FieldValue.serverTimestamp(), })
+        await docRef.update({ last_news_item: newest, updated_at: FieldValue.serverTimestamp() })
         const imageUrl = newest.media.thumbnail.url
         const message: Message = {
             notification: {

@@ -2,7 +2,7 @@ import z from 'zod'
 import express from 'express'
 
 import { join } from 'path'
-import { ClockFactory } from './lib/clock';
+import { ClockFactory } from './lib/clock'
 import { logger, loggerMiddleware } from './logging'
 import { Storage } from '@google-cloud/storage'
 import { CloudSchedulerClient } from '@google-cloud/scheduler'
@@ -52,7 +52,7 @@ app.get('/', async (req, res) => {
 
     const { id, dl } = z.object({
         id: z.string().regex(/\d+/),
-        dl: z.string().transform(v => v === 'true').default("true")
+        dl: z.string().transform(v => v === 'true').default('true')
     }).parse(req.query)
 
     const [exists] = await bucket.file(`cal_${id}.ics`).exists()
@@ -68,7 +68,8 @@ app.get('/', async (req, res) => {
             .setHeader('Content-Type', 'text/calendar')
             .setHeader('Content-Disposition', `attachment; filename="${name}.ics"`)
             .status(200)
-    } else {
+    }
+    else {
         res
             .setHeader('Content-Type', 'text/plain; charset=utf-8')
             .status(200)
@@ -93,7 +94,8 @@ app.post('/update', async (req, res) => {
 
     try {
         await updateLean(bucket, db, ClockFactory.native(), orgId)
-    } catch (err: any) {
+    }
+    catch (err: any) {
         logger.error(err, 'Error in updateLean()')
 
         return res.status(500)
@@ -113,7 +115,8 @@ app.get('/update', async (req, res) => {
         const result = await status(db, orgId, ClockFactory.native())
         return res.status(200)
             .json(result)
-    } catch (err: any) {
+    }
+    catch (err: any) {
         logger.error(err, 'Error in status()')
 
         return res.status(500)
@@ -121,7 +124,7 @@ app.get('/update', async (req, res) => {
     }
 })
 
-app.options('/book/search', cors);
+app.options('/book/search', cors)
 app.get('/book/search', cors, async (req, res) => {
     const QuerySchema = z.object({
         date: z.string().regex(/\d{4}-\d{2}-\d{2}/),
@@ -143,16 +146,17 @@ app.get('/book/search', cors, async (req, res) => {
     const { date, calendarId } = query.data
 
     try {
-
         const { data } = await actApi.fetchActivitiesOnDate(date, calendarId)
-        const out = createApiFormat(data);
+        const out = createApiFormat(data)
 
         res.json(out)
-    } catch (err: any) {
+    }
+    catch (err: any) {
         if ('response' in err) {
             const { status, statusText, url } = err.response as Response
             logger.error({ response: { status, statusText, url } }, 'Unable to fetch activities, got HTTP %d (%s)', status, statusText)
-        } else {
+        }
+        else {
             logger.error(err, 'Unable to fetch activities')
         }
         res.status(500).json({
@@ -162,7 +166,6 @@ app.get('/book/search', cors, async (req, res) => {
     }
 })
 
-
 app.get('/book', async (req, res) => {
     res.sendFile(join(__dirname, '..', 'static', 'booking.html'), {
         headers: {
@@ -170,7 +173,7 @@ app.get('/book', async (req, res) => {
         }
     })
 })
-app.options('/book', cors);
+app.options('/book', cors)
 app.post('/book', cors, async (req, res) => {
     const BookingSchema = z.object({
         title: z.string().min(3),
@@ -189,6 +192,7 @@ app.post('/book', cors, async (req, res) => {
 
     const data = await BookingSchema.safeParseAsync(req.body)
     if (data.success) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password, calendarId, ...event } = data.data
 
         const actApi = new ActivityApi(orgId, baseUrl, await cookies(), fetch)
@@ -203,16 +207,18 @@ app.post('/book', cors, async (req, res) => {
 
             if (activityId === 0) {
                 logger.info({ event }, 'Testing complete, skipping update schedule.')
-            } else {
+            }
+            else {
                 logger.info({ event }, 'Triggering update of activity in cloud schduler.')
                 triggerAsyncActivityUpdate()
             }
-
-        } catch (err: any) {
+        }
+        catch (err: any) {
             if ('response' in err) {
                 const { status, statusText, url } = err.response as Response
                 logger.error({ response: { status, statusText, url } }, 'Unable to complete booking, got HTTP %d (%s)', status, statusText)
-            } else {
+            }
+            else {
                 logger.error(err, 'Unable to complete booking, unknown error')
             }
             res.status(500).json({
@@ -220,7 +226,8 @@ app.post('/book', cors, async (req, res) => {
                 error: 'Unable to complete booking'
             })
         }
-    } else {
+    }
+    else {
         logger.error({ fieldErrors: data.error.flatten().fieldErrors, body: req.body }, 'Validation of request failed: %o', data.error.flatten().fieldErrors)
         res.status(400).json({
             sucesss: false,

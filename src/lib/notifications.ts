@@ -14,9 +14,9 @@ function getNotificationTitle(title: string, calendar_name: string, creator?: st
     if (title.toLocaleLowerCase().includes('tematräning')) {
         return creator ? `${creator} har bokat en tematräning!` : `Ny tematräning bokad!`
     }
-    return calendar_name === 'Friträning' ?
-        (creator ? `${creator} har bokat en friträning!` : `Ny friträning bokad!`) :
-        `Ny bokning i ${calendar_name}`
+    return calendar_name === 'Friträning'
+        ? (creator ? `${creator} har bokat en friträning!` : `Ny friträning bokad!`)
+        : `Ny bokning i ${calendar_name}`
 }
 
 function getNotificationBody(clock: Clock, start: Date, end: Date): string {
@@ -32,7 +32,8 @@ function getNotificationBody(clock: Clock, start: Date, end: Date): string {
     const suffix = `kl ${hhmm}-${hhmm_end}, ${duration} min`
     if (inDays < 7) {
         return `${weekday}, ${suffix}`
-    } else {
+    }
+    else {
         return `${weekday}, ${date}\n${suffix}`
     }
 }
@@ -76,5 +77,4 @@ export class Notifications {
 
         return notification
     }
-
 }

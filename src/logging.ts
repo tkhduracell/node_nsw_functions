@@ -5,11 +5,11 @@ import { randomUUID } from 'crypto'
 
 import { type Request, type NextFunction, type Response } from 'express'
 
-const asyncLocalStorage = new AsyncLocalStorage<{ 
-    requestId: string,
-    requestMethod: string, 
-    requestUrl: string, 
-    headers?: Request['headers'],
+const asyncLocalStorage = new AsyncLocalStorage<{
+    requestId: string
+    requestMethod: string
+    requestUrl: string
+    headers?: Request['headers']
 }>()
 
 export const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -22,12 +22,14 @@ export const loggerMiddleware = (req: Request, res: Response, next: NextFunction
     }, () => next())
 }
 
-const transport = process.env.NODE_ENV !== 'production' ? {
-    target: 'pino-pretty',
-    options: {
-        colorize: true
-    },
-} : undefined
+const transport = process.env.NODE_ENV !== 'production'
+    ? {
+            target: 'pino-pretty',
+            options: {
+                colorize: true
+            },
+        }
+    : undefined
 
 export const logger = pino({
     level: process.env.LOG_LEVEL ?? 'info',
@@ -37,16 +39,16 @@ export const logger = pino({
     messageKey: 'message',
     formatters: {
         level: (label) => {
-            return { severity: label.toUpperCase(), level: undefined };
+            return { severity: label.toUpperCase(), level: undefined }
         },
     },
-    mixin () {
+    mixin() {
         const { requestId, ...rest } = asyncLocalStorage.getStore() ?? { requestId: randomUUID() }
         return {
             ...rest,
             'logging.googleapis.com/spanId': requestId,
             'logging.googleapis.com/trace': `projects/${process.env.GCLOUD_PROJECT}/traces/${requestId}`,
             'logging.googleapis.com/trace_sampled': true
-         }
+        }
     }
 })

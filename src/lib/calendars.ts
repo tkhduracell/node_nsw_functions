@@ -1,6 +1,6 @@
 import { type Browser, type Page } from 'puppeteer'
 import { mapKeys, omit, pick, sortBy } from 'lodash'
-import { getMessaging, type Message } from 'firebase-admin/messaging'
+import { getMessaging } from 'firebase-admin/messaging'
 import { FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore'
 import { addDays, differenceInMinutes, formatDistance, startOfDay, subDays } from 'date-fns'
 import { type Bucket } from '@google-cloud/storage'
@@ -12,11 +12,13 @@ import { ActivityApi } from './booking'
 import { fetchCookies } from './cookies'
 import { Notifications } from './notifications'
 import { buildCalendar } from './ical-builder'
-import { type CalendarMetadata, type Calendars, type CalendarNotification, type CalendarMetadataUpdate, ListedActivities } from './types'
+import { type CalendarMetadata, type Calendars, type CalendarNotification, ListedActivities } from './types'
 import { logger } from '../logging'
 import { Clock } from './clock'
 
-const navigate = async <T>(page: Page, action: () => Promise<T>): Promise<T> => await Promise.all([page.waitForNavigation(), action()]).then(results => results[1] as T)
+const navigate = async <T>(page: Page, action: () => Promise<T>): Promise<T> => await Promise.all(
+    [page.waitForNavigation(), action()]
+).then(results => results[1] as T)
 
 export async function login(browser: Browser, db: Firestore, orgId: string) {
     const {
@@ -98,7 +100,8 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, cl
 
         const actApi = new ActivityApi(orgId, baseUrl, { get: () => cookies }, fetch)
         await updateCalendarContent(cals, actApi, clock, bucket, db)
-    } catch (err) {
+    }
+    catch (err) {
         throw new Error('Unable to do a full update', { cause: err })
     }
 }
@@ -112,7 +115,8 @@ export async function updateLean(bucket: Bucket, db: Firestore, clock: Clock, or
         const actApi = new ActivityApi(orgId, baseUrl, { get: () => cookies }, fetch)
         const cals = await fetchPreviousCalendars(db, orgId)
         await updateCalendarContent(cals, actApi, clock, bucket, db)
-    } catch (err) {
+    }
+    catch (err) {
         throw new Error('Unable to do a lean update', { cause: err })
     }
 }
@@ -124,7 +128,7 @@ export async function status(db: Firestore, orgId: string, clock: Clock) {
 
     const data = calendars.docs.map(d => d.data() as Partial<CalendarMetadata>)
 
-    return data.map(cal => {
+    return data.map((cal) => {
         return {
             calendar_last_uid: undefined,
             calendar_last_date: undefined,
@@ -170,8 +174,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
     await writeJSONManifest(bucket)
 }
 
-
-async function writeJsonToGcs(data: ListedActivities, now: Date, bucket: Bucket, cal: { id: string; name: string; orgId: string }) {
+async function writeJsonToGcs(data: ListedActivities, now: Date, bucket: Bucket, cal: { id: string, name: string, orgId: string }) {
     const today = startOfDay(now)
     const inamonth = addDays(today, 31) // Include same date if 30d month
     const upcoming = data.filter(e => e.listedActivity.startTime >= startOfDay(today).toISOString())
@@ -182,12 +185,12 @@ async function writeJsonToGcs(data: ListedActivities, now: Date, bucket: Bucket,
         cacheControl: 'public, max-age=30',
         contentLanguage: 'sv-SE',
         contentType: 'application/json; charset=utf-8',
-    }})
+    } })
     await jsonFile.makePublic()
 }
 
 export function createApiFormat(data: ListedActivities) {
-    const activities = data.map(e => e.listedActivity);
+    const activities = data.map(e => e.listedActivity)
 
     const out = activities.map(({ activityId, name, description, startTime, endTime, calendarId }) => {
         return {
@@ -198,9 +201,9 @@ export function createApiFormat(data: ListedActivities) {
             startTime,
             endTime,
             duration: differenceInMinutes(new Date(endTime), new Date(startTime)),
-        };
-    });
-    return out;
+        }
+    })
+    return out
 }
 
 async function fetchPreviousCalendars(db: Firestore, orgId: string): Promise<Calendars> {
@@ -239,25 +242,25 @@ async function fetchMetadata(cal: Calendars[number], db: Firestore): Promise<Cal
     return metadata
 }
 
-async function sleep(ms: number = 20000) {
-    return await new Promise((resolve, reject) => setTimeout(resolve, ms))
+async function sleep(ms = 20000) {
+    return await new Promise(resolve => setTimeout(resolve, ms))
 }
 
 async function notifyNewEvent(clock: Clock, event: ICalEvent, creator: string | undefined, cal: Calendars[number]) {
-    const builder = new Notifications(getMessaging());
+    const builder = new Notifications(getMessaging())
     const message = await builder.send(clock, event, creator, cal)
     return message
 }
 
 async function writeJSONManifest(bucket: Bucket) {
     const [files] = await bucket.getFiles({ prefix: 'cal_' })
-    const metadatas = await Promise.all(files.map(async (f) => await f.getMetadata()))
+    const metadatas = await Promise.all(files.map(async f => await f.getMetadata()))
     const data = metadatas.map(([{ metadata }]) => mapKeys(metadata, (_, k) => k.replace('calendar_', '')))
     const payload = JSON.stringify(data, null, 2)
     await bucket.file('index.json').save(payload)
 }
 
-async function writeICStoGcs(cal: { id: string; name: string; orgId: string }, bucket: Bucket, metadata: CalendarMetadata, data: string) {
+async function writeICStoGcs(cal: { id: string, name: string, orgId: string }, bucket: Bucket, metadata: CalendarMetadata, data: string) {
     const destination = `cal_${cal.id}.ics`
     const file = bucket.file(destination)
 
@@ -277,8 +280,7 @@ async function writeICStoGcs(cal: { id: string; name: string; orgId: string }, b
     return file
 }
 
-
-async function peekAndNotifyEvent(cal: { id: string; name: string; orgId: string }, calendar: ICalCalendar, today: Date, inaweek: Date, metadata: CalendarMetadata, clock: Clock) {
+async function peekAndNotifyEvent(cal: { id: string, name: string, orgId: string }, calendar: ICalCalendar, today: Date, inaweek: Date, metadata: CalendarMetadata, clock: Clock) {
     logger.info(cal, 'Sorting new events')
     const eventsByUid = sortBy(calendar.events(), e => e.uid())
 
@@ -294,7 +296,7 @@ async function peekAndNotifyEvent(cal: { id: string; name: string; orgId: string
         .filter(e => e.uid() > metadata.calendar_last_uid) // Larger than last uid
     logger.info(cal, `Found ${futureEvents.length} new events`)
 
-    const newEvent = newEvents.find(e => true) // Take first
+    const newEvent = newEvents.find(() => true) // Take first
 
     logger.info(
         cal,
@@ -320,7 +322,8 @@ async function peekAndNotifyEvent(cal: { id: string; name: string; orgId: string
         }
 
         metadata.last_notifications = [notification, ...metadata.last_notifications].slice(0, 5)
-    } else {
+    }
+    else {
         logger.warn(cal, 'No next event found, metadata: %o', omit(metadata, 'last_notifications'))
     }
 }

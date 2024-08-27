@@ -61,13 +61,14 @@ app.post('/', async (req, res) => {
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
 
-    logger.info( { orgId }, 'Launching browser')
+    logger.info({ orgId }, 'Launching browser')
     const browser = await launchBrowser()
 
     try {
-        logger.info( { orgId }, 'Updating calendars for org %s', orgId)
+        logger.info({ orgId }, 'Updating calendars for org %s', orgId)
         await update(browser, bucket, db, ClockFactory.native(), orgId)
-    } catch (err: any) {
+    }
+    catch (err: any) {
         logger.error(err, 'Error in update()')
 
         await dumpScreenshots(browser, bucket, `org-${orgId}-update`)
@@ -75,7 +76,8 @@ app.post('/', async (req, res) => {
         return res.status(500)
             .send({ message: `Unable to perform update: ${err?.message}` })
             .end()
-    } finally {
+    }
+    finally {
         await browser.close()
     }
 

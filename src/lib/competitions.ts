@@ -4,12 +4,11 @@ import fetch from 'cross-fetch'
 import z from 'zod'
 
 import { load } from 'cheerio'
-import ical, { ICalCalendar} from 'ical-generator'
+import ical, { ICalCalendar } from 'ical-generator'
 import { logger } from '../logging'
 import { Storage } from '@google-cloud/storage'
 import { GCloudOptions } from '../env'
-import { addDays, addHours, format, subDays } from 'date-fns'
-
+import { format, subDays } from 'date-fns'
 
 const com = z.object({
     name: z.string(),
@@ -35,10 +34,10 @@ export async function updateCompetitions(system?: 'BRR', debug = false) {
     } = GCloudOptions.parse(process.env)
     const storage = new Storage({ projectId: GCLOUD_PROJECT })
     const bucket = storage.bucket(GCLOUD_BUCKET)
-    
+
     const fileName = `dans.se_competitions_${system ?? 'all'}.ics`
     const file = bucket.file(fileName)
-    
+
     console.log('Fetching competitions from dans.se')
     const cal = await fetchCompetitions(system, debug)
 
@@ -54,7 +53,7 @@ export async function updateCompetitions(system?: 'BRR', debug = false) {
 
     logger.info(cal, `Ensuring public access of ${file.cloudStorageURI.toString()} as ${file.publicUrl()}`)
     await file.makePublic()
-    
+
     return { data: cal.toString(), url: file.publicUrl(), size: cal.length() }
 }
 
@@ -174,20 +173,20 @@ export async function fetchCompetitions(system?: 'BRR', debug = false): Promise<
 
         try {
             calendar.createEvent(event)
-        } catch (err) {
+        }
+        catch (err) {
             logger.error(err, 'Invalid event: %o', event)
         }
     }
     return calendar
 }
 
-function prettyDescription(event: Competition): string  {
+function prettyDescription(event: Competition): string {
     const details = {
-        "Organisatör": event.organizer,
-        "Stad": event.city,
-        "Klasser": event.classes,
-        "Sista anmälningsdag": event.last_regestration_date
+        'Organisatör': event.organizer,
+        'Stad': event.city,
+        'Klasser': event.classes,
+        'Sista anmälningsdag': event.last_regestration_date
     }
     return Object.entries(details).map(([k, v]) => `${k}: ${v}`).join('\n')
 }
-

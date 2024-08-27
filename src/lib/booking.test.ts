@@ -1,7 +1,6 @@
 import { ActivityApi } from './booking'
 import { HttpFetch } from './types'
 
-
 test('should fetch activities', async () => {
     const resp = [{}]
     const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)

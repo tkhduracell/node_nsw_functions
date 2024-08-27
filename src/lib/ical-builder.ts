@@ -23,7 +23,7 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
 
         if (shared && `${calendarId}` !== `${subject.id}`) {
             // Ignore shared events
-            continue;
+            continue
         }
 
         const event = calendar.createEvent({
@@ -39,7 +39,7 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
         if (description) {
             const [firstline] = description.split('\n')
             if (firstline.match(/.* - \+?[0-9 ]+/i)) {
-                const [organiser,] = firstline.split(' - ')
+                const [organiser] = firstline.split(' - ')
                 event.organizer({ name: organiser })
             }
         }
@@ -50,6 +50,6 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
 }
 
 function formatInStockholmTimeZone(isoDateString: string) {
-    const date = parseISO(isoDateString);
+    const date = parseISO(isoDateString)
     return toZonedTime(date, 'Europe/Stockholm')
 }

@@ -1,4 +1,4 @@
-import setupCors, { CorsOptions } from 'cors';
+import setupCors, { CorsOptions } from 'cors'
 
 export const ALLOWED_ORIGINS = [
     'capacitor://localhost',

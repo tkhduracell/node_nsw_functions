@@ -25,7 +25,7 @@ describe('updateCalendarContent', () => {
     let firestore: jest.Mocked<Firestore>
     let bucket: jest.Mocked<Bucket>
 
-    let mocks = {
+    const mocks = {
         firestore: {
             set: jest.fn().mockResolvedValue({}),
             data: { calendar_last_uid: undefined as number | undefined }
@@ -101,25 +101,25 @@ describe('updateCalendarContent', () => {
         await updateCalendarContent(calendars, mock, clock, bucket, firestore)
 
         expect(mocks.firestore.set).toHaveBeenCalledWith({
-            "calendar_id": "calendar1",
-            "calendar_last_date": new Date("2023-09-23T15:14:59.344Z"),
-            "calendar_last_uid": "222",
-            "calendar_name": "Calendar 1",
-            "calendar_org_id": "1",
-            "last_notifications": [{
-                "at": "2023-09-20T15:14:59.344Z",
-                "body": "Lördag, kl 17:14-18:14, 60 min",
-                "title": "Ny bokning i Calendar 1",
-                "event": {
-                    "description": "Description 222",
-                    "id": "222",
-                    "start": "2023-09-23T15:14:59.344Z",
+            calendar_id: 'calendar1',
+            calendar_last_date: new Date('2023-09-23T15:14:59.344Z'),
+            calendar_last_uid: '222',
+            calendar_name: 'Calendar 1',
+            calendar_org_id: '1',
+            last_notifications: [{
+                at: '2023-09-20T15:14:59.344Z',
+                body: 'Lördag, kl 17:14-18:14, 60 min',
+                title: 'Ny bokning i Calendar 1',
+                event: {
+                    description: 'Description 222',
+                    id: '222',
+                    start: '2023-09-23T15:14:59.344Z',
                 },
             }],
-            "size": 1,
-            "public_url": "http://mock.bucket/object.ics",
-            "updated_at": FieldValue.serverTimestamp(),
-        }, { merge: true });
+            size: 1,
+            public_url: 'http://mock.bucket/object.ics',
+            updated_at: FieldValue.serverTimestamp(),
+        }, { merge: true })
 
         expect(mocks.notifictions.send).toHaveBeenCalled()
     })
@@ -141,25 +141,25 @@ describe('updateCalendarContent', () => {
         await updateCalendarContent(calendars, mock, clock, bucket, firestore)
 
         expect(mocks.firestore.set).toHaveBeenCalledWith({
-            "calendar_id": "calendar1",
-            "calendar_last_date": new Date("2023-09-23T15:14:59.344Z"),
-            "calendar_last_uid": "222",
-            "calendar_name": "Calendar 1",
-            "calendar_org_id": "1",
-            "last_notifications": [{
-                "at": "2023-09-20T15:14:59.344Z",
-                "body": "Lördag, kl 17:14-18:14, 60 min",
-                "title": "Ny bokning i Calendar 1",
-                "event": {
-                    "id": "222",
-                    "description": "Description 222",
-                    "start": "2023-09-23T15:14:59.344Z",
+            calendar_id: 'calendar1',
+            calendar_last_date: new Date('2023-09-23T15:14:59.344Z'),
+            calendar_last_uid: '222',
+            calendar_name: 'Calendar 1',
+            calendar_org_id: '1',
+            last_notifications: [{
+                at: '2023-09-20T15:14:59.344Z',
+                body: 'Lördag, kl 17:14-18:14, 60 min',
+                title: 'Ny bokning i Calendar 1',
+                event: {
+                    id: '222',
+                    description: 'Description 222',
+                    start: '2023-09-23T15:14:59.344Z',
                 }
             }],
-            "size": data.length,
-            "public_url": "http://mock.bucket/object.ics",
-            "updated_at": FieldValue.serverTimestamp(),
-        }, { merge: true });
+            size: data.length,
+            public_url: 'http://mock.bucket/object.ics',
+            updated_at: FieldValue.serverTimestamp(),
+        }, { merge: true })
     })
 
     it('should notify new event if not set', async () => {
@@ -195,4 +195,3 @@ function createEvent(clock: Clock, id: number, inDays: number, durationMinutes: 
         description: 'Description ' + id
     } satisfies Partial<ListedActivity> as unknown as ListedActivity
 }
-

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 /*
 *   npm run demo
@@ -29,7 +28,7 @@ async () => {
     const start = startOfDay(parseISO(date))
     const end = startOfDay(addDays(start, 1))
 
-    logger.info({ start, end }, "Start and end dates")
+    logger.info({ start, end }, 'Start and end dates')
     logger.info({
         start: formatInTimeZone(start, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss'),
         end: formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd HH:mm:ss')
@@ -54,9 +53,11 @@ async () => {
     const db = getFirestore()
     try {
         await login(browser, db, orgId)
-    } catch (err) {
+    }
+    catch (err) {
         logger.error(err)
-    } finally {
+    }
+    finally {
         await browser.close()
     }
 
@@ -93,7 +94,7 @@ async () => {
         .where('updated_at', '>=', new Date(0))
         .get()
 
-    list.forEach(d => {
+    list.forEach((d) => {
         const data = d.data() as CalendarMetadata
 
         const updatedAt: Date = (data.updated_at as unknown as Timestamp).toDate()
