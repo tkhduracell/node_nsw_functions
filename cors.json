@@ -1,0 +1,24 @@
+[
+  {
+    "maxAgeSeconds": 30,
+    "method": [
+      "GET"
+    ],
+    "origin": [
+      "capacitor://localhost",
+      "ionic://localhost",
+      "http://localhost",
+      "http://192.168.68.57:3000",
+      "http://localhost:8080",
+      "https://localhost",
+      "https://nackswinget.se"
+    ],
+    "responseHeader": [
+      "content-type",
+      "x-app-version",
+      "x-app-id",
+      "x-app-build",
+      "x-app-name"
+    ]
+  }
+]

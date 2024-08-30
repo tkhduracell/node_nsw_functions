@@ -26,6 +26,8 @@
     "dev:news-api": "nodemon --watch src --ext ts --exec 'npm run run:news-api'",
     "dev:index": "live-server --https=https.config.js --port=3000 --watch=static/ --mount=/:static/index.html --mount=/firebase-messaging-sw.js:static/firebase-messaging-sw.js",
     "dev:book": "live-server --port=3000 --watch=static/ --mount=/:static/booking.html --proxy=/book/search:https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api/book/search",
+    "bucket:cors:set": "gsutil cors set cors.json gs://nackswinget-af7ef.appspot.com",
+    "bucket:cors": "gsutil cors get gs://nackswinget-af7ef.appspot.com|jq",
     "demo": "node --inspect -r ts-node/register -r dotenv/config -r source-map-support/register src/demo.ts",
     "clean": "rm -rf dist"
   },
