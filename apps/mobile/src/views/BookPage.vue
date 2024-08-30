@@ -289,8 +289,8 @@ function onSubmit() {
   const book: ActivityInit = {
     title: data.mode === 'theme' ? `Tematräning - ${data.theme}` : 'Friträning',
     description: data.responsible + ' - ' + data.tel,
-    date: date.value!,
-    time: time.value!,
+    date: date.value as string,
+    time: time.value as string,
     duration: data.duration!,
     password: data.pass,
     location: 'Ceylon',
