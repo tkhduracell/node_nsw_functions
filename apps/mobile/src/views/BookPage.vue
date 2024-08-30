@@ -30,8 +30,8 @@
 
             <b style="display: block; margin-top: 1em; margin-bottom: 0.5em;">Välj Datum / Tid</b>
 
-            <ion-datetime :min="min" locale="sv-SE" :first-day-of-week="1" v-model="data.datetime" presentation="date-time"
-              minuteValues="0,15,30,45" :prefer-wheel="true"
+            <ion-datetime :min="min" locale="sv-SE" :first-day-of-week="1" v-model="data.datetime"
+              presentation="date-time" minuteValues="0,15,30,45" :prefer-wheel="true"
               hourValues="7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23">
               <span slot="time-label">Starttid</span>
             </ion-datetime>
@@ -252,8 +252,8 @@ const errors = computed(() => {
   return errors.map(s => " - " + s)
 })
 
-const date = computed(() => data.datetime && formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'yyyy-MM-dd'))
-const time = computed(() => data.datetime && formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'HH:mm'))
+const date = computed(() => !!data.datetime && formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'yyyy-MM-dd'))
+const time = computed(() => !!data.datetime && formatInTimeZone(data.datetime!, 'Europe/Stockholm', 'HH:mm'))
 
 const activities = ref<Activity[]>([])
 
