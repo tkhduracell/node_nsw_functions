@@ -90,17 +90,27 @@ export class NswApiClient {
 
     async retrieveAppInfo() {
       const info = await App.getInfo()
-      return { 'x-app-version': info.version, 'x-app-id': info.id, 'x-app-build': info.build, 'x-app-name': info.name }
+      return { 
+        'x-app-version': info.version, 
+        'x-app-id': info.id, 
+        'x-app-build': info.build, 
+        'x-app-name': info.name 
+      }
     }
 
     async news(): Promise<News> {
-      return await axios.get<News>(`${this.bucketUrl}/news.json`, { headers: this.headers })
-        .then(resp => resp.data)
+      const url = `${this.bucketUrl}/news.json`
+      return await axios.get<News>(url, { 
+        headers: this.headers, 
+      }).then(resp => resp.data)
     }
 
     async searchByDateRange(calendarId = '337667', days = 30): Promise<{ date: string, json: Activity[] }[]> {
-      const all = await axios.get<Activity[]>(`${this.bucketUrl}/${calendarId}.${days}d.json`, { headers: this.headers })
-        .then(resp => resp.data)
+      const url = `${this.bucketUrl}/${calendarId}.${days}d.json`
+      const all = await axios.get<Activity[]>(url, { 
+        headers: this.headers,
+      }).then(resp => resp.data)
+
       const grouped = groupBy(all, a => format(new Date(a.startTime), 'yyyy-MM-dd'))
 
       return sortBy(Object.keys(grouped), i => i)
@@ -108,7 +118,8 @@ export class NswApiClient {
     }
 
     async searchByDate(date: string): Promise<Activity[]> {
-      return await axios.get<Activity[]>(`${this.baseUrl}/calendars-api/book/search`, { 
+      const url = `${this.baseUrl}/calendars-api/book/search`
+      return await axios.get<Activity[]>(url, { 
         params: { date },
         headers: this.headers 
       })
