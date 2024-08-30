@@ -60,8 +60,9 @@
         </ion-card-header>
         <ion-card-content>
           <p>Kunde ej ladda kalender</p>
-          <ion-label v-if="isDev && 'code' in error">
-            <pre>{{ JSON.stringify((error as AxiosError).toJSON(), null, 2) }}</pre>
+          <ion-label v-if="'code' in error">
+            <pre>
+              {{ isDev ? JSON.stringify((error as AxiosError).toJSON(), null, 2) : `Felkod: ${error.code} - ${error.message}` }}</pre>
           </ion-label>
           <ion-label v-else>
             {{ error }}
@@ -193,7 +194,7 @@ ion-spinner.big {
 </style>
 <script setup lang="ts">
 import {
-  IonPage, IonContent, IonButton, 
+  IonPage, IonContent, IonButton,
   IonRow, IonList, IonItem, IonLabel, IonCard, IonCardContent, IonCardHeader,
   IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonIcon, IonSpinner,
   IonRefresher, IonRefresherContent
@@ -217,6 +218,7 @@ const { data: subscription, unsubscribe, subscribe } = useSubscription('calendar
 
 const handleRefresh = (event: { target: { complete: () => void } }) => {
   execute()
+    .catch((e) => console.error('Failed to refresh', e))
     .finally(() => event.target.complete())
 };
 
