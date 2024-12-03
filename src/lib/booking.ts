@@ -1,7 +1,7 @@
 import { addHours, addMinutes, parseISO, addDays } from 'date-fns'
 
 import { HttpFetch, type ActivityCreateResponse, type ListedActivities } from './types'
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz'
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
 import { type Protocol } from 'puppeteer'
 import { logger } from '../logging'
 import z from 'zod'
@@ -82,7 +82,7 @@ export class ActivityApi {
 
         function parseDateString() {
             if (date.match(/^\d{4}-\d{2}-\d{2}$/gi)) {
-                return toZonedTime(date, 'Europe/Stockholm')
+                return fromZonedTime(date, 'Europe/Stockholm')
             }
             return parseISO(date)
         }
@@ -161,5 +161,4 @@ export interface ActivityBookingRaw {
     end: Date
     name: string
     description: string
-
 }
