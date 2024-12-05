@@ -62,7 +62,7 @@ app.get('/', async (req, res) => {
     if (!exists) {
         return res
             .status(404)
-            .send({ message: 'Calendar not found' })
+            .json({ message: 'Calendar not found' })
             .end()
     }
 
@@ -105,7 +105,7 @@ app.post('/update', async (req, res) => {
         logger.error(err, 'Error in updateLean()')
 
         return res.status(500)
-            .send({ message: `Unable to perform update: ${err?.message}` })
+            .json({ message: `Unable to perform update: ${err?.message}` })
             .end()
     }
 
@@ -206,7 +206,7 @@ app.post('/book', cors, async (req, res) => {
         logger.info({ event }, 'Booking activity')
         try {
             const { activityId } = await actApi.bookActivity(calendarId, event)
-            res.status(200).send({
+            res.status(200).json({
                 success: true,
                 id: activityId
             })
