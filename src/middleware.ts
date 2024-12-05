@@ -16,8 +16,13 @@ export const prettyJson = (req: Request, res: Response, next: NextFunction) => {
 
 export const errorHandling = (err: Error, req: Request, res: Response) => {
     logger.error(err, 'Uncaught error, sending "internal error" as response')
-    res.status((err as any).status ?? 500).json({
-        error: err.message,
-        success: false,
-    })
+    if (res) {
+        res.status((err as any).status ?? 500).json({
+            error: err.message,
+            success: false,
+        })
+    }
+    else {
+        throw err
+    }
 }
