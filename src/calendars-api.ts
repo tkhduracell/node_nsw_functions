@@ -47,7 +47,10 @@ app.get('/', async (req, res) => {
     if (!req.query.id) {
         const [file] = await bucket.file('index.json').download()
 
-        return res.header('Content-Type', 'application/json').send(file).end()
+        return res
+            .header('Content-Type', 'application/json')
+            .send(file)
+            .end()
     }
 
     const { id, dl } = z.object({
@@ -57,7 +60,10 @@ app.get('/', async (req, res) => {
 
     const [exists] = await bucket.file(`cal_${id}.ics`).exists()
     if (!exists) {
-        return res.status(404).send({ message: 'Calendar not found' }).end()
+        return res
+            .status(404)
+            .send({ message: 'Calendar not found' })
+            .end()
     }
 
     const [{ metadata }] = await bucket.file(`cal_${id}.ics`).getMetadata()
@@ -65,13 +71,13 @@ app.get('/', async (req, res) => {
 
     if (dl) {
         res
-            .setHeader('Content-Type', 'text/calendar')
-            .setHeader('Content-Disposition', `attachment; filename="${name}.ics"`)
+            .header('Content-Type', 'text/calendar')
+            .header('Content-Disposition', `attachment; filename="${name}.ics"`)
             .status(200)
     }
     else {
         res
-            .setHeader('Content-Type', 'text/plain; charset=utf-8')
+            .header('Content-Type', 'text/plain; charset=utf-8')
             .status(200)
     }
 
