@@ -79,7 +79,7 @@ jobs:
 
       - name: Deploy notifications-api
         run: |
-          gcloud functions deploy notifications-api \
+          gcloud --verbosity=debug functions deploy notifications-api \
             --gen2 \
             --runtime=nodejs20 \
             --region="${GCLOUD_REGION}" \
