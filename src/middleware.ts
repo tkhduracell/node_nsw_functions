@@ -6,7 +6,7 @@ export const prettyJson = (req: Request, res: Response, next: NextFunction) => {
 
     if (!req.xhr && userAgent && (userAgent.includes('Chrome') || userAgent.includes('Mozilla'))) {
         res.set('Content-Type', 'application/json; charset=utf-8')
-        res.json = (body) => {
+        res.json = (body: any) => {
             const json = JSON.stringify(body, null, 2)
             return res.send(json)
         }
@@ -15,7 +15,7 @@ export const prettyJson = (req: Request, res: Response, next: NextFunction) => {
 }
 
 export const errorHandling = (err: Error, req: Request, res: Response) => {
-    logger.error('Uncaught error, sending "internal error" as response', { err })
+    logger.error(err, 'Uncaught error, sending "internal error" as response')
     res.status((err as any).status ?? 500).json({
         error: err.message,
         success: false,
