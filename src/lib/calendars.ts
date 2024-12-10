@@ -147,7 +147,7 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
 
     for (const cal of cals) {
         try {
-            updateSingleCalendarContent(cal, actApi, clock, bucket, db, { today, lastquater, inayear, inaweek })
+            await updateSingleCalendarContent(cal, actApi, clock, bucket, db, { today, lastquater, inayear, inaweek })
         }
         catch (error) {
             console.error(`Unable to update calendar ${cal.name} ${cal.id}`, error)
@@ -162,7 +162,7 @@ async function updateSingleCalendarContent(cal: Calendars[number],
     clock: Clock,
     bucket: Bucket,
     db: Firestore,
-    { today, lastquater, inayear, inaweek }: { today: Date, lastquater: Date, inayear: Date, inaweek: Date }) {
+    { today, lastquater, inayear, inaweek }: { today: Date, lastquater: Date, inayear: Date, inaweek: Date }): Promise<CalendarMetadata> {
     logger.info(cal, 'Fetching activities: %o', { cal, lastquater, inayear })
     const { data, response } = await actApi.fetchActivities(lastquater, inayear, cal.id)
 
