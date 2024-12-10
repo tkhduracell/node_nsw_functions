@@ -146,32 +146,48 @@ export async function updateCalendarContent(cals: Calendars, actApi: ActivityApi
     const inaweek = addDays(today, 6)
 
     for (const cal of cals) {
-        logger.info(cal, 'Fetching activities: %o', { cal, lastquater, inayear })
-        const { data, response } = await actApi.fetchActivities(lastquater, inayear, cal.id)
-
-        const calendar = buildCalendar(response.url, data, cal)
-        logger.info(cal, `Built ICalendar successfully with %d events`, calendar.length())
-
-        const metadata = await fetchMetadata(cal, db)
-
-        await peekAndNotifyEvent(cal, calendar, today, inaweek, metadata, clock)
-
-        await writeJsonToGcs(data, today, bucket, cal)
-
-        const icsFile = await writeICStoGcs(cal, bucket, metadata, calendar.toString())
-
-        logger.info(cal, 'Saving metadata: %o', omit(metadata, 'last_notifications'))
-        await db.collection('calendars')
-            .doc(cal.id ?? '')
-            .set({
-                ...metadata,
-                size: calendar.length(),
-                updated_at: FieldValue.serverTimestamp(),
-                public_url: icsFile.publicUrl()
-            }, { merge: true })
+        try {
+            updateSingleCalendarContent(cal, actApi, clock, bucket, db, { today, lastquater, inayear, inaweek })
+        }
+        catch (error) {
+            console.error(`Unable to update calendar ${cal.name} ${cal.id}`, error)
+        }
     }
 
     await writeJSONManifest(bucket)
+}
+
+async function updateSingleCalendarContent(cal: Calendars[number],
+    actApi: ActivityApi,
+    clock: Clock,
+    bucket: Bucket,
+    db: Firestore,
+    { today, lastquater, inayear, inaweek }: { today: Date, lastquater: Date, inayear: Date, inaweek: Date }) {
+    logger.info(cal, 'Fetching activities: %o', { cal, lastquater, inayear })
+    const { data, response } = await actApi.fetchActivities(lastquater, inayear, cal.id)
+
+    const calendar = buildCalendar(response.url, data, cal)
+    logger.info(cal, `Built ICalendar successfully with %d events`, calendar.length())
+
+    const metadata = await fetchMetadata(cal, db)
+
+    await peekAndNotifyEvent(cal, calendar, today, inaweek, metadata, clock)
+
+    await writeJsonToGcs(data, today, bucket, cal)
+
+    const icsFile = await writeICStoGcs(cal, bucket, metadata, calendar.toString())
+
+    logger.info(cal, 'Saving metadata: %o', omit(metadata, 'last_notifications'))
+    await db.collection('calendars')
+        .doc(cal.id ?? '')
+        .set({
+            ...metadata,
+            size: calendar.length(),
+            updated_at: FieldValue.serverTimestamp(),
+            public_url: icsFile.publicUrl()
+        }, { merge: true })
+
+    return metadata
 }
 
 async function writeJsonToGcs(data: ListedActivities, now: Date, bucket: Bucket, cal: { id: string, name: string, orgId: string }) {
