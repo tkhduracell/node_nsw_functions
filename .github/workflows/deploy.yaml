@@ -434,7 +434,7 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         run: |
           YYYYMMDD=$(date '+%Y-%m-%d %H:%M:%S')
-          MESSAGE=" 🚀 NSW functions has been deployed! 🚀\nAt: ${YYYYMMDD}"
+          MESSAGE=" 🏋️ NSW functions has been deployed at: \`${YYYYMMDD}\`"
           curl -X POST -H 'Content-type: application/json' --data "{\"text\":\"${MESSAGE}\"}" ${SLACK_WEBHOOK}
 
   build-apps-android:
