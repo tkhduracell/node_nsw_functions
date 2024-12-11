@@ -14,18 +14,18 @@ export const prettyJson = (req: Request, res: Response, next: NextFunction) => {
     next()
 }
 
-export const errorHandling = (err: Error, req: Request, res: Response) => {
+// Based on https://expressjs.com/en/guide/error-handling.html#the-default-error-handler
+export const errorHandling = (err: Error, req: Request, res: Response, next: NextFunction) => {
     logger.error(new Error('Uncaught error, sending "internal error" as response', { cause: err }))
     if (err.cause) {
         logger.error(err.cause)
     }
-    if (res) {
-        res.status((err as any).status ?? 500).json({
-            error: err.message,
-            success: false,
-        })
+    if (res && res.headersSent) {
+        return next(err)
     }
-    else {
-        throw err
-    }
+    res.status((err as any).status ?? 500)
+    res.json({
+        error: err.message,
+        success: false,
+    })
 }
