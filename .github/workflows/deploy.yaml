@@ -1,4 +1,4 @@
-name: Deploy
+name: Main
 
 on:
   push:
@@ -20,8 +20,8 @@ jobs:
       matrix:
         node-version: [20.x]
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       - uses: actions/checkout@v4
@@ -42,14 +42,14 @@ jobs:
 
   deploy-notifications-api:
     runs-on: ubuntu-latest
-    needs: 'build'
-    concurrency: 'notifications-api'
+    needs: "build"
+    concurrency: "notifications-api"
     strategy:
       matrix:
         node-version: [20.x]
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -64,12 +64,12 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
@@ -93,14 +93,14 @@ jobs:
 
   deploy-competitions-api:
     runs-on: ubuntu-latest
-    needs: 'build'
-    concurrency: 'competitions-api'
+    needs: "build"
+    concurrency: "competitions-api"
     strategy:
       matrix:
         node-version: [20.x]
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -115,12 +115,12 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
@@ -143,14 +143,14 @@ jobs:
 
   deploy-news-api:
     runs-on: ubuntu-latest
-    needs: 'build'
-    concurrency: 'news-api'
+    needs: "build"
+    concurrency: "news-api"
     strategy:
       matrix:
         node-version: [20.x]
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -165,12 +165,12 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
@@ -193,14 +193,14 @@ jobs:
 
   deploy-calendar-api:
     runs-on: ubuntu-latest
-    needs: 'build'
-    concurrency: 'calendar-api'
+    needs: "build"
+    concurrency: "calendar-api"
     strategy:
       matrix:
         node-version: [20.x]
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -215,12 +215,12 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
@@ -244,14 +244,14 @@ jobs:
 
   deploy-calendar-update-api:
     runs-on: ubuntu-latest
-    needs: 'build'
-    concurrency: 'calendar-update-api'
+    needs: "build"
+    concurrency: "calendar-update-api"
     strategy:
       matrix:
         node-version: [20.x]
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
@@ -266,12 +266,12 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
@@ -301,24 +301,24 @@ jobs:
       - "deploy-calendar-api"
       - "deploy-calendar-update-api"
 
-    concurrency: 'scheduler'
+    concurrency: "scheduler"
 
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
     steps:
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: | 
+        run: |
           gcloud config set project "${GCLOUD_PROJECT}"
           gcloud config set functions/region europe-north1
           gcloud config set functions/gen2 true
@@ -389,21 +389,21 @@ jobs:
       - "deploy-calendar-update-api"
       - "deploy-news-api"
 
-    concurrency: 'cleanup'
+    concurrency: "cleanup"
 
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       - uses: actions/checkout@v4
 
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
@@ -425,8 +425,8 @@ jobs:
       - "deploy-news-api"
 
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       - name: Send deploy message to slack
@@ -444,8 +444,8 @@ jobs:
         node-version: [20.x]
 
     permissions:
-      contents: 'read'
-      id-token: 'write'
+      contents: "read"
+      id-token: "write"
 
     steps:
       - uses: actions/checkout@v4
@@ -474,12 +474,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
 
-      - id: 'auth'
+      - id: "auth"
         name: Setup  gcloud Cloud SDK auth
-        uses: 'google-github-actions/auth@v2'
+        uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: 'projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider'
-          service_account: 'github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com'
+          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
+          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
           create_credentials_file: true
 
       - name: Set up gcloud Cloud SDK environment
