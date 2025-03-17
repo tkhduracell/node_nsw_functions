@@ -13,22 +13,40 @@ env:
   GCLOUD_BUCKET: nackswinget-af7ef.appspot.com
   TZ: Europe/Stockholm
 
+permissions: # Global permissions
+  contents: "read"
+  id-token: "write"
+
 jobs:
-  build:
+  deploy-functions:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        node-version: [20.x]
-    permissions:
-      contents: "read"
-      id-token: "write"
+        function:
+          - name: competitions-api
+            secrets: ""
+          - name: news-api
+            secrets: ""
+          - name: notifications-api
+            secrets: "ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest"
+          - name: calendars-api
+            secrets: "ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest"
+          - name: calendars-update-api
+            secrets: "ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest"
+            memory: 1GiB
+            max_instances: 1
+            concurrency_limit: 1
+
+    concurrency: ${{ matrix.function.name }}
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install deps
@@ -37,289 +55,54 @@ jobs:
       - name: Build source
         run: npm run build --if-present
 
-      - name: Test
-        run: npm run test --if-present
-
-  deploy-notifications-api:
-    runs-on: ubuntu-latest
-    needs: "build"
-    concurrency: "notifications-api"
-    strategy:
-      matrix:
-        node-version: [20.x]
-    permissions:
-      contents: "read"
-      id-token: "write"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build source
-        run: npm run build --if-present
-
-      - id: "auth"
-        name: Setup  gcloud Cloud SDK auth
+      - id: auth
+        name: Setup gcloud Cloud SDK auth
         uses: "google-github-actions/auth@v2"
         with:
           workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
           service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
+          export_environment_variables: true
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: gcloud config set project "${GCLOUD_PROJECT}"
-
-      - name: Deploy notifications-api
+      - name: Deploy ${{ matrix.function.name }}
         run: |
-          gcloud functions deploy notifications-api \
+          gcloud functions deploy ${{ matrix.function.name }} \
             --gen2 \
             --runtime=nodejs20 \
             --region="${GCLOUD_REGION}" \
             --source=. \
-            --entry-point=notifications-api \
+            --entry-point=${{ matrix.function.name }} \
             --trigger-http \
-            --max-instances=10 \
+            --max-instances=${{ matrix.function.max_instances || 1 }} \
             --allow-unauthenticated \
-            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
-
-  deploy-competitions-api:
-    runs-on: ubuntu-latest
-    needs: "build"
-    concurrency: "competitions-api"
-    strategy:
-      matrix:
-        node-version: [20.x]
-    permissions:
-      contents: "read"
-      id-token: "write"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build source
-        run: npm run build --if-present
-
-      - id: "auth"
-        name: Setup  gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
-        with:
-          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
-          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
-
-      - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: gcloud config set project "${GCLOUD_PROJECT}"
-
-      - name: Deploy competitions-api
-        run: |
-          gcloud functions deploy competitions-api \
-            --gen2 \
-            --runtime=nodejs20 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=competitions-api \
-            --trigger-http \
-            --max-instances=10 \
-            --allow-unauthenticated \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
-
-  deploy-news-api:
-    runs-on: ubuntu-latest
-    needs: "build"
-    concurrency: "news-api"
-    strategy:
-      matrix:
-        node-version: [20.x]
-    permissions:
-      contents: "read"
-      id-token: "write"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build source
-        run: npm run build --if-present
-
-      - id: "auth"
-        name: Setup  gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
-        with:
-          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
-          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
-
-      - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: gcloud config set project "${GCLOUD_PROJECT}"
-
-      - name: Deploy news-api
-        run: |
-          gcloud functions deploy news-api \
-            --gen2 \
-            --runtime=nodejs20 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=news-api \
-            --trigger-http \
-            --max-instances=10 \
-            --allow-unauthenticated \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
-
-  deploy-calendar-api:
-    runs-on: ubuntu-latest
-    needs: "build"
-    concurrency: "calendar-api"
-    strategy:
-      matrix:
-        node-version: [20.x]
-    permissions:
-      contents: "read"
-      id-token: "write"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build source
-        run: npm run build --if-present
-
-      - id: "auth"
-        name: Setup  gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
-        with:
-          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
-          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
-
-      - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: gcloud config set project "${GCLOUD_PROJECT}"
-
-      - name: Deploy calendars-api
-        run: |
-          gcloud functions deploy calendars-api \
-            --gen2 \
-            --runtime=nodejs20 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=calendars-api \
-            --trigger-http \
-            --max-instances=10 \
-            --allow-unauthenticated \
-            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
-
-  deploy-calendar-update-api:
-    runs-on: ubuntu-latest
-    needs: "build"
-    concurrency: "calendar-update-api"
-    strategy:
-      matrix:
-        node-version: [20.x]
-    permissions:
-      contents: "read"
-      id-token: "write"
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install deps
-        run: npm ci
-
-      - name: Build source
-        run: npm run build --if-present
-
-      - id: "auth"
-        name: Setup  gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
-        with:
-          workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
-          service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
-
-      - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: gcloud config set project "${GCLOUD_PROJECT}"
-
-      - name: Deploy calendars-update-api
-        run: |
-          gcloud functions deploy calendars-update-api \
-            --gen2 \
-            --runtime=nodejs20 \
-            --region="${GCLOUD_REGION}" \
-            --source=. \
-            --entry-point=calendars-update-api \
-            --trigger-http \
-            --memory=1GiB \
-            --max-instances=1 \
-            --concurrency=1 \
-            --allow-unauthenticated \
-            --update-secrets=ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest \
-            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA}
+            --update-secrets=${{ matrix.function.secrets }} \
+            --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA} \
+            ${{ matrix.function.memory && format('--memory={0}', matrix.function.memory) || '' }} \
+            ${{ matrix.function.concurrency_limit && format('--concurrency={0}', matrix.function.concurrency_limit) || '' }}
 
   update-scheduler:
     runs-on: ubuntu-latest
     needs:
-      - "deploy-calendar-api"
-      - "deploy-calendar-update-api"
+      - deploy-functions
 
     concurrency: "scheduler"
 
-    permissions:
-      contents: "read"
-      id-token: "write"
     steps:
-      - id: "auth"
+      - id: auth
         name: Setup  gcloud Cloud SDK auth
         uses: "google-github-actions/auth@v2"
         with:
           workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
           service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
+          export_environment_variables: true
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
+      - name: Setup gcloud defaults
         run: |
-          gcloud config set project "${GCLOUD_PROJECT}"
           gcloud config set functions/region europe-north1
           gcloud config set functions/gen2 true
 
@@ -383,33 +166,21 @@ jobs:
   clean-artifacts:
     runs-on: ubuntu-latest
     needs:
-      - "deploy-notifications-api"
-      - "deploy-competitions-api"
-      - "deploy-calendar-api"
-      - "deploy-calendar-update-api"
-      - "deploy-news-api"
-
-    concurrency: "cleanup"
-
-    permissions:
-      contents: "read"
-      id-token: "write"
+      - deploy-functions
 
     steps:
       - uses: actions/checkout@v4
 
-      - id: "auth"
+      - id: auth
         name: Setup  gcloud Cloud SDK auth
         uses: "google-github-actions/auth@v2"
         with:
           workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
           service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
+          export_environment_variables: true
 
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
-
-      - name: Setup default project (${{ env.GCLOUD_PROJECT }})
-        run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Clean cloud functions artifacts
         run: |
@@ -418,15 +189,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     needs:
-      - "deploy-notifications-api"
-      - "deploy-competitions-api"
-      - "deploy-calendar-api"
-      - "deploy-calendar-update-api"
-      - "deploy-news-api"
-
-    permissions:
-      contents: "read"
-      id-token: "write"
+      - deploy-functions
 
     steps:
       - name: Send deploy message to slack
@@ -439,20 +202,14 @@ jobs:
 
   build-apps-android:
     runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        node-version: [20.x]
-
-    permissions:
-      contents: "read"
-      id-token: "write"
 
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+
+      - name: Install Node.JS
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: apps/mobile/package-lock.json
 
@@ -474,7 +231,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v3
 
-      - id: "auth"
+      - id: auth
         name: Setup  gcloud Cloud SDK auth
         uses: "google-github-actions/auth@v2"
         with:
