@@ -16,3 +16,4 @@ keystore.properties
 apps/mobile/android/.idea/deploymentTargetDropDown.xml
 
 _*.md
+report.json
