@@ -40,7 +40,7 @@ export function buildCalendar(url: string, activities: ListedActivities, subject
             const [firstline] = description.split('\n')
             if (firstline.match(/.* - \+?[0-9 ]+/i)) {
                 const [organiser] = firstline.split(' - ')
-                event.organizer({ name: organiser })
+                event.organizer({ name: organiser?.trim() })
             }
         }
     }
