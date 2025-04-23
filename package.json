@@ -37,7 +37,7 @@
     "@google-cloud/functions-framework": "^3.4.0",
     "@google-cloud/scheduler": "^4.3.0",
     "@google-cloud/storage": "^7.11.2",
-    "cheerio": "^1.0.0-rc.12",
+    "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "cross-fetch": "^4.1.0",
     "date-fns": "^3.6.0",
