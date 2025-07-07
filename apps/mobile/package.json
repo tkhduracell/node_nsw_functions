@@ -51,7 +51,7 @@
     "@types/lodash": "^4.14.202",
     "@vitejs/plugin-legacy": "^5.3.0",
     "@vitejs/plugin-vue": "^5.0.3",
-    "@vue/eslint-config-typescript": "^12.0.0",
+    "@vue/eslint-config-typescript": "^13.0.0",
     "@vue/test-utils": "^2.4.4",
     "cypress": "^13.6.4",
     "eslint": "^8.56.0",
