@@ -8,11 +8,11 @@ export async function dumpScreenshots(browser: Browser, bucket: Bucket, prefix: 
     const date = new Date()
     date.setMilliseconds(0)
 
-    for (const page of (await browser.pages()).slice(1)) {
+    for (const page of (await browser.pages()).filter(p => p.url() !== 'about:blank')) {
         const img = await page.screenshot({ fullPage: true, type: 'png' })
         const date = formatInTimeZone(Date.now(), 'Europe/Stockholm', 'yyyy-MM-dd')
         const time = formatInTimeZone(Date.now(), 'Europe/Stockholm', 'HH:mm:ss')
-        const imageName = `errors/${prefix}/${date}/${time}-page-${i++}.png`
+        const imageName = `errors/${prefix}/${date}/Screen-${time}-page-${i++}.png`
         const file = bucket.file(imageName)
 
         const uri = file.cloudStorageURI.toString()
