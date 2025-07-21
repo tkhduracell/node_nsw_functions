@@ -24,7 +24,7 @@ export async function login(browser: Browser, db: Firestore, orgId: string) {
     const {
         ACTIVITY_BASE_URL,
         ACTIVITY_USERNAME,
-        ACTIVITY_PASSWORD
+        ACTIVITY_PASSWORD,
     } = IDOActivityOptions.parse(process.env)
 
     const page = await browser.newPage()
@@ -43,11 +43,12 @@ export async function login(browser: Browser, db: Firestore, orgId: string) {
     await page.select('#OrganisationSelect2', orgId)
     await navigate(page, async () => { await page.click('#login-button') })
 
-    // Verify login state
-    await page.waitForSelector('#PageHeader_Start > h1')
-
     // Add a delay to ensure the login process is completed
     await sleep(2000)
+
+    // Verify login state
+    await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${orgId}`, { waitUntil: 'networkidle2' })
+    await page.waitForSelector('.page-header > h1')
 
     const cookies = await page.cookies()
 
