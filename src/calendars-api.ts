@@ -102,7 +102,7 @@ app.post('/update', async (req, res) => {
         await updateLean(bucket, db, ClockFactory.native(), orgId)
     }
     catch (err: any) {
-        logger.error(err, 'Error in updateLean()')
+        logger.error(err, err?.message || 'Error during calendar update in updateLean()')
 
         return res.status(500)
             .json({ message: `Unable to perform update: ${err?.message}` })
