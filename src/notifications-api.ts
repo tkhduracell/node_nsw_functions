@@ -111,8 +111,8 @@ export async function notification({ token, topic, title, body }: { token?: stri
             }
 
     const notification: Message['notification'] = {
-        title: title ?? data.nsw_topic ?? 'The-dans på Söndag igen!',
-        body: body ?? data.nsw_subject_id ?? 'Vi kör The-dans på Söndag igen kl 15-17. Välkomna!',
+        title: title ?? data.nsw_topic ?? 'Meddelande ifrån Nackswinget',
+        body: body ?? data.nsw_subject_id ?? 'Välkomna till våra kurser',
         imageUrl: 'https://nackswinget.se/wp-content/uploads/2024/01/The-dans-980x560.png'
     }
     const webpush: Message['webpush'] = {

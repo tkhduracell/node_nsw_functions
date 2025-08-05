@@ -154,10 +154,10 @@ export async function fetchCompetitions(system?: 'BRR', debug = false): Promise<
         // Enrichment
         data.last_regestration_date = data.last_regestration_date?.replace(/(Senast|Stängd) +/gi, '') ?? null
         data.open = data.type?.toLocaleLowerCase() === 'öppen' || data.type?.toLocaleLowerCase() === 'gp'
-        data.cancelled = data.name.toLocaleLowerCase().includes('inställd!')
-        data.name = data.name.replace(/ *Inställd! */g, '')
+        data.cancelled = data.name.match(/.*inställd.*/gi) !== null
 
         if (!data.open) continue
+        if (data.cancelled) continue
 
         const event = {
             start: new Date(data.start_date),
