@@ -14,6 +14,7 @@ env:
 permissions:
   contents: "read"
   id-token: "write"
+  pull-requests: "write"
 
 jobs:
   build-functions:
@@ -67,15 +68,12 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Lint
-        run: npm run lint -- --format json --output-file eslint_report.json || echo "{}" > eslint_report.json
-
-      - name: Annotate Code Linting Results
-        uses: ataylorme/eslint-annotate-action@3.0.0
-        if: always()
+      - name: Lint with reviewdog
+        uses: reviewdog/action-eslint@v1
         with:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          report-json: "eslint_report.json"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          eslint_flags: "src/"
 
   build-apps:
     runs-on: ubuntu-latest
