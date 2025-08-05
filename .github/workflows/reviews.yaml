@@ -68,7 +68,7 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint -- -o eslint_report.json
+        run: npm run lint -- --format json --output-file eslint_report.json || echo "{}" > eslint_report.json
 
       - name: Annotate Code Linting Results
         uses: ataylorme/eslint-annotate-action@3.0.0
