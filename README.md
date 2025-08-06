@@ -147,6 +147,50 @@ curl 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/calendars-api/b
   --data-raw '{"title":"Test","location":"Ceylon","password":"XXX","date":"2024-01-23T23:00:00.000Z","time":"15:00","duration":60,"description":"Bob - 07026XXXXX"}'
 ```
 
+## Local GitHub Actions Testing
+
+This project uses [`act`](https://github.com/nektos/act) to run GitHub Actions workflows locally for testing before pushing to GitHub.
+
+### Prerequisites
+
+Install `act`:
+```bash
+# macOS
+brew install act
+
+# Or using GitHub CLI
+gh extension install https://github.com/nektos/gh-act
+```
+
+### Running Workflows Locally
+
+Test specific jobs from the pull request workflow:
+
+```bash
+# Test the functions build job
+act pull_request -j build-functions --container-architecture linux/amd64
+
+# Test the functions test job  
+act pull_request -j test-functions --container-architecture linux/amd64
+
+# Test the lint job
+act pull_request -j lint-functions --container-architecture linux/amd64
+
+# Test the mobile app build job
+act pull_request -j build-apps --container-architecture linux/amd64
+```
+
+Test all pull request jobs:
+```bash
+act pull_request --container-architecture linux/amd64
+```
+
+### Notes
+
+- The `--container-architecture linux/amd64` flag ensures compatibility across different host architectures
+- Local testing helps catch issues before they appear in CI/CD
+- Some steps that require GitHub secrets or cloud credentials will be skipped locally
+
 ## Additional Documentation
 
 - [Android Development Guide](apps/mobile/android/README.md)
