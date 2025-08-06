@@ -5,20 +5,31 @@ README
 
 This project uses [pnpm](https://pnpm.io/) as the package manager for better performance and disk efficiency.
 
+## Workspace Structure
+
+This monorepo contains two main packages:
+
+- **`@nackswinget/functions`** - Cloud Functions and backend APIs (in `functions/`)
+- **`@nackswinget/mobile`** - Ionic Vue mobile application (in `apps/mobile/`)
+
 ### Installation
 
 ```bash
-# Install dependencies
+# Install dependencies for all packages
 pnpm install
 
 # Build all packages
-pnpm run build
+pnpm build
 
-# Build specific workspace (mobile app)
-pnpm --filter nackswinget run build
+# Build specific packages
+pnpm --filter @nackswinget/functions run build
+pnpm --filter @nackswinget/mobile run build
 
 # Run tests
-pnpm run test
+pnpm test
+
+# Run linting
+pnpm lint
 ```
 
 ## Certs

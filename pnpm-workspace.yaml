@@ -1,8 +1,8 @@
 packages:
-  # Root package
-  - "."
-  # Include packages in subfolders
-  - "apps/**"
+  # Mobile app
+  - "apps/*"
+  # Cloud functions
+  - "functions"
   # Exclude test directories
   - "!**/test/**"
   - "!**/tests/**"
