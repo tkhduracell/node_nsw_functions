@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 /*
-*   npm run demo
+*   pnpm run demo
 */
 
 import { formatInTimeZone } from 'date-fns-tz'
