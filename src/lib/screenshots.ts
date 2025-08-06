@@ -24,6 +24,6 @@ export async function dumpScreenshots(browser: Browser, bucket: Bucket, prefix: 
             action: 'read',
             expires: Date.now() + 3600 * 1000
         })
-        logger.info(`Screenshot uploaded for page ${i-1}`, { i, uri, url })
+        logger.info(`Screenshot uploaded for page ${i - 1}`, { i, uri, url })
     }
 }
