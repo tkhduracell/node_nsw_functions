@@ -8,6 +8,7 @@
     "node": "20"
   },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "ios:watch": "vite dev --host=0.0.0.0 --port=3000",

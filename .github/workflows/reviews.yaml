@@ -27,13 +27,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build source
-        run: npm run build --if-present
+        run: pnpm run build --if-present
 
   test-functions:
     runs-on: ubuntu-latest
@@ -45,13 +49,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Test
-        run: npm run test --if-present
+        run: pnpm run test --if-present
 
   lint-functions:
     runs-on: ubuntu-latest
@@ -63,10 +71,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install deps
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Lint with reviewdog
         uses: reviewdog/action-eslint@v1
@@ -85,11 +97,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: "apps/mobile/package-lock.json"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install deps
-        run: npm -C apps/mobile ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build source
-        run: npm -C apps/mobile run build --if-present
+        run: pnpm --filter mobile run build --if-present

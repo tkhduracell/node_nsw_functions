@@ -1,0 +1,8 @@
+packages:
+  # Root package
+  - "."
+  # Include packages in subfolders
+  - "apps/**"
+  # Exclude test directories
+  - "!**/test/**"
+  - "!**/tests/**"

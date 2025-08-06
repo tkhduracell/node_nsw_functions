@@ -1,6 +1,10 @@
 node_modules/
 apps/*/node_modules/
 
+# pnpm
+.pnpm-store/
+.pnpm-debug.log*
+
 .cache/
 .env
 dist/
