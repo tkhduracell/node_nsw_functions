@@ -1,6 +1,26 @@
 README
 ===
 
+## Package Manager
+
+This project uses [pnpm](https://pnpm.io/) as the package manager for better performance and disk efficiency.
+
+### Installation
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build all packages
+pnpm run build
+
+# Build specific workspace (mobile app)
+pnpm --filter nackswinget run build
+
+# Run tests
+pnpm run test
+```
+
 ## Certs
 
     openssl genrsa -out server.key 2048
