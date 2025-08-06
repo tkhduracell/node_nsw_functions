@@ -13,7 +13,6 @@ export const Keys = {
 
 export function provideClient() {
     const platforms = getPlatforms()
-    // eslint-disable-next-line no-extra-boolean-cast
     const baseUrlAlt = !!(platforms.includes('ios') || platforms.includes('android'))
     ? 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net'
     : '/api'
