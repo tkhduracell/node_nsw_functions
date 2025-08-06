@@ -57,7 +57,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build source
-        run: pnpm run build --if-present
+        run: pnpm --filter @nackswinget/functions run build
 
       - id: auth
         name: Setup gcloud Cloud SDK auth
@@ -71,6 +71,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy ${{ matrix.function.name }}
+        working-directory: functions
         run: |
           gcloud functions deploy ${{ matrix.function.name }} \
             --gen2 \
@@ -186,9 +187,8 @@ jobs:
       - name: Set up gcloud Cloud SDK environment
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Clean cloud functions artifacts
-        run: |
-          ./clean-artifacts.sh
+      - name: Clean build artifacts
+        run: ./functions/clean-artifacts.sh
 
   notify:
     runs-on: ubuntu-latest
@@ -214,14 +214,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install deps
-        run: npm -C apps/mobile ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build source
-        run: npm -C apps/mobile run build
+        run: pnpm --filter @nackswinget/mobile run build
 
       - name: Package webapp
         working-directory: apps/mobile
@@ -263,4 +266,4 @@ jobs:
           log-accepted-android-sdk-licenses: false
 
       - name: Build with Gradle
-        run: npm -C apps/mobile run android:build
+        run: pnpm --filter @nackswinget/mobile run android:build
