@@ -135,41 +135,52 @@ export async function fetchCompetitions(system?: 'BRR', debug = false): Promise<
         'federation', 'last_regestration_date', 'game_regs'
     ]
 
+    // Step 1: Row/tr -> JSON object (preprocessing)
+    const parsedRows = Array.from(rows)
+        .map(row => {
+            const tr = load(row)
+            const text = tr.text().trim().split(/\n */)
+            const raw = Object.fromEntries(zip(cols, text))
+            return raw
+        })
+        .filter(raw => !!raw.name)
+        .map(raw => {
+            const result = com.safeParse(raw)
+
+            if (!result.success) {
+                logger.warn(raw, result.error.flatten())
+                return null
+            }
+            const { data } = result
+
+            // Enrichment
+            data.last_regestration_date = data.last_regestration_date?.replace(/(Senast|Stängd) +/gi, '') ?? null
+            data.open = data.type?.toLocaleLowerCase() === 'öppen' || data.type?.toLocaleLowerCase() === 'gp'
+            data.cancelled = data.name.match(/.*inställd.*/gi) !== null
+
+            return data
+        })
+        .filter((competition): competition is Competition => competition !== null)
+        .filter(competition => !!competition.open)
+        .filter(competition => !competition.cancelled)
+        .filter(competition => !(system === 'BRR' && competition.classes === '-')) // Skip BRR events without classes
+
+    // Step 2: Combine events with same date, city, organizer
+    const combinedCompetitions = combineCompetitions(parsedRows)
+
+    // Step 3: JSON object -> calendar event
     const calendar = ical({ name: ('Tävlingar ' + (system ?? '')).trim() })
-
-    for (const row of rows) {
-        const tr = load(row)
-        const text = tr.text().trim().split(/\n */)
-        const raw = Object.fromEntries(zip(cols, text))
-        if (!raw.name) continue
-
-        const result = com.safeParse(raw)
-
-        if (!result.success) {
-            logger.warn(raw, result.error.flatten())
-            continue
-        }
-        const { data } = result
-
-        // Enrichment
-        data.last_regestration_date = data.last_regestration_date?.replace(/(Senast|Stängd) +/gi, '') ?? null
-        data.open = data.type?.toLocaleLowerCase() === 'öppen' || data.type?.toLocaleLowerCase() === 'gp'
-        data.cancelled = data.name.match(/.*inställd.*/gi) !== null
-
-        if (!data.open) continue
-        if (data.cancelled) continue
-
+    
+    for (const competition of combinedCompetitions) {
         const event = {
-            start: new Date(data.start_date),
-            end: new Date(data.start_date),
+            start: new Date(competition.start_date),
+            end: new Date(competition.start_date),
             allDay: true,
             timezone: 'CEST',
-            summary: data.name,
-            description: debug ? JSON.stringify(data, null, 2) : prettyDescription(data),
-            location: data.city
+            summary: competition.name,
+            description: debug ? JSON.stringify(competition, null, 2) : prettyDescription(competition),
+            location: competition.city
         }
-
-        if (system === 'BRR' && data.classes === '-') continue // Skip BRR events without classes
 
         try {
             calendar.createEvent(event)
@@ -189,4 +200,49 @@ function prettyDescription(event: Competition): string {
         'Sista anmälningsdag': event.last_regestration_date
     }
     return Object.entries(details).map(([k, v]) => `${k}: ${v}`).join('\n')
+}
+
+function combineCompetitions(competitions: Competition[]): Competition[] {
+    // Group competitions by date, city, and organizer
+    const groups = new Map<string, Competition[]>()
+    
+    for (const competition of competitions) {
+        const key = `${competition.start_date}|${competition.city}|${competition.organizer}`
+        
+        if (!groups.has(key)) {
+            groups.set(key, [])
+        }
+        groups.get(key)!.push(competition)
+    }
+    
+    // Combine competitions in each group
+    const combinedCompetitions: Competition[] = []
+    
+    for (const [, group] of groups) {
+        if (group.length === 1) {
+            // Single competition, no combination needed
+            combinedCompetitions.push(group[0])
+        } else {
+            // Multiple competitions, combine them
+            const combined: Competition = {
+                ...group[0], // Use first competition as base
+                name: group.map(comp => comp.name).join(' / '),
+                classes: [...new Set(group.map(comp => comp.classes))].join(' / '),
+                type: [...new Set(group.map(comp => comp.type))].join(' / '),
+                federation: [...new Set(group.map(comp => comp.federation))].join(' / '),
+                last_regestration_date: group
+                    .map(comp => comp.last_regestration_date)
+                    .filter(date => date && date.trim() !== '')
+                    .sort()
+                    .pop() || group[0].last_regestration_date, // Use latest registration date
+                game_regs: group
+                    .map(comp => comp.game_regs)
+                    .filter(reg => reg && reg.trim() !== '')
+                    .join(' / ') || undefined
+            }
+            combinedCompetitions.push(combined)
+        }
+    }
+    
+    return combinedCompetitions
 }

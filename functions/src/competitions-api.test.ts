@@ -54,6 +54,30 @@ jest.mock('cross-fetch', () => {
                         <td>2025-08-10</td>
                         <td></td>
                     </tr>
+                    <tr class="cwEven">
+                        <td>Combined Event A</td>
+                        <td>2025-08-20</td>
+                        <td>Test Branch</td>
+                        <td>A/B/C</td>
+                        <td>öppen</td>
+                        <td>Göteborg</td>
+                        <td>Same Organizer</td>
+                        <td>Fed A</td>
+                        <td>2025-08-18</td>
+                        <td></td>
+                    </tr>
+                    <tr class="cwOdd">
+                        <td>Combined Event B</td>
+                        <td>2025-08-20</td>
+                        <td>Test Branch</td>
+                        <td>D/E/F</td>
+                        <td>gp</td>
+                        <td>Göteborg</td>
+                        <td>Same Organizer</td>
+                        <td>Fed B</td>
+                        <td>2025-08-19</td>
+                        <td></td>
+                    </tr>
                 </table>
             </html>`)
     }))
@@ -76,7 +100,7 @@ describe('Competitions API', () => {
             .expect(200)
 
         expect(response.body).toHaveProperty('data')
-        expect(response.body).toHaveProperty('size', 1)
+        expect(response.body).toHaveProperty('size', 3) // 4 competitions, "Another Competition" kept, combined into 3 events
         expect(response.body).toHaveProperty('url', 'https://publicurl.ics')
     })
 
@@ -86,7 +110,7 @@ describe('Competitions API', () => {
             .expect(200)
 
         expect(response.body).toHaveProperty('data')
-        expect(response.body).toHaveProperty('size', 1)
+        expect(response.body).toHaveProperty('size', 2) // 4 competitions, "Another Competition" filtered out for BRR, combined into 2 events
         expect(response.body).toHaveProperty('url', 'https://publicurl.ics')
     })
 
@@ -95,6 +119,24 @@ describe('Competitions API', () => {
             .get('/nonexistent')
 
         expect(response.status).toBeGreaterThanOrEqual(400)
+    })
+
+    it('should combine competitions with same date, city, and organizer', async () => {
+        const response = await request(app)
+            .post('/update') // No system parameter, so all competitions should be included
+            .expect(200)
+
+        const icalData = response.body.data
+        
+        // Check that the combined event name contains both competition names
+        expect(icalData).toContain('Combined Event A / Combined Event B')
+        
+        // Check that we have the expected number of events
+        const eventCount = (icalData.match(/BEGIN:VEVENT/g) || []).length
+        expect(eventCount).toBe(3) // 4 competitions: Test Competition, Another Competition, Combined Event A/B -> 3 events
+        
+        // Verify combined event has combined classes (allow for line wrapping)
+        expect(icalData).toMatch(/A\/B\/C\s*\/\s*D\/E\/F/)
     })
 
     // Integration test - skipped by default to avoid external API calls in CI
