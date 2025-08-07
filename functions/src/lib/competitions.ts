@@ -169,7 +169,7 @@ export async function fetchCompetitions(system?: 'BRR', debug = false): Promise<
             location: data.city
         }
 
-        if (system === 'BRR' && data.classes === '-') continue
+        if (system === 'BRR' && data.classes === '-') continue // Skip BRR events without classes
 
         try {
             calendar.createEvent(event)
