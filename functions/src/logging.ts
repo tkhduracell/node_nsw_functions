@@ -21,15 +21,16 @@ export const loggerMiddleware = (req: Request, res: Response, next: NextFunction
         headers: req.headers,
     }, () => next())
 }
-
-const transport = process.env.NODE_ENV !== 'production'
-    ? {
-            target: 'pino-pretty',
-            options: {
-                colorize: true
-            },
-        }
-    : undefined
+const transport = (process.env.NODE_ENV !== 'production' || !process.env.K_SERVICE)
+? {
+    target: 'pino-pretty',
+    options: {
+        colorize: true,
+        messageFormat: '[{severity}] {message}',
+        singleLine: true,
+    },
+}
+: undefined
 
 export const logger = pino({
     level: process.env.LOG_LEVEL ?? 'info',
@@ -44,11 +45,11 @@ export const logger = pino({
     },
     mixin() {
         const { requestId, ...rest } = asyncLocalStorage.getStore() ?? { requestId: randomUUID() }
-        return {
+        return process.env.K_SERVICE ? {
             ...rest,
             'logging.googleapis.com/spanId': requestId,
             'logging.googleapis.com/trace': `projects/${process.env.GCLOUD_PROJECT}/traces/${requestId}`,
             'logging.googleapis.com/trace_sampled': true
-        }
+        } : {}
     }
 })
