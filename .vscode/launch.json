@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Run fn-tests",
+            "runtimeExecutable": "pnpm",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--filter",
+                "@nackswinget/functions",
+                "test",
+                "--",
+                "--runInBand"
+            ]
+        },
+        {
             "name": "ts-node",
             "type": "node",
             "request": "launch",
