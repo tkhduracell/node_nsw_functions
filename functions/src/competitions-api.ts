@@ -4,6 +4,7 @@ import z from 'zod'
 import express from 'express'
 import { initializeApp } from 'firebase-admin/app'
 import { prettyJson } from './middleware'
+import { tr } from 'date-fns/locale'
 
 const app = express()
 app.use(express.json())
@@ -22,12 +23,23 @@ app.post('/update', async (req, res) => {
             system: z.enum(['BRR']).default('BRR'),
             debug: z.boolean().optional()
         })
-            .parse(req.query)
+            .safeParse(req.query)
 
-    const { data, size, url } = await updateCompetitions(opts.system, opts.debug)
-    console.log('Updated cometitions', { url, size })
+    if (!opts.success) {
+        console.error('Invalid query parameters:', opts.error)
+        return res.status(400).json({ error: 'Invalid query parameters' })
+    }
+    
+    const { system, debug } = opts.data
 
-    res.json({ data, size, url })
+    try {
+        const { data, size, url } = await updateCompetitions(system, debug)
+        logger.info('Competitions updated successfully', { system, size, url })
+        return res.json({ data, size, url })
+    } catch (error) {
+        console.error('Error updating competitions:', error)
+        return res.status(500).json({ error: 'Failed to update competitions' })
+    }
 })
 
 export default app
