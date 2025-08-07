@@ -20,7 +20,7 @@ if (require.main === module) {
 app.post('/update', async (req, res) => {
     const opts
         = z.object({
-            system: z.enum(['BRR']).default('BRR'),
+            system: z.enum(['BRR']).optional(),
             debug: z.boolean().optional()
         })
             .safeParse(req.query)
