@@ -21,6 +21,7 @@ jest.mock('@google-cloud/storage', () => ({
                 exists: jest.fn(() => Promise.resolve([false])),
                 save: jest.fn(() => Promise.resolve()),
                 makePublic: jest.fn(() => Promise.resolve()),
+                download: jest.fn(() => Promise.resolve([Buffer.from('[]')])),
             })),
         })),
     })),

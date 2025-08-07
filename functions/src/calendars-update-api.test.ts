@@ -17,6 +17,7 @@ jest.mock('firebase-admin/firestore', () => ({
 jest.mock('@google-cloud/storage', () => ({
     Storage: jest.fn(() => ({
         bucket: jest.fn(() => ({
+            exists: jest.fn(() => Promise.resolve([true])),
             file: jest.fn(() => ({
                 exists: jest.fn(() => Promise.resolve([false])),
                 save: jest.fn(() => Promise.resolve()),
