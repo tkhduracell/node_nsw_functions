@@ -33,11 +33,12 @@ describe('Competitions API', () => {
 
     it('should handle query parameters in POST /update', async () => {
         const response = await request(app)
-            .post('/update?system=BRR&debug=true')
+            .post('/update?system=BRR')
+            .expect(200)
 
-        // Expect either 200 (success) or 500 (missing env/services) - both are valid for app loading test
-        expect([200, 500]).toContain(response.status)
-        expect(response).toBeDefined()
+        expect(response.body).toHaveProperty('data')
+        expect(response.body).toHaveProperty('size')
+        expect(response.body).toHaveProperty('url')
     })
 
     it('should handle invalid endpoints gracefully', async () => {
