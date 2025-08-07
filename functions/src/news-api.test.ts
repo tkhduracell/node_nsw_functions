@@ -115,8 +115,8 @@ describe('News API', () => {
     })
 
     it('should handle RSS parsing errors', async () => {
-        const rssToJson = jest.requireMock('rss-to-json')
-        rssToJson.parse.mockRejectedValueOnce(new Error('RSS fetch failed'))
+        const { parse } = jest.mocked(require('rss-to-json'))
+        parse.mockRejectedValueOnce(new Error('RSS fetch failed'))
 
         const response = await request(app)
             .get('/')
@@ -145,8 +145,8 @@ describe('News API', () => {
     })
 
     it('should handle missing document in POST /update', async () => {
-        const firebaseFirestore = jest.requireMock('firebase-admin/firestore')
-        firebaseFirestore.getFirestore.mockReturnValueOnce({
+        const { getFirestore } = jest.mocked(require('firebase-admin/firestore'))
+        getFirestore.mockReturnValueOnce({
             collection: jest.fn(() => ({
                 doc: jest.fn(() => ({
                     get: jest.fn(() => Promise.resolve({
@@ -165,8 +165,8 @@ describe('News API', () => {
     })
 
     it('should handle messaging errors in POST /update', async () => {
-        const firebaseMessaging = jest.requireMock('firebase-admin/messaging')
-        firebaseMessaging.getMessaging.mockReturnValueOnce({
+        const { getMessaging } = jest.mocked(require('firebase-admin/messaging'))
+        getMessaging.mockReturnValueOnce({
             send: jest.fn(() => Promise.reject(new Error('Messaging failed')))
         })
 
