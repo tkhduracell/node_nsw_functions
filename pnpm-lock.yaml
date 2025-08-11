@@ -33,8 +33,8 @@ importers:
         specifier: 5.7.8
         version: 5.7.8(@capacitor/core@5.7.8)
       '@capacitor/keyboard':
-        specifier: 5.0.8
-        version: 5.0.8(@capacitor/core@5.7.8)
+        specifier: 7.0.2
+        version: 7.0.2(@capacitor/core@5.7.8)
       '@capacitor/push-notifications':
         specifier: ^5.1.1
         version: 5.1.2(@capacitor/core@5.7.8)
@@ -869,10 +869,10 @@ packages:
     peerDependencies:
       '@capacitor/core': ^5.7.0
 
-  '@capacitor/keyboard@5.0.8':
-    resolution: {integrity: sha512-XYyBzGlzjgLPqyPVdu5McGLYV6+G2efVR4I3l5cF1B27M6U/oFqv9CQU74WNG08nee28bfccboNpv6eWCLYn1A==}
+  '@capacitor/keyboard@7.0.2':
+    resolution: {integrity: sha512-9We5BY1mu+QWOReDukr+6HxA4Bh0mKBU0txFtwXJdjBohttMYWJzB+dQf4oHrX8odiU2Cm/BfDdAU2wV06Cyig==}
     peerDependencies:
-      '@capacitor/core': ^5.0.0
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor/push-notifications@5.1.2':
     resolution: {integrity: sha512-l5kz/8B2oszi1ciJzOKfkhb6jSlYTs8OpjozV/ey+xcUVnYDTBWpDBUi66ZfPDFoZC/G7srIazR7Le+JJAoNUQ==}
@@ -6618,7 +6618,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 5.7.8
 
-  '@capacitor/keyboard@5.0.8(@capacitor/core@5.7.8)':
+  '@capacitor/keyboard@7.0.2(@capacitor/core@5.7.8)':
     dependencies:
       '@capacitor/core': 5.7.8
 
@@ -9504,7 +9504,7 @@ snapshots:
     dependencies:
       basic-ftp: 5.0.5
       data-uri-to-buffer: 6.0.2
-      debug: 4.3.4
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -10896,7 +10896,7 @@ snapshots:
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.1
       get-uri: 6.0.5
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
@@ -11099,7 +11099,7 @@ snapshots:
   proxy-agent@6.3.1:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.1
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
       lru-cache: 7.18.3
@@ -11590,7 +11590,7 @@ snapshots:
   socks-proxy-agent@8.0.5:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.1
       socks: 2.8.6
     transitivePeerDependencies:
       - supports-color
