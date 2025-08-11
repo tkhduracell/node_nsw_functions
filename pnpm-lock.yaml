@@ -21,8 +21,8 @@ importers:
         specifier: 5.7.8
         version: 5.7.8(@capacitor/core@5.7.8)
       '@capacitor/app':
-        specifier: 5.0.7
-        version: 5.0.7(@capacitor/core@5.7.8)
+        specifier: 7.0.2
+        version: 7.0.2(@capacitor/core@5.7.8)
       '@capacitor/core':
         specifier: 5.7.8
         version: 5.7.8
@@ -846,10 +846,10 @@ packages:
     peerDependencies:
       '@capacitor/core': ^5.7.0
 
-  '@capacitor/app@5.0.7':
-    resolution: {integrity: sha512-oad0jwQu+vgQDukeS9UV56yG10dlxkAGGl26IQpZlTmg3dTI9qSJtvhmlLfkF0nEtoj5IsVQUPE+NLH1oZkgGQ==}
+  '@capacitor/app@7.0.2':
+    resolution: {integrity: sha512-kRWBF6Wc6OQxhL+N6rsegyfJY37Lj9/VJhtrmgmH+y+rdxQLQwUOpMyxXStym7cF+QzGeVpItyVxyUT9fE5ByQ==}
     peerDependencies:
-      '@capacitor/core': ^5.0.0
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor/cli@5.7.8':
     resolution: {integrity: sha512-qN8LDlREMhrYhOvVXahoJVNkP8LP55/YPRJrzTAFrMqlNJC18L3CzgWYIblFPnuwfbH/RxbfoZT/ydkwgVpMrw==}
@@ -6580,7 +6580,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 5.7.8
 
-  '@capacitor/app@5.0.7(@capacitor/core@5.7.8)':
+  '@capacitor/app@7.0.2(@capacitor/core@5.7.8)':
     dependencies:
       '@capacitor/core': 5.7.8
 
@@ -9504,7 +9504,7 @@ snapshots:
     dependencies:
       basic-ftp: 5.0.5
       data-uri-to-buffer: 6.0.2
-      debug: 4.3.4
+      debug: 4.4.1
     transitivePeerDependencies:
       - supports-color
 
@@ -10896,7 +10896,7 @@ snapshots:
     dependencies:
       '@tootallnate/quickjs-emscripten': 0.23.0
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.1
       get-uri: 6.0.5
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
@@ -11099,7 +11099,7 @@ snapshots:
   proxy-agent@6.3.1:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.1
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
       lru-cache: 7.18.3
@@ -11590,7 +11590,7 @@ snapshots:
   socks-proxy-agent@8.0.5:
     dependencies:
       agent-base: 7.1.4
-      debug: 4.3.4
+      debug: 4.4.1
       socks: 2.8.6
     transitivePeerDependencies:
       - supports-color
