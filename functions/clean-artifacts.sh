@@ -5,13 +5,16 @@ PROJECT_ID="nackswinget-af7ef"
 REPOSITORY="gcf-artifacts"
 LOCATION="europe-north1-docker.pkg.dev"
 IMAGES=("notifications--api" "competitions--api" "calendars--update--api" "calendars--api" "news--api")
+PROJECT_PREFIX="nackswinget--af7ef__europe--north1"
 
 for IMAGE in "${IMAGES[@]}"; do
     echo "Processing $IMAGE..."
 
+    fullname="${LOCATION}/${PROJECT_ID}/${REPOSITORY}/${PROJECT_PREFIX}__${IMAGE}"
+
     # List the artifacts
     artifacts=$(
-        gcloud artifacts docker images list "${LOCATION}/${PROJECT_ID}/${REPOSITORY}/${IMAGE}" --format json|\
+        gcloud artifacts docker images list "${fullname}" --format json|\
         jq "sort_by(.createTime)|reverse"|\
         jq -r '.[].version'
     )
@@ -22,7 +25,7 @@ for IMAGE in "${IMAGES[@]}"; do
         artifacts=$(echo "${artifacts}"| tail -n +4)
         for artifact in $artifacts; do
             echo "Deleting artifact: $artifact"
-            gcloud artifacts docker images delete --async --quiet "${LOCATION}/${PROJECT_ID}/${REPOSITORY}/${IMAGE}@${artifact}"
+            gcloud artifacts docker images delete --async --quiet "${fullname}@${artifact}"
         done
         echo "Cleanup of ${IMAGE} completed."
     else
