@@ -38,4 +38,5 @@ jobs:
         run: gcloud config set project "${GCLOUD_PROJECT}"
 
       - name: Run clean up
+        working-directory: ./functions
         run: ./clean-artifacts.sh
