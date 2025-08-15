@@ -56,9 +56,6 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Build source
-        run: pnpm --filter @nackswinget/functions run build
-
       - id: auth
         name: Setup gcloud Cloud SDK auth
         uses: "google-github-actions/auth@v2"
@@ -73,11 +70,45 @@ jobs:
       - name: Deploy ${{ matrix.function.name }}
         working-directory: functions
         run: |
+          pnpx esbuild \
+            ./src/index.ts \
+            --bundle \
+            --platform=node \
+            --target=node20 \
+            --outfile=./dist/index.js \
+            --external:@google-cloud/functions-framework \
+            --external:@google-cloud/scheduler \
+            --external:@google-cloud/storage
+            
+          jq -n \
+            --arg name "@nackswinget/functions" \
+            --arg version "1.0.0" \
+            --arg main "index.js" \
+            --arg start "node index.js" \
+            --arg build "echo \"No build step\"" \
+            --arg functions_version "^3.4.0" \
+            --arg scheduler_version "^4.3.0" \
+            --arg storage_version "^7.11.2" \
+            '{
+              name: $name,
+              version: $version,
+              main: $main,
+              scripts: {
+                start: $start,
+                build: $build
+              },
+              dependencies: {
+                "@google-cloud/functions-framework": $functions_version,
+                "@google-cloud/scheduler": $scheduler_version,
+                "@google-cloud/storage": $storage_version,
+              }
+            }' > ./dist/package.json
+
           gcloud functions deploy ${{ matrix.function.name }} \
             --gen2 \
             --runtime=nodejs20 \
             --region="${GCLOUD_REGION}" \
-            --source=. \
+            --source=./dist \
             --entry-point=${{ matrix.function.name }} \
             --trigger-http \
             --max-instances=${{ matrix.function.max_instances || 1 }} \
