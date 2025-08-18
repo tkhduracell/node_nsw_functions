@@ -41,7 +41,7 @@ jobs:
     concurrency: ${{ matrix.function.name }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -174,7 +174,7 @@ jobs:
       - deploy-functions
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - id: auth
         name: Setup  gcloud Cloud SDK auth
@@ -208,7 +208,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Node.JS
         uses: actions/setup-node@v4
