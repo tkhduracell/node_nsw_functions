@@ -134,7 +134,7 @@ describe('buildCalendar', () => {
 const listedActivity = {
     activityId: 83570342,
     calendarId: 337667,
-    name: 'Friträning och städning',
+    name: 'Medlemsträning och städning',
     startTime: '2024-01-23T19:00:00+01:00',
     endTime: '2024-01-23T20:30:00+01:00',
     allDayActivity: false,

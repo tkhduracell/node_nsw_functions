@@ -26,7 +26,7 @@ describe('Notifications', () => {
         const calendar = ical()
         const event = calendar.createEvent({ start: new Date(start), end: new Date(end) })
 
-        sut.send(clock, event, 'Someone', { id: '1', name: 'XX', orgId: '1' })
+        sut.send(clock, event, 'Someone', { id: '337667', name: 'XX', orgId: '1' })
 
         const x = notification()
         expect(x).toHaveProperty('body', body)
@@ -34,7 +34,7 @@ describe('Notifications', () => {
     })
 
     it.each([
-        ['Friträning', 'Alice har bokat en friträning!'],
+        ['Medlemsträning', 'Alice har bokat en medlemsträning!'],
         ['Tematräning dubbelbugg', 'Alice har bokat en tematräning!'],
         ['Tematräning - dubbelbugg', 'Alice har bokat en tematräning!'],
         ['Tematräning: Lindy hop', 'Alice har bokat en tematräning!']
@@ -48,7 +48,7 @@ describe('Notifications', () => {
             summary
         })
 
-        sut.send(clock, event, 'Alice', { id: '1', name: 'Friträning', orgId: '1' })
+        sut.send(clock, event, 'Alice', { id: '337667', name: 'Medlemsträning', orgId: '1' })
 
         const x = notification()
         expect(x).toHaveProperty('body', 'Torsdag, kl 12:12-14:13, 121 min')

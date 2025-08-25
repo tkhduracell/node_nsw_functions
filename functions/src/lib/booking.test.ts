@@ -36,7 +36,7 @@ test('should book activities', async () => {
         date: '2023-11-21T23:00:00.000Z',
         location: 'Ceylon',
         description: 'Filip - 0702683230',
-        title: 'Friträning'
+        title: 'Medlemsträning'
     })
 
     const [call] = fetch.mock.calls
@@ -60,7 +60,7 @@ test('should book activities', async () => {
             startDateTimeString: '2023-11-22 21:00:00',
             endDateTimeString: '2023-11-22 22:00:00',
             allDayActivity: false,
-            name: 'Friträning',
+            name: 'Medlemsträning',
             description: 'Filip - 0702683230',
             spansMultipleDays: false
         }
@@ -75,7 +75,7 @@ test('should book activities with right datetime', async () => {
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
 
-    await api.bookActivity('1', { title: 'Friträning', location: 'Ceylon', date: '2023-11-17T23:00:00.000Z', time: '13:37', duration: 60, description: 'Filip - 0702683230' })
+    await api.bookActivity('1', { title: 'Medlemsträning', location: 'Ceylon', date: '2023-11-17T23:00:00.000Z', time: '13:37', duration: 60, description: 'Filip - 0702683230' })
 
     const [call] = fetch.mock.calls
     const [url, opts] = call
@@ -96,7 +96,7 @@ test('should book activities with short date', async () => {
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
 
-    await api.bookActivity('1', { title: 'Friträning', location: 'Ceylon', date: '2023-11-17', time: '13:37', duration: 60, description: 'Filip - 0702683230' })
+    await api.bookActivity('1', { title: 'Medlemsträning', location: 'Ceylon', date: '2023-11-17', time: '13:37', duration: 60, description: 'Filip - 0702683230' })
 
     const [call] = fetch.mock.calls
     const [url, opts] = call
