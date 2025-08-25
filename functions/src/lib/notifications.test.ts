@@ -30,7 +30,7 @@ describe('Notifications', () => {
 
         const x = notification()
         expect(x).toHaveProperty('body', body)
-        expect(x).toHaveProperty('title', 'Ny bokning i XX')
+        expect(x).toHaveProperty('title', 'Someone har bokat en medlemsträning!')
     })
 
     it.each([
