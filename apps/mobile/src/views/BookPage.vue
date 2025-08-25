@@ -6,15 +6,15 @@
       <form>
         <ion-card>
           <ion-card-header>
-            <ion-card-title>Boka Friträning</ion-card-title>
+            <ion-card-title>Boka Träning</ion-card-title>
           </ion-card-header>
 
           <ion-card-content>
 
-            <b style="display: block; margin-top: 1em;">Typ av friträning</b>
+            <b style="display: block; margin-top: 1em;">Typ av träning</b>
             <ion-select label-placement="floating" label="Välj typ av träning" v-model="data.mode"
               interface="action-sheet" fill="solid">
-              <ion-select-option value="regular">Friträning</ion-select-option>
+              <ion-select-option value="regular">Medlemsträning</ion-select-option>
               <ion-select-option value="theme">Tematräning</ion-select-option>
             </ion-select>
 
@@ -287,7 +287,7 @@ onMounted(() => resetDateToTomorrow())
 function onSubmit() {
   state.submitting = true
   const book: ActivityInit = {
-    title: data.mode === 'theme' ? `Tematräning - ${data.theme}` : 'Friträning',
+    title: data.mode === 'theme' ? `Tematräning - ${data.theme}` : 'Medlemsträning',
     description: data.responsible + ' - ' + data.tel,
     date: date.value as string,
     time: time.value as string,

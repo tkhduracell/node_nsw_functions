@@ -21,10 +21,10 @@
           <ion-card-title>Bevakning</ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <p>Du bevakar friträningar på denna enhet.</p>
+          <p>Du bevakar öppna träningar på denna enhet.</p>
           <ion-button @click="unsubscribe" fill="solid">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
-            <span v-if="!subscription.isLoading">Avsluta bevakning</span>
+            <span v-if="!subscription.isLoading">Avsluta notiser</span>
           </ion-button>
         </ion-card-content>
       </ion-card>
@@ -34,11 +34,11 @@
           <ion-card-title>Vill du få notiser?</ion-card-title>
         </ion-card-header>
         <ion-card-content>
-          <p>Du kan bevaka friträning och få notiser när någon bokar ny träning. Detta genom att trycka på knappen nedan
-            och godkänna notifiktioner.</p>
+          <p>Du kan bevaka öppna träningar och få notiser när någon bokar ny träning. Detta genom att trycka på knappen
+            nedan och godkänna notifiktioner.</p>
           <ion-button @click="subscribe" fill="solid">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
-            <span v-if="!subscription.isLoading">Bevaka friträningar</span>
+            <span v-if="!subscription.isLoading">Få notiser</span>
           </ion-button>
           <ion-button @click="subscription.isDismissed = true" fill="clear" size="small">Nej tack</ion-button>
         </ion-card-content>
@@ -166,7 +166,7 @@ ion-item[data-calendar="333892"] {
   --background: rgba(244, 153, 56, 0.9);
 }
 
-/* Friträning */
+/* Öppen Träning */
 ion-item[data-calendar="337667"] {
   --background: rgba(0, 128, 0, 0.9);
 }
