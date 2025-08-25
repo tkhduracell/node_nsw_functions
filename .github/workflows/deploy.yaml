@@ -100,7 +100,7 @@ jobs:
               dependencies: {
                 "@google-cloud/functions-framework": $functions_version,
                 "@google-cloud/scheduler": $scheduler_version,
-                "@google-cloud/storage": $storage_version,
+                "@google-cloud/storage": $storage_version
               }
             }' > ./dist/package.json
 
