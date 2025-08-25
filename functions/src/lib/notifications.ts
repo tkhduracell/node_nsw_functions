@@ -8,9 +8,6 @@ import { pick } from 'lodash'
 import { Clock } from './clock'
 
 function getNotificationTitle(title: string, calendarId: string, creator?: string): string {
-    if (title.toLocaleLowerCase().includes('medlemsträning')) {
-        return creator ? `${creator} har bokat en medlemsträning!` : `Ny medlemsträning bokad!`
-    }
     if (title.toLowerCase().includes('medlemsträning')) {
         return creator ? `${creator} har bokat en medlemsträning!` : `Ny medlemsträning bokad!`
     }
@@ -18,8 +15,8 @@ function getNotificationTitle(title: string, calendarId: string, creator?: strin
         return creator ? `${creator} har bokat en tematräning!` : `Ny tematräning bokad!`
     }
     return calendarId === '337667'
-        ? (creator ? `${creator} har bokat en öppen träning!` : `Ny öppen träning bokad!`)
-        : `Ny bokning i ${calendarId}`
+        ? (creator ? `${creator} har bokat en medlemsträning!` : `Ny medlemsträning bokad!`)
+        : `Ny bokning i kalendern`
 }
 
 function getNotificationBody(clock: Clock, start: Date, end: Date): string {
