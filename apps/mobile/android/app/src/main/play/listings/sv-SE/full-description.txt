@@ -1,2 +1,2 @@
-Visar kommande friträningar och andra event på Dansklubben Nackswinget. 
-Ger möjlighet att prenumerera på nya friträningsbokningar.
+Visar kommande öppna träningar och andra event på Dansklubben Nackswinget. 
+Ger möjlighet att prenumerera på öppna träningstider.
