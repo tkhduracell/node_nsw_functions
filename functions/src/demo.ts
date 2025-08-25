@@ -76,7 +76,7 @@ async () => {
     const actApi = new ActivityApi(orgId, 'https://www.idrottonline.se', { get: () => cookies }, fetch)
 
     const result = await actApi.bookActivityRaw('337667', {
-        name: 'Friträning',
+        name: 'Medlemsträning',
         description: 'Filip 0702683230',
         start,
         end,

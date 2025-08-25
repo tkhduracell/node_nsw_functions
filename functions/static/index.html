@@ -1,37 +1,44 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,regular,500,600,700,800,300italic,italic,500italic,600italic,700italic,800italic&amp;subset=latin,latin-ext&amp;display=swap" type="text/css" media="all">
-        <meta charset="UTF-8">
-    </head>
-    <body>
-        <div id="app">
-            <div v-if="isSupported && token && isSubscribed">
-                <p class="mt-0 mb-1">
-                    Du bevakar nya friträningar på denna enhet.
-                </p>
-                <button @click="unsubscribe" class="btn-red">
-                    Sluta bevaka
-                </button>
-            </div>
-            <div v-else-if="isSupported || isSafari">
-                <h5>Nyhet!</h5>
-                <p class="mt-0 mb-1">
-                    Du kan bevaka nya friträningar. Då kommer du att få notiser på denna enhet när en friträning bokas.
-                </p>
-                <div v-if="isSafari" class="note">
-                    <b>Obs!</b> Du använder Safari. Det fungerar inte att bevaka friträningar i Safari. Använd istället Chrome eller Firefox.
-                </div>
-                <button @click="requestAndSubscribe" class="btn-red" :disabled="isSafari">
-                    Bevaka
-                </button>
-            </div>
-            <p class="mt-1">
-                <div v-for="msg in msgs">{{ msg }}</div>
+
+<head>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300,regular,500,600,700,800,300italic,italic,500italic,600italic,700italic,800italic&amp;subset=latin,latin-ext&amp;display=swap"
+        type="text/css" media="all">
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div id="app">
+        <div v-if="isSupported && token && isSubscribed">
+            <p class="mt-0 mb-1">
+                Du bevakar nya medlemsträning på denna enhet.
             </p>
+            <button @click="unsubscribe" class="btn-red">
+                Avsluta notiser
+            </button>
         </div>
-        <script async src="https://ga.jspm.io/npm:es-module-shims@1.8.0/dist/es-module-shims.js"></script>
-        <script type="importmap">
+        <div v-else-if="isSupported || isSafari">
+            <h5>Nyhet!</h5>
+            <p class="mt-0 mb-1">
+                Du kan få notiser om nya medlemsträningar.
+                Då kommer du att få notiser på denna enhet när en träning
+                bokas.
+            </p>
+            <div v-if="isSafari" class="note">
+                <b>Obs!</b> Du använder Safari. Det fungerar inte att bevaka träningar i Safari. Använd istället
+                Chrome eller Firefox.
+            </div>
+            <button @click="requestAndSubscribe" class="btn-red" :disabled="isSafari">
+                Få notiser
+            </button>
+        </div>
+        <p class="mt-1">
+        <div v-for="msg in msgs">{{ msg }}</div>
+        </p>
+    </div>
+    <script async src="https://ga.jspm.io/npm:es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
             {
               "imports": {
                 "firebase/app": "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js",
@@ -40,216 +47,241 @@
               }
             }
         </script>
-        <script type="module">
-            import { initializeApp } from 'firebase/app';
-            import { getMessaging, getToken, onMessage, isSupported as getIsSupported } from 'firebase/messaging'
-            import { ref, createApp, onMounted } from 'vue'
+    <script type="module">
+        import { initializeApp } from 'firebase/app';
+        import { getMessaging, getToken, onMessage, isSupported as getIsSupported } from 'firebase/messaging'
+        import { ref, createApp, onMounted } from 'vue'
 
-            const vapidKey = 'BMTIrHUbvBXlQpWWeIDc2IMD_CPye0EW-XmOqzAtBvMkKy8bsRfx5YEfvQQ4Gp98XV2XAOcaz6o-x2bisVBNWXM'
+        const vapidKey = 'BMTIrHUbvBXlQpWWeIDc2IMD_CPye0EW-XmOqzAtBvMkKy8bsRfx5YEfvQQ4Gp98XV2XAOcaz6o-x2bisVBNWXM'
 
-            let serviceWorkerRegistration = null
-            createApp({
-                setup() {
-                    const userAgent = navigator.userAgent;
-                    const isSafariDesktop = userAgent.includes('Safari') && !userAgent.includes('Chrome') && !userAgent.includes('Chromium');
-                    const isSafariMobile = userAgent.includes('Mobile') && isSafariDesktop;
-                    const isSafari = isSafariDesktop || isSafariMobile;
+        let serviceWorkerRegistration = null
+        createApp({
+            setup() {
+                const userAgent = navigator.userAgent;
+                const isSafariDesktop = userAgent.includes('Safari') && !userAgent.includes('Chrome') && !userAgent.includes('Chromium');
+                const isSafariMobile = userAgent.includes('Mobile') && isSafariDesktop;
+                const isSafari = isSafariDesktop || isSafariMobile;
 
-                    const isSubscribed = ref(false)
-                    const isSupported = ref(false)
-                    const token = ref('')
-                    const msgs = ref([])
-                    const baseUrl = document.location.host.endsWith('cloudfunctions.net')
-                        ? 'notifications-api' :
-                        document.location.host.endsWith('nackswinget.se')
-                            ? 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/notifications-api'
-                            : '.'
-                    const swBaseUrl = document.location.host.endsWith('cloudfunctions.net')
-                        ? 'notifications-api' :
-                        document.location.host.endsWith('nackswinget.se')
-                            ? ''
-                            : '.'
+                const isSubscribed = ref(false)
+                const isSupported = ref(false)
+                const token = ref('')
+                const msgs = ref([])
+                const baseUrl = document.location.host.endsWith('cloudfunctions.net')
+                    ? 'notifications-api' :
+                    document.location.host.endsWith('nackswinget.se')
+                        ? 'https://europe-north1-nackswinget-af7ef.cloudfunctions.net/notifications-api'
+                        : '.'
+                const swBaseUrl = document.location.host.endsWith('cloudfunctions.net')
+                    ? 'notifications-api' :
+                    document.location.host.endsWith('nackswinget.se')
+                        ? ''
+                        : '.'
 
-                    const str = x => typeof(x) === 'string' ? x : JSON.stringify(x, null, 2)
-                    function log(...other) {
-                        console.log(...other);
-                        // msgs.value = [...msgs.value, ...other.map(str)]
-                    }
-                    function clear() {
-                        msgs.value = []
-                    }
+                const str = x => typeof (x) === 'string' ? x : JSON.stringify(x, null, 2)
+                function log(...other) {
+                    console.log(...other);
+                    // msgs.value = [...msgs.value, ...other.map(str)]
+                }
+                function clear() {
+                    msgs.value = []
+                }
 
-                    const requestAndSubscribe = async ()  => {
-                        await requestPermission()
-                        await subscribe()
-                    }
+                const requestAndSubscribe = async () => {
+                    await requestPermission()
+                    await subscribe()
+                }
 
-                    const requestPermission = async () => {
-                        // Already requested
-                        if (Notification.permission === "granted") return;
+                const requestPermission = async () => {
+                    // Already requested
+                    if (Notification.permission === "granted") return;
 
-                        const permission = await Notification.requestPermission()
-                        if (permission === 'granted') {
-                            log('Notification permission granted.');
-                            const messaging = getMessaging();
-
-                            try {
-                                const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
-                                token.value = currentToken
-                            } catch (e) {
-                                log('Exception: ' + e)
-                            }
-                        } else {
-                            log('Notification permission: ' + permission)
-                        }
-                    }
-
-                    const subscribe = async () => {
-                        const query = new URLSearchParams()
-                        query.append('token', token.value)
-                        query.append('topic', 'calendar-337667')
-
-                        const resp = await fetch(baseUrl + '/subscribe?' + query.toString(), {  method: 'POST' })
-                        if (resp.ok) {
-                            log('Subscribe success', await resp.json())
-                            isSubscribed.value = true
-                        } else {
-                            log('Subscribe failed', resp.status, resp.statusText)
-                        }
-                    }
-
-                    const unsubscribe = async () => {
-                        const query = new URLSearchParams()
-                        query.append('token', token.value)
-                        query.append('topic', 'calendar-337667')
-
-                        const resp = await fetch(baseUrl + '/unsubscribe?' + query.toString(), {  method: 'POST' })
-                        if (resp.ok) {
-                            log('Unsubscribe success', await resp.json())
-                            isSubscribed.value = false
-                        } else {
-                            log('Unsubscribe failed', resp.status, resp.statusText)
-                        }
-                    }
-
-                    onMounted(async () => {
-                        const firebaseConfig = {
-                            apiKey: "AIzaSyBJ_cRfI7tvVZ_xlIk9QqF6eN29YD6xOAk",
-                            authDomain: "nackswinget-af7ef.firebaseapp.com",
-                            projectId: "nackswinget-af7ef",
-                            storageBucket: "nackswinget-af7ef.appspot.com",
-                            messagingSenderId: "560237127162",
-                            appId: "1:560237127162:web:2e12c34e9e8fa521997043"
-                        };
-
-                        const app = initializeApp(firebaseConfig);
-
+                    const permission = await Notification.requestPermission()
+                    if (permission === 'granted') {
+                        log('Notification permission granted.');
                         const messaging = getMessaging();
 
-                        // onMessage(messaging, (payload) => log('Message received. ', payload))
-
-                        const supported = await getIsSupported()
-                        isSupported.value = supported
-
-                        if (supported) {
-                            try {
-                                serviceWorkerRegistration = await navigator.serviceWorker.register(swBaseUrl + '/firebase-messaging-sw.js')
-                                console.log('Registration successful, scope is:', serviceWorkerRegistration.scope);
-
-                                if (!["default", "granted"].includes(Notification.permission)) return;
-
-                                console.log('Requesting token...');
-                                const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
-                                token.value = currentToken
-
-                                console.log('Got token', currentToken);
-
-                                const query = new URLSearchParams()
-                                query.append('token', token.value)
-
-                                const resp = await fetch(baseUrl + '/status?' + query.toString(), {  method: 'POST' })
-                                if (resp.ok) {
-                                    const { subscribed, data } = await resp.json()
-                                    isSubscribed.value = !!subscribed
-                                    if (subscribed) {
-                                        log('Subscribed', data)
-                                    } else {
-                                        log('Not subscribed', data)
-                                    }
-                                } else {
-                                    log('Status failed', resp.status, resp.statusText)
-                                }
-                            } catch (e) {
-                                console.error(e)
-                                isSupported.value = false
-                            }
+                        try {
+                            const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
+                            token.value = currentToken
+                        } catch (e) {
+                            log('Exception: ' + e)
                         }
-                    })
-
-                    return {
-                        token,
-                        subscribe,
-                        unsubscribe,
-                        requestAndSubscribe,
-                        isSubscribed,
-                        isSupported,
-                        isSafari,
-                        msgs,
-                        clear
+                    } else {
+                        log('Notification permission: ' + permission)
                     }
                 }
-            }).mount('#app')
 
-        </script>
-        <style>
-            :root {
-                --nsw-red-lighter: #d2174c;
-                --nsw-red: #F9064B;
-                --nsw-red-darker: #d40741;
-                --border-radius: 6px;
-            }
-            @media only screen and (max-width: 980px) {
-                #app div {
-                    font-size: 90% !important;
+                const subscribe = async () => {
+                    const query = new URLSearchParams()
+                    query.append('token', token.value)
+                    query.append('topic', 'calendar-337667')
+
+                    const resp = await fetch(baseUrl + '/subscribe?' + query.toString(), { method: 'POST' })
+                    if (resp.ok) {
+                        log('Subscribe success', await resp.json())
+                        isSubscribed.value = true
+                    } else {
+                        log('Subscribe failed', resp.status, resp.statusText)
+                    }
+                }
+
+                const unsubscribe = async () => {
+                    const query = new URLSearchParams()
+                    query.append('token', token.value)
+                    query.append('topic', 'calendar-337667')
+
+                    const resp = await fetch(baseUrl + '/unsubscribe?' + query.toString(), { method: 'POST' })
+                    if (resp.ok) {
+                        log('Unsubscribe success', await resp.json())
+                        isSubscribed.value = false
+                    } else {
+                        log('Unsubscribe failed', resp.status, resp.statusText)
+                    }
+                }
+
+                onMounted(async () => {
+                    const firebaseConfig = {
+                        apiKey: "AIzaSyBJ_cRfI7tvVZ_xlIk9QqF6eN29YD6xOAk",
+                        authDomain: "nackswinget-af7ef.firebaseapp.com",
+                        projectId: "nackswinget-af7ef",
+                        storageBucket: "nackswinget-af7ef.appspot.com",
+                        messagingSenderId: "560237127162",
+                        appId: "1:560237127162:web:2e12c34e9e8fa521997043"
+                    };
+
+                    const app = initializeApp(firebaseConfig);
+
+                    const messaging = getMessaging();
+
+                    // onMessage(messaging, (payload) => log('Message received. ', payload))
+
+                    const supported = await getIsSupported()
+                    isSupported.value = supported
+
+                    if (supported) {
+                        try {
+                            serviceWorkerRegistration = await navigator.serviceWorker.register(swBaseUrl + '/firebase-messaging-sw.js')
+                            console.log('Registration successful, scope is:', serviceWorkerRegistration.scope);
+
+                            if (!["default", "granted"].includes(Notification.permission)) return;
+
+                            console.log('Requesting token...');
+                            const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
+                            token.value = currentToken
+
+                            console.log('Got token', currentToken);
+
+                            const query = new URLSearchParams()
+                            query.append('token', token.value)
+
+                            const resp = await fetch(baseUrl + '/status?' + query.toString(), { method: 'POST' })
+                            if (resp.ok) {
+                                const { subscribed, data } = await resp.json()
+                                isSubscribed.value = !!subscribed
+                                if (subscribed) {
+                                    log('Subscribed', data)
+                                } else {
+                                    log('Not subscribed', data)
+                                }
+                            } else {
+                                log('Status failed', resp.status, resp.statusText)
+                            }
+                        } catch (e) {
+                            console.error(e)
+                            isSupported.value = false
+                        }
+                    }
+                })
+
+                return {
+                    token,
+                    subscribe,
+                    unsubscribe,
+                    requestAndSubscribe,
+                    isSubscribed,
+                    isSupported,
+                    isSafari,
+                    msgs,
+                    clear
                 }
             }
-            body {
-                font-family: 'Open Sans',Helvetica,Arial,Lucida,sans-serif;
-                margin: 0 !important;
+        }).mount('#app')
+
+    </script>
+    <style>
+        :root {
+            --nsw-red-lighter: #d2174c;
+            --nsw-red: #F9064B;
+            --nsw-red-darker: #d40741;
+            --border-radius: 6px;
+        }
+
+        @media only screen and (max-width: 980px) {
+            #app div {
+                font-size: 90% !important;
             }
-            .btn-red {
-                background-color: var(--nsw-red);
-                color: #fff;
-                font-size: 1.0rem;
-                font-weight: 700;
-                cursor: pointer;
-                border-radius: var(--border-radius);
-                padding: 0.5rem;
-                border-style: none;
-                border-width: 0px;
-            }
-            .btn-red:hover {
-                background-color: var(--nsw-red-lighter) !important;
-            }
-            .btn-red:active {
-                background-color: var(--nsw-red-darker) !important;
-            }
-            .btn-red:disabled {
-                background-color: var(--nsw-red-lighter); /* Lighter red for a softer look */
-                color: #e0e0e0; /* Soft grey for text */
-                cursor: not-allowed;
-                opacity: 0.8; /* Slightly higher opacity for better visibility */
-                border: 1px solid #d2174c; /* Subtle border for definition */
-                box-shadow: none; /* Optionally remove any shadow if present */
-            }
-            .note {
-                font-size: 0.8rem;
-                color: #666;
-            }
-            .mt-0 { margin-top: 0rem; }
-            .mt-1 { margin-top: 0.25rem; }
-            .mb-0 { margin-bottom: 0rem; }
-            .mb-1 { margin-bottom: 0.25rem; }
-        </style>
-    </body>
+        }
+
+        body {
+            font-family: 'Open Sans', Helvetica, Arial, Lucida, sans-serif;
+            margin: 0 !important;
+        }
+
+        .btn-red {
+            background-color: var(--nsw-red);
+            color: #fff;
+            font-size: 1.0rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: var(--border-radius);
+            padding: 0.5rem;
+            border-style: none;
+            border-width: 0px;
+        }
+
+        .btn-red:hover {
+            background-color: var(--nsw-red-lighter) !important;
+        }
+
+        .btn-red:active {
+            background-color: var(--nsw-red-darker) !important;
+        }
+
+        .btn-red:disabled {
+            background-color: var(--nsw-red-lighter);
+            /* Lighter red for a softer look */
+            color: #e0e0e0;
+            /* Soft grey for text */
+            cursor: not-allowed;
+            opacity: 0.8;
+            /* Slightly higher opacity for better visibility */
+            border: 1px solid #d2174c;
+            /* Subtle border for definition */
+            box-shadow: none;
+            /* Optionally remove any shadow if present */
+        }
+
+        .note {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .mt-0 {
+            margin-top: 0rem;
+        }
+
+        .mt-1 {
+            margin-top: 0.25rem;
+        }
+
+        .mb-0 {
+            margin-bottom: 0rem;
+        }
+
+        .mb-1 {
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</body>
+
 </html>
