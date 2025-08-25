@@ -271,7 +271,7 @@ jobs:
         working-directory: apps/mobile
         run: npx cap sync android
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: corretto
           java-version: 18
