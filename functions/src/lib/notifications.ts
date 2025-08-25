@@ -11,7 +11,10 @@ function getNotificationTitle(title: string, calendarId: string, creator?: strin
     if (title.toLocaleLowerCase().includes('medlemsträning')) {
         return creator ? `${creator} har bokat en medlemsträning!` : `Ny medlemsträning bokad!`
     }
-    if (title.toLocaleLowerCase().includes('tematräning')) {
+    if (title.toLowerCase().includes('medlemsträning')) {
+        return creator ? `${creator} har bokat en medlemsträning!` : `Ny medlemsträning bokad!`
+    }
+    if (title.toLowerCase().includes('tematräning')) {
         return creator ? `${creator} har bokat en tematräning!` : `Ny tematräning bokad!`
     }
     return calendarId === '337667'
