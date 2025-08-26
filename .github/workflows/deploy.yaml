@@ -78,31 +78,40 @@ jobs:
             --outfile=./dist/index.js \
             --external:@google-cloud/functions-framework \
             --external:@google-cloud/scheduler \
-            --external:@google-cloud/storage
-            
+            --external:@google-cloud/storage \
+            --external:puppeteer
+
           jq -n \
             --arg name "@nackswinget/functions" \
             --arg version "1.0.0" \
             --arg main "index.js" \
             --arg start "node index.js" \
-            --arg build "echo \"No build step\"" \
+            --arg build "npx puppeteer browsers install chrome" \
+            --arg postbuild "node node_modules/puppeteer/install.js" \
             --arg functions_version "^3.4.0" \
             --arg scheduler_version "^4.3.0" \
             --arg storage_version "^7.11.2" \
+            --arg puppeteer_version "^24.17.0" \
             '{
               name: $name,
               version: $version,
               main: $main,
               scripts: {
                 start: $start,
-                build: $build
+                build: $build,
+                postbuild: $postbuild
               },
               dependencies: {
                 "@google-cloud/functions-framework": $functions_version,
                 "@google-cloud/scheduler": $scheduler_version,
-                "@google-cloud/storage": $storage_version
+                "@google-cloud/storage": $storage_version,
+                "puppeteer": $puppeteer_version
               }
             }' > ./dist/package.json
+
+          echo " =============== package.json =============== "
+          cat ./dist/package.json
+          echo ""
 
           gcloud functions deploy ${{ matrix.function.name }} \
             --gen2 \
