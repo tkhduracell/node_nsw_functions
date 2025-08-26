@@ -21,7 +21,18 @@ export async function fetchCookies(db: Firestore, orgId: string): Promise<Cookie
 }
 
 export async function storeCookies(db: Firestore, orgId: string, cookies: Cookie[]): Promise<void> {
+    // Undefined is not allowed in Firestore
+    const data = cookies.map(ck => {
+        const obj: Record<string, any> = { ...ck }
+        for (const key in obj) {
+            if (obj[key] === undefined) {
+                delete obj[key];
+            }
+        }
+        return obj
+    })
+    
     await db.collection('browser')
         .doc(`org-${orgId}`)
-        .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
+        .set({ data, updated_at: FieldValue.serverTimestamp() }, { merge: false })
 }

@@ -60,7 +60,6 @@ app.post('/', async (req, res) => {
 
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
-    db.settings({ ignoreUndefinedProperties: true })
 
     logger.info({ orgId }, 'Launching browser')
     const browser = await launchBrowser()

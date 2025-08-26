@@ -107,6 +107,8 @@ jobs:
               }
             }' > ./dist/package.json
 
+          cp .puppeteerrc.js ./dist/
+
           echo " =============== package.json =============== "
           cat ./dist/package.json
           echo ""
