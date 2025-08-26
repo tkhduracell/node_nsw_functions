@@ -9,7 +9,7 @@ import { IDOActivityOptions } from '../env'
 
 import { ICalCalendar, type ICalEvent } from 'ical-generator'
 import { ActivityApi } from './booking'
-import { fetchCookies } from './cookies'
+import { fetchCookies, storeCookies } from './cookies'
 import { Notifications } from './notifications'
 import { buildCalendar } from './ical-builder'
 import { type CalendarMetadata, type Calendars, type CalendarNotification, ListedActivities } from './types'
@@ -50,11 +50,8 @@ export async function login(browser: Browser, db: Firestore, orgId: string) {
     await page.goto(`${ACTIVITY_BASE_URL}/Calendars/Index/${orgId}`, { waitUntil: 'networkidle2' })
     await page.waitForSelector('.page-header > h1')
 
-    const cookies = await page.cookies()
-
-    await db.collection('browser')
-        .doc(`org-${orgId}`)
-        .set({ data: cookies, updated_at: FieldValue.serverTimestamp() }, { merge: false })
+    const cookies = await browser.cookies()
+    storeCookies(db, orgId, cookies)
 
     await page.close()
 
@@ -94,7 +91,7 @@ export async function update(browser: Browser, bucket: Bucket, db: Firestore, cl
         await page.setViewport({ height: 720, width: 1280, hasTouch: false, isMobile: false })
 
         logger.info({ orgId }, 'Restoring old cookies')
-        await page.setCookie(...cookies)
+        await browser.setCookie(...cookies)
 
         logger.info({ orgId }, 'Finding calendars')
         const cals = await fetchCalendars(page, orgId)

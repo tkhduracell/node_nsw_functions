@@ -38,7 +38,7 @@ export async function launchBrowser() {
         '--force-gpu-mem-available-mb=500'
     ]
     return await launch({
-        headless: 'new',
+        headless: 'shell',
         timeout: 180_000,
         protocolTimeout: 240_000,
         devtools: false,
@@ -60,6 +60,7 @@ app.post('/', async (req, res) => {
 
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
+    db.settings({ ignoreUndefinedProperties: true })
 
     logger.info({ orgId }, 'Launching browser')
     const browser = await launchBrowser()

@@ -1,13 +1,13 @@
 import { addHours, addMinutes, parseISO, addDays } from 'date-fns'
-
-import { HttpFetch, type ActivityCreateResponse, type ListedActivities } from './types'
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz'
-import { type Protocol } from 'puppeteer'
-import { logger } from '../logging'
+import { Cookie } from 'puppeteer'
 import z from 'zod'
 
+import { HttpFetch, type ActivityCreateResponse, type ListedActivities } from './types'
+import { logger } from '../logging'
+
 export interface CookieProvider {
-    get(): Protocol.Network.CookieParam[]
+    get(): Cookie[]
 }
 
 export type ActivityResult = Pick<ActivityCreateResponse['activities'][number], 'activityId'>
@@ -32,15 +32,26 @@ export class ActivityApi {
         const endTime = `${formatInTimeZone(end, 'Europe/Stockholm', 'yyyy-MM-dd')}+${suffix}`
 
         logger.info('Fetching activities: %o', { startTime, endTime, id: calendarId })
-        const response = await this.fetch(`${this.baseUrl}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
-            method: 'GET',
-            headers: {
-                'cookie': this.cookies.get().map(ck => ck.name + '=' + ck.value).join(';'),
+        const cookies = this.cookies.get()
+                    .filter(ck => !ck.name.startsWith('MSIS'))
+                    .filter(ck => !ck.name.startsWith('browserState'))
+                    .filter(ck => !ck.name.startsWith('_ga'))
+                    .filter(ck => !ck.name.startsWith('_gid'))
+                    .filter(ck => !ck.name.startsWith('ai_'))
+                    .filter(ck => !ck.name.startsWith('io_'))
+                    .filter(ck => ck.domain === 'activity.idrottonline.se')
+
+        const headers = {
+               'cookie': cookies.map(ck => ck.name + '=' + ck.value).join(';'),
                 'Referer': `${this.baseUrl}/Calendars/View/${calendarId}`,
                 'Referrer-Policy': 'strict-origin-when-cross-origin',
                 'x-requested-with': 'XMLHttpRequest',
                 'accept': 'application/json, text/javascript, */*; q=0.01'
-            }
+        };
+
+        const response = await this.fetch(`${this.baseUrl}/activities/getactivities?calendarId=${calendarId}&startTime=${startTime}&endTime=${endTime}`, {
+            method: 'GET',
+            headers
         })
 
         if (!response.ok) {

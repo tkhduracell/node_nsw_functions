@@ -31,6 +31,7 @@ if (require.main === module) {
 async function cookies(): Promise<CookieProvider> {
     const { ACTIVITY_ORG_ID: orgId } = IDOActivityOptions.parse(process.env)
     const db = getFirestore()
+    db.settings({ ignoreUndefinedProperties: true })
 
     const cookies = await fetchCookies(db, orgId)
     return { get: () => cookies }

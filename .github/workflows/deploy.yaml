@@ -86,8 +86,7 @@ jobs:
             --arg version "1.0.0" \
             --arg main "index.js" \
             --arg start "node index.js" \
-            --arg build "npx puppeteer browsers install chrome" \
-            --arg postbuild "node node_modules/puppeteer/install.js" \
+            --arg build "npx puppeteer browsers install chrome-headless-shell" \
             --arg functions_version "^3.4.0" \
             --arg scheduler_version "^4.3.0" \
             --arg storage_version "^7.11.2" \
@@ -99,7 +98,6 @@ jobs:
               scripts: {
                 start: $start,
                 build: $build,
-                postbuild: $postbuild
               },
               dependencies: {
                 "@google-cloud/functions-framework": $functions_version,
