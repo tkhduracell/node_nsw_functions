@@ -115,7 +115,7 @@ jobs:
             --allow-unauthenticated \
             --update-secrets=${{ matrix.function.secrets }} \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA} \
-            ${{ matrix.function.memory && format('--memory={0}', matrix.function.memory) || '' }} \
+            --memory=${{ matrix.function.memory || '512MiB' }} \
             ${{ matrix.function.concurrency_limit && format('--concurrency={0}', matrix.function.concurrency_limit) || '' }}
 
   update-scheduler:
