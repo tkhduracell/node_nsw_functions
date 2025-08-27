@@ -7,9 +7,17 @@
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
+      <ion-card style="display: flex; justify-content: center;">
+        <ion-card-header>
+          <ion-card-title style="font-size: 2rem">
+            Nyheter
+          </ion-card-title>
+        </ion-card-header>
+      </ion-card>
+
       <ion-card v-if="subscription.isDenied">
         <ion-card-header>
-          <ion-card-title>Bevaka</ion-card-title>
+          <ion-card-title>Notiser</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Du har valt att inte tillåta notifiktioner.</p>
@@ -19,27 +27,28 @@
 
       <ion-card v-if="subscription.isSubscribed">
         <ion-card-header>
-          <ion-card-title>Bevaka</ion-card-title>
+          <ion-card-title>Notiser</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Du bevakar nyheter på denna enhet.</p>
           <ion-button @click="unsubscribe">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
-            <span v-if="!subscription.isLoading">Avsluta bevakning</span>
+            <span v-if="!subscription.isLoading">Avsluta notiser</span>
           </ion-button>
         </ion-card-content>
       </ion-card>
 
-      <ion-card v-if="subscription.isSupported && !subscription.isSubscribed">
+      <ion-card v-if="subscription.isSupported && !subscription.isSubscribed && !subscription.isDismissed">
         <ion-card-header>
-          <ion-card-title>Bevaka</ion-card-title>
+          <ion-card-title>Vill du få notiser?</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Du kan bevaka nyheter och få notiser.</p>
-          <ion-button @click="subscribe">
+          <ion-button @click="subscribe" fill="solid">
             <ion-spinner slot="icon-only" name="circles" v-if="subscription.isLoading"></ion-spinner>
-            <span v-if="!subscription.isLoading">Bevaka nyheter</span>
+            <span v-if="!subscription.isLoading">Få notiser</span>
           </ion-button>
+          <ion-button @click="subscription.isDismissed = true" fill="clear" size="small">Nej tack</ion-button>
         </ion-card-content>
       </ion-card>
 
@@ -49,7 +58,7 @@
         </ion-card-header>
         <ion-card-content>
           <p>Kunde ej ladda prenumeration.</p>
-          <ion-label>{{ subscription.error }}</ion-label>
+          <ion-label v-if="isDev">{{ subscription.error }}</ion-label>
         </ion-card-content>
       </ion-card>
 
@@ -59,8 +68,10 @@
         </ion-card-header>
         <ion-card-content>
           <p>Kunde ej ladda nyheter</p>
-          <ion-label v-if="isDev && 'code' in error">
-            <pre>{{ JSON.stringify((error as AxiosError).toJSON(), null, 2) }}</pre>
+          <ion-label v-if="'code' in error">
+            <pre>
+              {{ isDev ? JSON.stringify((error as AxiosError).toJSON(), null, 2) : `Felkod: ${error.code} - ${error.message}` }}
+            </pre>
           </ion-label>
           <ion-label v-else>
             {{ error }}
@@ -116,7 +127,7 @@ ion-card.toasted {
 </style>
 <script setup lang="ts">
 import {
-  IonPage, IonContent, 
+  IonPage, IonContent,
   IonRow, IonLabel, IonCard, IonCardContent, IonCardHeader,
   IonCardSubtitle, IonCardTitle, IonCol, IonGrid, IonSpinner,
   IonRefresher, IonRefresherContent, IonButton
