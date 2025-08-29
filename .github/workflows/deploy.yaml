@@ -107,8 +107,9 @@ jobs:
               }
             }' > ./dist/package.json
 
+          mkdir -p ./dist/static
           cp .puppeteerrc.js ./dist/
-          cp -R static/ ./dist/static
+          cp -R static/ ./dist/static/
 
           echo " =============== package.json =============== "
           cat ./dist/package.json
