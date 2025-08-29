@@ -35,7 +35,6 @@ jobs:
           - name: calendars-update-api
             secrets: "ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest"
             memory: 1GiB
-            max_instances: 1
             concurrency_limit: 1
 
     concurrency: ${{ matrix.function.name }}
@@ -126,7 +125,8 @@ jobs:
             --update-secrets=${{ matrix.function.secrets }} \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA} \
             --memory=${{ matrix.function.memory || '512MiB' }} \
-            ${{ matrix.function.concurrency_limit && format('--concurrency={0}', matrix.function.concurrency_limit) || '' }}
+            --cpu=${{ matrix.function.cpu || '1' }} \
+            --concurrency=${{ matrix.function.concurrency_limit || '80' }}
 
   update-scheduler:
     runs-on: ubuntu-latest
