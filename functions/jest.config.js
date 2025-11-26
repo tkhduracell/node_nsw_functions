@@ -1,4 +1,8 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
+
+// Set timezone for consistent test results
+process.env.TZ = 'Europe/Stockholm'
+
 module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
