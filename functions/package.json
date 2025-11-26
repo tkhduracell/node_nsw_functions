@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
-    "@stylistic/eslint-plugin": "^5.2.2",
+    "@stylistic/eslint-plugin": "^5.6.1",
     "@tsconfig/node20": "^20.1.4",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.3",
