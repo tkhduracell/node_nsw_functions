@@ -38,7 +38,7 @@ export async function launchBrowser() {
         '--force-gpu-mem-available-mb=500'
     ]
     return await launch({
-        headless: 'new',
+        headless: 'shell',
         timeout: 180_000,
         protocolTimeout: 240_000,
         devtools: false,

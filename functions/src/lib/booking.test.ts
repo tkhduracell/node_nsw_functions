@@ -26,7 +26,7 @@ test('should throw if invalid format on activities', async () => {
 test('should book activities', async () => {
     const resp = { success: true, activities: [{ foo: 'bar' }] }
 
-    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)
+    const fetch = jest.fn().mockResolvedValue({ ok: true, text: async () => JSON.stringify(resp), json: async () => await Promise.resolve(resp) } as Response)
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
 
@@ -71,7 +71,7 @@ test('should book activities', async () => {
 test('should book activities with right datetime', async () => {
     const resp = { success: true, activities: [{ foo: 'bar' }] }
 
-    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)
+    const fetch = jest.fn().mockResolvedValue({ ok: true, text: async () => JSON.stringify(resp), json: async () => await Promise.resolve(resp) } as Response)
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
 
@@ -92,7 +92,7 @@ test('should book activities with right datetime', async () => {
 test('should book activities with short date', async () => {
     const resp = { success: true, activities: [{ foo: 'bar' }] }
 
-    const fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => await Promise.resolve(resp) } as Response)
+    const fetch = jest.fn().mockResolvedValue({ ok: true, text: async () => JSON.stringify(resp), json: async () => await Promise.resolve(resp) } as Response)
 
     const api = new ActivityApi('1234', 'http://mock.app', { get: () => [] }, fetch)
 

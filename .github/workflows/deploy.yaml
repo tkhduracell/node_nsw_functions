@@ -35,16 +35,15 @@ jobs:
           - name: calendars-update-api
             secrets: "ACTIVITY_ORG_ID=ACTIVITY_ORG_ID:latest,ACTIVITY_BASE_URL=ACTIVITY_BASE_URL:latest,ACTIVITY_USERNAME=ACTIVITY_USERNAME:latest,ACTIVITY_PASSWORD=ACTIVITY_PASSWORD:latest"
             memory: 1GiB
-            max_instances: 1
             concurrency_limit: 1
 
     concurrency: ${{ matrix.function.name }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
 
@@ -58,14 +57,14 @@ jobs:
 
       - id: auth
         name: Setup gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
+        uses: "google-github-actions/auth@v3"
         with:
           workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
           service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
           export_environment_variables: true
 
       - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Deploy ${{ matrix.function.name }}
         working-directory: functions
@@ -78,31 +77,41 @@ jobs:
             --outfile=./dist/index.js \
             --external:@google-cloud/functions-framework \
             --external:@google-cloud/scheduler \
-            --external:@google-cloud/storage
-            
+            --external:@google-cloud/storage \
+            --external:puppeteer
+
           jq -n \
             --arg name "@nackswinget/functions" \
             --arg version "1.0.0" \
             --arg main "index.js" \
             --arg start "node index.js" \
-            --arg build "echo \"No build step\"" \
+            --arg build "npx puppeteer browsers install chrome-headless-shell" \
             --arg functions_version "^3.4.0" \
             --arg scheduler_version "^4.3.0" \
             --arg storage_version "^7.11.2" \
+            --arg puppeteer_version "^24.17.0" \
             '{
               name: $name,
               version: $version,
               main: $main,
               scripts: {
                 start: $start,
-                build: $build
+                build: $build,
               },
               dependencies: {
                 "@google-cloud/functions-framework": $functions_version,
                 "@google-cloud/scheduler": $scheduler_version,
-                "@google-cloud/storage": $storage_version
+                "@google-cloud/storage": $storage_version,
+                "puppeteer": $puppeteer_version
               }
             }' > ./dist/package.json
+
+          cp .puppeteerrc.js ./dist/
+          cp -R static/ ./dist/
+
+          echo " =============== package.json =============== "
+          cat ./dist/package.json
+          echo ""
 
           gcloud functions deploy ${{ matrix.function.name }} \
             --gen2 \
@@ -115,8 +124,9 @@ jobs:
             --allow-unauthenticated \
             --update-secrets=${{ matrix.function.secrets }} \
             --update-env-vars=GCLOUD_PROJECT=${GCLOUD_PROJECT},GCLOUD_BUCKET=${GCLOUD_BUCKET},GCLOUD_REGION=${GCLOUD_REGION},GITHUB_SHA=${GITHUB_SHA} \
-            ${{ matrix.function.memory && format('--memory={0}', matrix.function.memory) || '' }} \
-            ${{ matrix.function.concurrency_limit && format('--concurrency={0}', matrix.function.concurrency_limit) || '' }}
+            --memory=${{ matrix.function.memory || '512MiB' }} \
+            --cpu=${{ matrix.function.cpu || '1' }} \
+            --concurrency=${{ matrix.function.concurrency_limit || '80' }}
 
   update-scheduler:
     runs-on: ubuntu-latest
@@ -128,14 +138,14 @@ jobs:
     steps:
       - id: auth
         name: Setup  gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
+        uses: "google-github-actions/auth@v3"
         with:
           workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
           service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
           export_environment_variables: true
 
       - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Setup gcloud defaults
         run: |
@@ -205,18 +215,18 @@ jobs:
       - deploy-functions
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: auth
         name: Setup  gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
+        uses: "google-github-actions/auth@v3"
         with:
           workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
           service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
           export_environment_variables: true
 
       - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Clean build artifacts
         run: ./functions/clean-artifacts.sh
@@ -239,10 +249,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Node.JS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
 
@@ -261,7 +271,7 @@ jobs:
         working-directory: apps/mobile
         run: npx cap sync android
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: corretto
           java-version: 18
@@ -271,14 +281,14 @@ jobs:
 
       - id: auth
         name: Setup  gcloud Cloud SDK auth
-        uses: "google-github-actions/auth@v2"
+        uses: "google-github-actions/auth@v3"
         with:
           workload_identity_provider: "projects/560237127162/locations/global/workloadIdentityPools/github-deployer-auth-pool/providers/github-deployer-auth-provider"
           service_account: "github-deployer-account@nackswinget-af7ef.iam.gserviceaccount.com"
           create_credentials_file: true
 
       - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Fetch and write GOOGLE_PLAY_KEYSTORE
         run: |

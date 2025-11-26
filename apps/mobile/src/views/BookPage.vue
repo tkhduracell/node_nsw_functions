@@ -3,17 +3,23 @@
   <ion-page>
     <nsw-toolbar />
     <ion-content>
+
+      <ion-card style="display: flex; justify-content: center;">
+        <ion-card-header>
+          <ion-card-title style="font-size: 2rem">
+            Boka träning
+          </ion-card-title>
+        </ion-card-header>
+      </ion-card>
+
       <form>
         <ion-card>
-          <ion-card-header>
-            <ion-card-title>Boka Träning</ion-card-title>
-          </ion-card-header>
 
           <ion-card-content>
 
-            <b style="display: block; margin-top: 1em;">Typ av träning</b>
+            <ion-label>Typ av träning</ion-label>
             <ion-select label-placement="floating" label="Välj typ av träning" v-model="data.mode"
-              interface="action-sheet" fill="solid">
+              interface="action-sheet" fill="solid" cancel-text="Avbryt">
               <ion-select-option value="regular">Medlemsträning</ion-select-option>
               <ion-select-option value="theme">Tematräning</ion-select-option>
             </ion-select>
@@ -24,21 +30,22 @@
                 label-placement="floating"></ion-input>
             </div>
 
-            <b style="display: block; margin-top: 1em;">Ansvarig</b>
+            <ion-label>Ansvarig</ion-label>
             <ion-input label="Ditt namn" v-model="data.responsible" label-placement="floating" fill="solid"></ion-input>
             <ion-input label="Telefonnummmer" v-model="data.tel" label-placement="floating" fill="solid"></ion-input>
 
-            <b style="display: block; margin-top: 1em; margin-bottom: 0.5em;">Välj Datum / Tid</b>
-
-            <ion-datetime :min="min" locale="sv-SE" :first-day-of-week="1" v-model="data.datetime"
-              presentation="date-time" minuteValues="0,15,30,45" :prefer-wheel="true"
-              hourValues="7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23">
-              <span slot="time-label">Starttid</span>
-            </ion-datetime>
+            <ion-label>Välj Datum / Tid</ion-label>
+            <div class="datetime">
+              <ion-datetime :min="min" locale="sv-SE" :first-day-of-week="1" v-model="data.datetime"
+                presentation="date-time" minuteValues="0,15,30,45" :prefer-wheel="true"
+                hourValues="7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23">
+                <span slot="time-label">Starttid</span>
+              </ion-datetime>
+            </div>
 
             <div v-if="activities" class="activities">
-              <b v-if="activities.length > 0" key="header">Andra aktiviteter denna dag<br /></b>
-              <b v-else key="empty-header">✅ Inga andra aktiviteter denna dag</b>
+              <ion-label v-if="activities.length > 0" key="header">Andra aktiviteter denna dag</ion-label>
+              <ion-label v-else key="empty-header">✅ Inga andra aktiviteter denna dag</ion-label>
 
               <TransitionGroup name="list">
                 <div v-for="act in activities" class="activity" :key="act.calendarId + ':' + act.id">
@@ -51,7 +58,7 @@
               </TransitionGroup>
             </div>
 
-            <b style="display: block; margin-top: 1em;">Träningens längd</b>
+            <ion-label>Träningens längd</ion-label>
             <div style="display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center;">
               <ion-button :fill="data.duration === duration ? 'solid' : 'outline'" expand="block"
                 style="flex-basis: 32%;" @click="data.duration = duration"
@@ -59,10 +66,6 @@
                 {{ duration }} min
               </ion-button>
             </div>
-
-            <b style="display: block; margin-top: 1em;">Lösenord</b>
-            <ion-input label="Vårt gemensama lösenord" v-model="data.pass" type="password"
-              label-placement="floating"></ion-input>
 
             <div style="margin-top: 1em;">
               <p>Tänk på (<a href="https://nackswinget.se/fritraning/fritraning-interna-rutiner/">Interna rutiner</a>)
@@ -74,8 +77,12 @@
               </ul>
             </div>
 
+            <ion-label>Lösenord</ion-label>
+            <ion-input label="Vårt gemensama lösenord" v-model="data.pass" type="password"
+              label-placement="floating"></ion-input>
+
             <div class="errors" v-if="errors && errors.length > 0">
-              Innan du kan boka måste du:
+              <ion-label>Innan du kan boka måste du</ion-label>
               <div class="error" v-for="e in errors" :key="e">{{ e }}</div>
             </div>
             <ion-button expand="block" style="margin-top: 1em;" @click="onSubmit"
@@ -96,8 +103,17 @@ ion-range {
   --knob-size: 40px;
 }
 
+ion-datetime {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 ion-label {
-  font-size: 5em;
+  font-size: 1.2em;
+  font-weight: bold;
+  display: block;
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
 }
 
 ion-input {
@@ -113,7 +129,6 @@ ion-input {
 }
 
 .activities {
-  margin-top: 1em;
   display: flex;
   flex-direction: column;
   gap: 0.2em;
@@ -165,12 +180,10 @@ ion-input {
 
 .list-enter-from {
   opacity: 0;
-  transform: translateX(-30px);
 }
 
 .list-leave-to {
   opacity: 0;
-  transform: translateX(30px);
 }
 
 .list-leave-active {

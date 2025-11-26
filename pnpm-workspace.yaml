@@ -1,8 +1,17 @@
 packages:
-  # Mobile app
-  - "apps/*"
-  # Cloud functions
-  - "functions"
-  # Exclude test directories
-  - "!**/test/**"
-  - "!**/tests/**"
+  - apps/*
+  - functions
+  - '!**/test/**'
+  - '!**/tests/**'
+
+ignoredBuiltDependencies:
+  - core-js
+
+onlyBuiltDependencies:
+  - '@firebase/util'
+  - cypress
+  - esbuild
+  - fsevents
+  - protobufjs
+  - puppeteer
+  - vue-demi

@@ -6,9 +6,17 @@
         <ion-refresher-content></ion-refresher-content>
       </ion-refresher>
 
+      <ion-card style="display: flex; justify-content: center;">
+        <ion-card-header>
+          <ion-card-title style="font-size: 2rem">
+            Kalender
+          </ion-card-title>
+        </ion-card-header>
+      </ion-card>
+
       <ion-card v-if="subscription.isDenied">
         <ion-card-header>
-          <ion-card-title>Bevaka</ion-card-title>
+          <ion-card-title>Notiser</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Du har valt att inte tillåta notifiktioner.</p>
@@ -18,7 +26,7 @@
 
       <ion-card v-if="subscription.isSubscribed">
         <ion-card-header>
-          <ion-card-title>Bevakning</ion-card-title>
+          <ion-card-title>Notiser</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>Du bevakar öppna träningar på denna enhet.</p>
@@ -50,7 +58,7 @@
         </ion-card-header>
         <ion-card-content>
           <p>Kunde ej ladda prenumeration.</p>
-          <ion-label>{{ subscription.error }}</ion-label>
+          <ion-label v-if="isDev">{{ subscription.error }}</ion-label>
         </ion-card-content>
       </ion-card>
 
@@ -62,7 +70,8 @@
           <p>Kunde ej ladda kalender</p>
           <ion-label v-if="'code' in error">
             <pre>
-              {{ isDev ? JSON.stringify((error as AxiosError).toJSON(), null, 2) : `Felkod: ${error.code} - ${error.message}` }}</pre>
+              {{ isDev ? JSON.stringify((error as AxiosError).toJSON(), null, 2) : `Felkod: ${error.code} - ${error.message}` }}
+            </pre>
           </ion-label>
           <ion-label v-else>
             {{ error }}

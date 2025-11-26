@@ -1,7 +1,7 @@
 import z from 'zod'
 import express from 'express'
 
-import { join } from 'path'
+import { dirname, join, resolve } from 'path'
 import { ClockFactory } from './lib/clock'
 import { logger, loggerMiddleware } from './logging'
 import { Storage } from '@google-cloud/storage'
@@ -173,7 +173,12 @@ app.get('/book/search', cors, async (req, res) => {
 })
 
 app.get('/book', async (req, res) => {
-    res.sendFile(join(__dirname, '..', 'static', 'booking.html'), {
+    const path = dirname(__dirname) === '/' ?
+            join(__dirname, 'static', 'booking.html'): 
+            join(__dirname, '..', 'static', 'booking.html')
+
+    logger.info({ __dirname, __filename }, 'Serving booking page from %s', resolve(path))
+    res.sendFile(path, {
         headers: {
             'Content-Type': 'text/html; charset=utf-8'
         }

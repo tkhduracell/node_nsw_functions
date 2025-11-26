@@ -16,7 +16,7 @@ type State = {
 export function useSubscription(topic: string) {
   const { client } = useClient();
 
-  const dismissed = useLocalStorage("subscription-dismissed", false);
+  const dismissed = useLocalStorage(`subscription-${topic}-dismissed`, false);
   const data = reactive<State>({
     isSubscribed: null,
     isSupported: true,
