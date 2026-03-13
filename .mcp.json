@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "gcp-logging": {
+      "type": "http",
+      "url": "https://logging.googleapis.com/mcp"
+    },
+    "gcp-monitoring": {
+      "type": "http",
+      "url": "https://monitoring.googleapis.com/mcp"
+    }
+  }
+}
