@@ -10,40 +10,40 @@ importers:
     devDependencies:
       pnpm:
         specifier: latest
-        version: 10.23.0
+        version: 10.24.0
 
   apps/mobile:
     dependencies:
       '@capacitor-community/fcm':
         specifier: ^5.0.2
-        version: 5.0.3(@capacitor/core@5.7.8)
+        version: 5.0.3(@capacitor/core@7.4.4)
       '@capacitor/android':
         specifier: 5.7.8
-        version: 5.7.8(@capacitor/core@5.7.8)
+        version: 5.7.8(@capacitor/core@7.4.4)
       '@capacitor/app':
         specifier: 5.0.7
-        version: 5.0.7(@capacitor/core@5.7.8)
+        version: 5.0.7(@capacitor/core@7.4.4)
       '@capacitor/core':
-        specifier: 5.7.8
-        version: 5.7.8
+        specifier: 7.4.4
+        version: 7.4.4
       '@capacitor/haptics':
         specifier: 5.0.7
-        version: 5.0.7(@capacitor/core@5.7.8)
+        version: 5.0.7(@capacitor/core@7.4.4)
       '@capacitor/ios':
         specifier: 5.7.8
-        version: 5.7.8(@capacitor/core@5.7.8)
+        version: 5.7.8(@capacitor/core@7.4.4)
       '@capacitor/keyboard':
         specifier: 5.0.8
-        version: 5.0.8(@capacitor/core@5.7.8)
+        version: 5.0.8(@capacitor/core@7.4.4)
       '@capacitor/push-notifications':
         specifier: ^5.1.1
-        version: 5.1.2(@capacitor/core@5.7.8)
+        version: 5.1.2(@capacitor/core@7.4.4)
       '@capacitor/status-bar':
         specifier: 5.0.7
-        version: 5.0.7(@capacitor/core@5.7.8)
+        version: 5.0.7(@capacitor/core@7.4.4)
       '@capacitor/toast':
         specifier: ^5.0.7
-        version: 5.0.8(@capacitor/core@5.7.8)
+        version: 5.0.8(@capacitor/core@7.4.4)
       '@ionic/vue':
         specifier: ^7.7.0
         version: 7.8.6
@@ -869,8 +869,8 @@ packages:
     engines: {node: '>=16.0.0'}
     hasBin: true
 
-  '@capacitor/core@5.7.8':
-    resolution: {integrity: sha512-rrZcm/2vJM0WdWRQup1TUidbjQV9PfIadSkV4rAGLD7R6PuzZSMPGT0gmoZzCRlXkqrazrWWDkurei3ozU02FA==}
+  '@capacitor/core@7.4.4':
+    resolution: {integrity: sha512-xzjxpr+d2zwTpCaN0k+C6wKSZzWFAb9OVEUtmO72ihjr/NEDoLvsGl4WLfjWPcCO2zOy0b2X52tfRWjECFUjtw==}
 
   '@capacitor/haptics@5.0.7':
     resolution: {integrity: sha512-/j+7Qa4BxQA5aOU43cwXuiudfSXfoHFsAVfcehH5DkSjxLykZKWHEuE4uFJXqdkSIbAHjS37D0Sde6ENP6G/MA==}
@@ -4654,8 +4654,8 @@ packages:
     resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
     engines: {node: '>=10.4.0'}
 
-  pnpm@10.23.0:
-    resolution: {integrity: sha512-IcTlaYACrel+Tv6Li0qJqN48haN5GflX56DzDzj7xbvdBZgP/ikXmy+25uaRJC4JjZRdFgF3LK0P71+2QR4qSw==}
+  pnpm@10.24.0:
+    resolution: {integrity: sha512-Af+K5xtEGZA7ZcYPstydNM+LtuBtA73hEu8496NNaQTEJLpmvqXNzxKJAjC/OflYBHMUDtnJRv7zKLblI4o0Wg==}
     engines: {node: '>=18.12'}
     hasBin: true
 
@@ -6661,17 +6661,17 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@capacitor-community/fcm@5.0.3(@capacitor/core@5.7.8)':
+  '@capacitor-community/fcm@5.0.3(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
-  '@capacitor/android@5.7.8(@capacitor/core@5.7.8)':
+  '@capacitor/android@5.7.8(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
-  '@capacitor/app@5.0.7(@capacitor/core@5.7.8)':
+  '@capacitor/app@5.0.7(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
   '@capacitor/cli@5.7.8':
     dependencies:
@@ -6695,33 +6695,33 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@capacitor/core@5.7.8':
+  '@capacitor/core@7.4.4':
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/haptics@5.0.7(@capacitor/core@5.7.8)':
+  '@capacitor/haptics@5.0.7(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
-  '@capacitor/ios@5.7.8(@capacitor/core@5.7.8)':
+  '@capacitor/ios@5.7.8(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
-  '@capacitor/keyboard@5.0.8(@capacitor/core@5.7.8)':
+  '@capacitor/keyboard@5.0.8(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
-  '@capacitor/push-notifications@5.1.2(@capacitor/core@5.7.8)':
+  '@capacitor/push-notifications@5.1.2(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
-  '@capacitor/status-bar@5.0.7(@capacitor/core@5.7.8)':
+  '@capacitor/status-bar@5.0.7(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
-  '@capacitor/toast@5.0.8(@capacitor/core@5.7.8)':
+  '@capacitor/toast@5.0.8(@capacitor/core@7.4.4)':
     dependencies:
-      '@capacitor/core': 5.7.8
+      '@capacitor/core': 7.4.4
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -11293,7 +11293,7 @@ snapshots:
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
-  pnpm@10.23.0: {}
+  pnpm@10.24.0: {}
 
   posix-character-classes@0.1.1: {}
 
