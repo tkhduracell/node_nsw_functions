@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-pnpm monorepo (Node 20, pnpm 10.14) for Nackswinget (NSW):
+pnpm monorepo (Node 24, pnpm 10.14) for Nackswinget (NSW):
 - `functions/` (`@nackswinget/functions`): GCP Cloud Functions backend. See `functions/CLAUDE.md`.
 - `apps/mobile/` (`@nackswinget/mobile`): Ionic Vue/Capacitor mobile app. See `apps/mobile/CLAUDE.md`.
 
