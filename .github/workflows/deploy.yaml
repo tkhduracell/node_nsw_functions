@@ -115,7 +115,7 @@ jobs:
 
           gcloud functions deploy ${{ matrix.function.name }} \
             --gen2 \
-            --runtime=nodejs22 \
+            --runtime=nodejs24 \
             --region="${GCLOUD_REGION}" \
             --source=./dist \
             --entry-point=${{ matrix.function.name }} \
